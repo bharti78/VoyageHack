@@ -1,22 +1,24 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import HotelCard from "../components/HotelCard"
 import CabCard from "../components/CabCard"
 import MapView from "../components/MapView"
 
 function Results() {
-  const [persona, setPersona] = useState("")
-  const [query, setQuery] = useState("")
-  const [searchType, setSearchType] = useState("")
-const [imagePreview, setImagePreview] = useState("")
+  const navigate = useNavigate()
 
- useEffect(() => {
-  setPersona(localStorage.getItem("persona"))
-  setQuery(localStorage.getItem("searchQuery"))
-  setSearchType(localStorage.getItem("searchType"))
+  const persona = localStorage.getItem("persona") || ""
+  const query = localStorage.getItem("searchQuery") || ""
+  const searchType = localStorage.getItem("searchType") || ""
+  const imagePreview = localStorage.getItem("uploadedImage") || ""
 
-  const img = localStorage.getItem("uploadedImage")
-  if (img) setImagePreview(img)
-}, [])
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/")
+      return
+    }
+  }, [navigate])
 
   // Temporary mock data (backend later)
  const hotels = [

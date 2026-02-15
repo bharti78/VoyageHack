@@ -1,13 +1,20 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import ChatAssistant from "../components/ChatAssistant";
+ import { useState, useRef, useEffect } from "react";
+ import { useNavigate } from "react-router-dom";
+ import ChatAssistant from "../components/ChatAssistant";
+ 
+ function Search() {
+   const [query, setQuery] = useState("");
+   const [listening, setListening] = useState(false);
+   const [chatOpen, setChatOpen] = useState(false);
+   const navigate = useNavigate();
+   const recognitionRef = useRef(null);
 
-function Search() {
-  const [query, setQuery] = useState("");
-  const [listening, setListening] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const navigate = useNavigate();
-  const recognitionRef = useRef(null);
+   useEffect(() => {
+     const token = localStorage.getItem("token");
+     if (!token) {
+       navigate("/");
+     }
+   }, [navigate]);
 
   // 🔍 Normal Search
   const handleSearch = () => {
