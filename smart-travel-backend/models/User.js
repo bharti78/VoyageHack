@@ -17,6 +17,18 @@ const userSchema = new mongoose.Schema({
   googleId: {
     type: String
   },
+  phone: {
+    type: String,
+    default: ""
+  },
+  bio: {
+    type: String,
+    default: ""
+  },
+  profileImage: {
+    type: String,
+    default: ""
+  },
   createdAt: {
     type: Date,
     default: Date.now
