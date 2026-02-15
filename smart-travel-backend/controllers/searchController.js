@@ -1,6 +1,7 @@
 const Hotel = require("../models/Hotel")
 const Driver = require("../models/Driver")
 
+
 exports.searchTrip = async (req, res) => {
   try {
     const { city, budget, persona } = req.body
