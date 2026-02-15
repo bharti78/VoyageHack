@@ -1,6 +1,7 @@
  import { useState, useRef, useEffect } from "react";
- import { useNavigate } from "react-router-dom";
- import ChatAssistant from "../components/ChatAssistant";
+import { useNavigate } from "react-router-dom";
+import ChatAssistant from "../components/ChatAssistant";
+import Navbar from "../components/Navbar";
  
  function Search() {
    const [query, setQuery] = useState("");
@@ -105,10 +106,12 @@
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-10">
-      <h1 className="text-4xl font-bold text-center mb-12">
-        Where would you like to travel?
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
+      <Navbar />
+      <div className="p-10">
+        <h1 className="text-4xl font-bold text-center mb-12">
+          Where would you like to travel?
+        </h1>
 
       <div className="flex justify-center">
         <div className="flex w-full max-w-3xl bg-gray-800 rounded-full overflow-hidden shadow-xl">
@@ -159,6 +162,7 @@
         </button>
       </div>
       <ChatAssistant isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      </div>
     </div>
   );
 }

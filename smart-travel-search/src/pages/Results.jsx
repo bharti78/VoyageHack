@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import HotelCard from "../components/HotelCard"
 import CabCard from "../components/CabCard"
 import MapView from "../components/MapView"
+import Navbar from "../components/Navbar"
 
 function Results() {
   const navigate = useNavigate()
@@ -45,7 +46,9 @@ function Results() {
     : [{ driver: "Rahul Verma", type: "SUV", rating: 4.6 }]
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-black text-white">
+      <Navbar />
+      <div className="p-8">
         {/* Image Search Preview */}
 {searchType === "image" && imagePreview && (
   <div className="bg-gray-900 p-6 rounded-xl mb-8 shadow-lg">
@@ -107,7 +110,7 @@ function Results() {
   <h2 className="text-2xl font-bold mb-6">Map View</h2>
   <MapView hotels={hotels} />
 </div>
-
+      </div>
     </div>
   )
 }

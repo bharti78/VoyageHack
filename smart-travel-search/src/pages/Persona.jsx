@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import Navbar from "../components/Navbar"
 
 function Persona() {
   const navigate = useNavigate()
@@ -17,10 +18,12 @@ function Persona() {
   }
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col items-center justify-center">
-      <h2 className="text-3xl font-bold mb-10">
-        What type of trip are you planning?
-      </h2>
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
+      <Navbar />
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h2 className="text-3xl font-bold mb-10">
+          What type of trip are you planning?
+        </h2>
 
       <div className="flex gap-10">
         <div
@@ -42,6 +45,7 @@ function Persona() {
             Comfort & Spacious Options
           </p>
         </div>
+      </div>
       </div>
     </div>
   )

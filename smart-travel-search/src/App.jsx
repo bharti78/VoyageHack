@@ -4,6 +4,7 @@ import Persona from "./pages/Persona"
 import Search from "./pages/Search"
 import Results from "./pages/Results"
 import Register from "./pages/Register"
+import Profile from "./pages/Profile"
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/persona" element={<Persona />} />
         <Route path="/search" element={<Search />} />
         <Route path="/results" element={<Results />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   )
