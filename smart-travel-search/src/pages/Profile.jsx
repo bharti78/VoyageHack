@@ -19,7 +19,13 @@ function Profile() {
     const userData = localStorage.getItem("user");
     if (userData) {
       const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
+      setUser({
+        name: parsedUser.name || "",
+        email: parsedUser.email || "",
+        phone: parsedUser.phone || "",
+        bio: parsedUser.bio || "",
+        profileImage: parsedUser.profileImage || ""
+      });
       setPreviewImage(parsedUser.profileImage || "");
     }
   }, []);
