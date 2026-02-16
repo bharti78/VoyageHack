@@ -35,12 +35,22 @@ function Navbar() {
         <div className="flex items-center space-x-8">
           <h1 
             className="text-xl font-bold text-white cursor-pointer hover:text-blue-400 transition"
-            onClick={() => navigate("/search")}
+            onClick={() => navigate("/home")}
           >
             Smart Travel Search
           </h1>
           
           <div className="hidden md:flex space-x-6">
+            <button
+              onClick={() => navigate("/home")}
+              className={`text-sm font-medium transition ${
+                location.pathname === "/home" 
+                  ? "text-blue-400" 
+                  : "text-gray-300 hover:text-white"
+              }`}
+            >
+              Home
+            </button>
             <button
               onClick={() => navigate("/search")}
               className={`text-sm font-medium transition ${

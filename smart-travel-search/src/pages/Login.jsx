@@ -104,48 +104,117 @@ function Login() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black text-white">
-      <div className="bg-gray-800 p-10 rounded-2xl shadow-2xl w-96">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Smart Travel Search
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50">
+      {/* Hero Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-transparent to-blue-100/20"></div>
+      
+      {/* Login Content */}
+      <div className="relative min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md w-full">
+          {/* Logo/Brand */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <svg className="w-10 h-10 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 7a2 2 0 11-4 0 2 2 0 014 0zm8 8a6 6 0 01-12 0v-1a1 1 0 011-1h2a1 1 0 011 1v1a2 2 0 104 0v-1a1 1 0 011-1h2a1 1 0 011 1v1z"/>
+              </svg>
+              <span className="text-3xl font-bold text-gray-900">TravelSmart</span>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900">Welcome back</h2>
+            <p className="text-gray-600 mt-2">Sign in to your account to continue</p>
+          </div>
 
-        {error && <div className="mb-4 text-red-400 text-sm">{error}</div>}
+          {/* Login Card */}
+          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                {error}
+              </div>
+            )}
 
-        <input
-          type="email"
-          placeholder="Enter Email"
-          className="w-full p-3 mb-4 rounded-lg bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+            <form onSubmit={handleLogin} className="space-y-6">
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  required
+                />
+              </div>
 
-        <input
-          type="password"
-          placeholder="Enter Password"
-          className="w-full p-3 mb-6 rounded-lg bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+              {/* Password Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  required
+                />
+              </div>
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 transition duration-300 p-3 rounded-lg font-semibold disabled:opacity-60"
-        >
-          {loading ? "Logging in..." : "Continue"}
-        </button>
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+                <a href="#" className="text-sm text-pink-600 hover:text-pink-700">
+                  Forgot password?
+                </a>
+              </div>
 
-        <div className="mt-4">
-          <div ref={googleButtonRef} className="flex justify-center"></div>
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? "Signing in..." : "Sign In"}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Sign-In */}
+            <div className="mb-6">
+              <div ref={googleButtonRef} className="flex justify-center"></div>
+            </div>
+
+            {/* Sign Up Link */}
+            <div className="text-center">
+              <p className="text-gray-600">
+                Don't have an account?{" "}
+                <button
+                  onClick={goToRegister}
+                  className="text-pink-600 hover:text-pink-700 font-medium"
+                >
+                  Sign up
+                </button>
+              </p>
+            </div>
+          </div>
         </div>
-
-        <button
-          onClick={goToRegister}
-          className="w-full mt-4 text-sm text-gray-300 hover:text-white"
-        >
-          New user? Register
-        </button>
       </div>
     </div>
   );
