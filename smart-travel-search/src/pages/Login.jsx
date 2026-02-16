@@ -42,8 +42,8 @@ function Login() {
   };
 
   useEffect(() => {
-    const clientId =
-      "172902286128-3magsni5lgvf95nf0iisv83hl35ha2im.apps.googleusercontent.com";
+   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 
     if (window.google && googleButtonRef.current) {
       window.google.accounts.id.initialize({
@@ -59,45 +59,48 @@ function Login() {
     }
   }, []);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please enter email and password");
+const handleLogin = async (e) => {
+  e.preventDefault();  // 🔥 THIS IS MISSING
+
+  if (!email || !password) {
+    setError("Please enter email and password");
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError((data && data.error) || "Login failed");
       return;
     }
 
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        setError((data && data.error) || "Login failed");
-        return;
-      }
-
-      if (data && data.token) {
-        localStorage.setItem("token", data.token);
-      }
-      if (data && data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
-
-      navigate("/persona");
-    } catch {
-      setError("Network error. Please try again");
-    } finally {
-      setLoading(false);
+    if (data?.token) {
+      localStorage.setItem("token", data.token);
     }
-  };
+    if (data?.user) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+    }
+
+    navigate("/persona");
+  } catch {
+    setError("Network error. Please try again");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const goToRegister = () => {
     navigate("/register");

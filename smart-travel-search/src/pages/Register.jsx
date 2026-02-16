@@ -98,8 +98,8 @@ function Register() {
   };
 
   useEffect(() => {
-    const clientId =
-      "172902286128-3magsni5lgvf95nf0iisv83hl35ha2im.apps.googleusercontent.com";
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 
     if (window.google && googleButtonRef.current) {
       window.google.accounts.id.initialize({
