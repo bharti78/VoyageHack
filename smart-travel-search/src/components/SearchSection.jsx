@@ -1,16 +1,29 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ChatAssistant from "../components/ChatAssistant";
 
 const SearchSection = () => {
   const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [listening, setListening] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const recognitionRef = useRef(null);
   const [whereOpen, setWhereOpen] = useState(false);
+  const [tripTypeOpen, setTripTypeOpen] = useState(false);
   const [whenOpen, setWhenOpen] = useState(false);
   const [whoOpen, setWhoOpen] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
   
   // Where state
   const [destination, setDestination] = useState('');
   const [destinationSearch, setDestinationSearch] = useState('');
   const [selectedDestination, setSelectedDestination] = useState(null);
+  
+  // Trip Type state
+  const [selectedTripType, setSelectedTripType] = useState('');
+  
+  // Budget state
+  const [selectedBudget, setSelectedBudget] = useState('');
   
   // When state
   const [whenTab, setWhenTab] = useState('dates');
@@ -28,8 +41,10 @@ const SearchSection = () => {
   const [pets, setPets] = useState(0);
   
   const whereRef = useRef(null);
+  const tripTypeRef = useRef(null);
   const whenRef = useRef(null);
   const whoRef = useRef(null);
+  const budgetRef = useRef(null);
 
   // Mock destinations data
   const destinations = [
@@ -58,17 +73,104 @@ const SearchSection = () => {
       if (whereRef.current && !whereRef.current.contains(event.target)) {
         setWhereOpen(false);
       }
+      if (tripTypeRef.current && !tripTypeRef.current.contains(event.target)) {
+        setTripTypeOpen(false);
+      }
       if (whenRef.current && !whenRef.current.contains(event.target)) {
         setWhenOpen(false);
       }
       if (whoRef.current && !whoRef.current.contains(event.target)) {
         setWhoOpen(false);
       }
+      if (budgetRef.current && !budgetRef.current.contains(event.target)) {
+        setBudgetOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Image Upload functionality
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      localStorage.setItem("uploadedImage", reader.result);
+      localStorage.setItem("searchType", "image");
+      navigate("/results");
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  // Voice Search functionality
+  const handleVoice = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech Recognition not supported. Please use Google Chrome.");
+      return;
+    }
+
+    // Stop previous session if running
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    setListening(true);
+    recognition.start();
+
+    recognition.onresult = (event) => {
+      const speechResult = event.results[0][0].transcript;
+      setQuery(speechResult);
+      setListening(false);
+
+      localStorage.setItem("searchQuery", speechResult);
+      navigate("/results");
+    };
+
+    recognition.onerror = (event) => {
+      console.log("Speech error:", event.error);
+
+      if (event.error === "no-speech") {
+        // Auto retry once if user silent
+        recognition.stop();
+        setTimeout(() => {
+          try {
+            recognition.start();
+          } catch (err) {
+            setListening(false);
+          }
+        }, 500);
+      } else if (event.error === "not-allowed") {
+        alert("Microphone permission denied.");
+        setListening(false);
+      } else if (event.error === "audio-capture") {
+        alert("No microphone detected.");
+        setListening(false);
+      } else {
+        alert("Voice recognition error: " + event.error);
+        setListening(false);
+      }
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+  };
 
   // Filter destinations based on search
   const filteredDestinations = destinations.filter(dest =>
@@ -85,7 +187,10 @@ const SearchSection = () => {
 
   const handleSearch = () => {
     const searchData = {
+      query: query || '',
       destination: destination || 'Anywhere',
+      tripType: selectedTripType,
+      budget: selectedBudget,
       startDate,
       endDate,
       flexibility,
@@ -98,7 +203,7 @@ const SearchSection = () => {
     };
     
     localStorage.setItem('homepageSearch', JSON.stringify(searchData));
-    navigate('/search');
+    navigate('/results');
   };
 
   const getWhenDisplay = () => {
@@ -144,18 +249,73 @@ const SearchSection = () => {
 
         {/* Search Card */}
         <div className="max-w-5xl mx-auto">
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-2 border border-white/20">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-3 border border-white/20">
+            <div className="grid grid-cols-2 md:grid-cols-8 gap-1">
+              {/* Trip Type Field */}
+              <div ref={tripTypeRef} className="relative">
+                <button
+                  onClick={() => setTripTypeOpen(!tripTypeOpen)}
+                  className="w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
+                  aria-label="Trip type?"
+                  aria-expanded={tripTypeOpen}
+                >
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Trip Type</div>
+                  <div className="text-xs text-gray-900 font-medium truncate">
+                    {selectedTripType || 'Select trip type'}
+                  </div>
+                </button>
+
+                {tripTypeOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                    <div className="p-6">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Choose your trip type</h3>
+                      <div className="space-y-2">
+                        {['Summer', 'Winter', 'Adventure'].map(tripType => (
+                          <button
+                            key={tripType}
+                            onClick={() => {
+                              setSelectedTripType(tripType);
+                              setTripTypeOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                              selectedTripType === tripType
+                                ? 'bg-pink-50 border border-pink-200'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{tripType}</div>
+                                <div className="text-xs text-gray-500">
+                                  {tripType === 'Summer'}
+                                  {tripType === 'Winter' }
+                                  {tripType === 'Adventure'}
+                                </div>
+                              </div>
+                              {selectedTripType === tripType && (
+                                <svg className="w-5 h-5 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Where Field */}
               <div ref={whereRef} className="relative">
                 <button
                   onClick={() => setWhereOpen(!whereOpen)}
-                  className="w-full px-6 py-4 text-left hover:bg-gray-50 rounded-2xl transition-colors"
+                  className="w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors border-l border-gray-200"
                   aria-label="Where to?"
                   aria-expanded={whereOpen}
                 >
                   <div className="text-xs font-semibold text-gray-500 mb-1">Where</div>
-                  <div className="text-sm text-gray-900 font-medium truncate">
+                  <div className="text-xs text-gray-900 font-medium truncate">
                     {destination || 'Search destinations'}
                   </div>
                 </button>
@@ -222,12 +382,12 @@ const SearchSection = () => {
               <div ref={whenRef} className="relative">
                 <button
                   onClick={() => setWhenOpen(!whenOpen)}
-                  className="w-full px-6 py-4 text-left hover:bg-gray-50 rounded-2xl transition-colors border-l border-gray-200"
+                  className="w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors border-l border-gray-200"
                   aria-label="When?"
                   aria-expanded={whenOpen}
                 >
                   <div className="text-xs font-semibold text-gray-500 mb-1">When</div>
-                  <div className="text-sm text-gray-900 font-medium truncate">
+                  <div className="text-xs text-gray-900 font-medium truncate">
                     {getWhenDisplay()}
                   </div>
                 </button>
@@ -491,12 +651,12 @@ const SearchSection = () => {
               <div ref={whoRef} className="relative">
                 <button
                   onClick={() => setWhoOpen(!whoOpen)}
-                  className="w-full px-6 py-4 text-left hover:bg-gray-50 rounded-2xl transition-colors border-l border-gray-200"
+                  className="w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors border-l border-gray-200"
                   aria-label="Who?"
                   aria-expanded={whoOpen}
                 >
                   <div className="text-xs font-semibold text-gray-500 mb-1">Who</div>
-                  <div className="text-sm text-gray-900 font-medium truncate">
+                  <div className="text-xs text-gray-900 font-medium truncate">
                     {getWhoDisplay()}
                   </div>
                 </button>
@@ -618,13 +778,125 @@ const SearchSection = () => {
                 )}
               </div>
 
+              {/* Budget Field */}
+              <div ref={budgetRef} className="relative">
+                <button
+                  onClick={() => setBudgetOpen(!budgetOpen)}
+                  className="w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors border-l border-gray-200"
+                  aria-label="Budget?"
+                  aria-expanded={budgetOpen}
+                >
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Budget</div>
+                  <div className="text-xs text-gray-900 font-medium truncate">
+                    {selectedBudget || 'Select budget'}
+                  </div>
+                </button>
+
+                {budgetOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                    <div className="p-6">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Choose your budget range</h3>
+                      <div className="space-y-2">
+                        {['Low', 'Medium', 'Premium'].map(budget => (
+                          <button
+                            key={budget}
+                            onClick={() => {
+                              setSelectedBudget(budget);
+                              setBudgetOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                              selectedBudget === budget
+                                ? 'bg-pink-50 border border-pink-200'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{budget}</div>
+                                <div className="text-xs text-gray-500">
+                                  {budget === 'Low'}
+                                  {budget === 'Medium'}
+                                  {budget === 'Premium' }
+                                </div>
+                              </div>
+                              {selectedBudget === budget && (
+                                <svg className="w-5 h-5 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Search Field */}
+              <div className="relative">
+                <button
+                  onClick={handleVoice}
+                  className={`w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors flex items-center justify-center ${
+                    listening
+                      ? "bg-red-50 animate-pulse border border-red-200"
+                      : "hover:bg-gray-50"
+                  }`}
+                  aria-label="Voice search"
+                >
+                  <div className="text-center">
+                    <div className="text-lg mb-1 flex justify-center">
+                      {listening ? (
+                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="text-xs font-semibold text-gray-500">
+                      {listening ? "Listening..." : "Voice"}
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Image Upload Field */}
+              <div className="relative">
+                <label className="cursor-pointer w-full px-3 py-3 text-left hover:bg-gray-50 rounded-xl transition-colors flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-lg mb-1 flex justify-center">
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-xs font-semibold text-gray-500">
+                      Image
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                  />
+                </label>
+              </div>
+
               {/* Search Button */}
-              <div className="flex items-end">
+              <div className="relative">
                 <button
                   onClick={handleSearch}
-                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-4 rounded-2xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="w-full px-3 py-3 text-left bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
+                  aria-label="Search"
                 >
-                  Search
+                  <div className="text-center">
+                    <div className="text-xs font-semibold">Search</div>
+                  </div>
                 </button>
               </div>
             </div>
@@ -651,6 +923,19 @@ const SearchSection = () => {
           </div>
         </div>
       </div>
+
+      {/* AI Chatbot Button */}
+      <button
+        onClick={() => setChatOpen(true)}
+        className="fixed bottom-8 right-8 bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 z-40"
+        aria-label="AI Travel Assistant"
+      >
+        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2M12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4M8,7V10H11V7H8M13,7V10H16V7H13M8,12V15H11V12H8M13,12V15H16V12H13Z"/>
+        </svg>
+      </button>
+
+      <ChatAssistant isOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 };

@@ -100,7 +100,6 @@ function Register() {
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-
     if (window.google && googleButtonRef.current) {
       window.google.accounts.id.initialize({
         client_id: clientId,
