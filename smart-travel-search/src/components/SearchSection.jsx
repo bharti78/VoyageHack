@@ -19,7 +19,7 @@ const backgroundImages = [
   "/travel1.jpeg",      
   "/travel1.png",   
   "/travel2.png",
-  "/travel4.png",
+  "/travel4.jpeg",
 ];
 
 const [currentBg, setCurrentBg] = useState(0);
@@ -112,7 +112,7 @@ useEffect(() => {
     setCurrentBg((prev) =>
       prev === backgroundImages.length - 1 ? 0 : prev + 1
     );
-  }, 4000);
+  }, 6000);
 
   return () => clearInterval(interval);
 }, []);
@@ -259,20 +259,34 @@ useEffect(() => {
    <div className="relative min-h-screen overflow-hidden">
 
 {/* Background Slider */}
-<div className="absolute inset-0 -z-20 overflow-hidden">
-  <div
-    className="flex w-full h-full transition-transform duration-1000 ease-in-out"
-    style={{
-      transform: `translateX(-${currentBg * 100}%)`,
-      width: `${backgroundImages.length * 100}%`
-    }}
-  >
-    {backgroundImages.map((img, index) => (
+<div className="absolute inset-0 -z-20">
+  {backgroundImages.map((img, index) => (
+    <div
+      key={index}
+      className={`absolute inset-0 transition-opacity duration-1500 ease-in-out ${
+        index === currentBg ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
       <img
-        key={index}
         src={img}
         alt="travel background"
-        className="w-full h-full object-cover flex-shrink-0"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  ))}
+  
+  {/* Slider Indicators */}
+  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+    {backgroundImages.map((_, index) => (
+      <button
+        key={index}
+        onClick={() => setCurrentBg(index)}
+        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+          currentBg === index 
+            ? 'bg-white scale-110' 
+            : 'bg-white/50 hover:bg-white/70'
+        }`}
+        aria-label={`Go to slide ${index + 1}`}
       />
     ))}
   </div>
