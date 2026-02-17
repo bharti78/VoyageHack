@@ -2,31 +2,31 @@ function HotelCard({ hotel }) {
   const matchScore = Math.floor(Math.random() * 15) + 85 // demo score 85-100
 
   return (
-    <div className="bg-gray-900 p-6 rounded-2xl shadow-lg hover:scale-105 hover:shadow-2xl transition duration-300 border border-gray-800">
+    <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-6 hover:scale-105 hover:shadow-3xl transition-all duration-300">
 
       {/* Top Section */}
       <div className="flex justify-between items-start">
-        <h3 className="text-xl font-semibold">{hotel.name}</h3>
+        <h3 className="text-xl font-bold text-gray-900">{hotel.name}</h3>
 
-        <span className="bg-blue-600 text-xs px-3 py-1 rounded-full">
+        <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs px-3 py-1 rounded-full font-semibold">
           {matchScore}% Match
         </span>
       </div>
 
-      <p className="text-gray-400 mt-2">
+      <p className="text-gray-600 mt-2 font-medium">
         ₹{hotel.price} / night
       </p>
 
       <div className="flex justify-between mt-4 text-sm">
-        <span>⭐ {hotel.rating}</span>
-        <span className="text-green-400">
+        <span className="text-gray-700">⭐ {hotel.rating}</span>
+        <span className="text-green-600 font-medium">
           Safety: {hotel.safety}
         </span>
       </div>
 
       {/* Safety Badge */}
       {hotel.safety > 4.5 && (
-        <div className="mt-4 text-xs bg-green-600 inline-block px-3 py-1 rounded-full">
+        <div className="mt-4 text-xs bg-gradient-to-r from-green-500 to-emerald-500 text-white inline-block px-3 py-1 rounded-full font-semibold">
           Verified Safe Area
         </div>
       )}
