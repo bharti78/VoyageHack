@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import HotelCard from "../components/HotelCard"
 import CabCard from "../components/CabCard"
@@ -7,11 +7,19 @@ import Navbar from "../components/HomepageNavbar"
 
 function Results() {
   const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState("hotels")
 
   const persona = localStorage.getItem("persona") || ""
   const query = localStorage.getItem("searchQuery") || ""
   const searchType = localStorage.getItem("searchType") || ""
   const imagePreview = localStorage.getItem("uploadedImage") || ""
+  
+  // Get search data from homepage search
+  const homepageSearch = localStorage.getItem("homepageSearch")
+  let searchData = {}
+  if (homepageSearch) {
+    searchData = JSON.parse(homepageSearch)
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -45,6 +53,36 @@ function Results() {
     ? [{ driver: "Priya Sharma", type: "Sedan", rating: 4.8 }]
     : [{ driver: "Rahul Verma", type: "SUV", rating: 4.6 }]
 
+  // Get display text for search criteria
+  const getDestinationDisplay = () => {
+    if (searchData.destination && searchData.destination !== 'Anywhere') {
+      return searchData.destination
+    }
+    return query || 'Anywhere'
+  }
+
+  const getDatesDisplay = () => {
+    if (searchData.startDate && searchData.endDate) {
+      const start = new Date(searchData.startDate)
+      const end = new Date(searchData.endDate)
+      return `${start.toLocaleString('default', { month: 'short', day: 'numeric' })}–${end.toLocaleString('default', { month: 'short', day: 'numeric' })}`
+    }
+    return 'Any dates'
+  }
+
+  const getGuestsDisplay = () => {
+    const total = (searchData.adults || 1) + (searchData.children || 0)
+    return `${total} Guest${total > 1 ? 's' : ''}`
+  }
+
+  const tabs = [
+    { id: 'hotels', label: 'Hotels', icon: '🏨' },
+    { id: 'homestays', label: 'Homestays', icon: '🏠' },
+    { id: 'packages', label: 'Packages', icon: '📦' },
+    { id: 'activities', label: 'Activities', icon: '🎯' },
+    { id: 'flights', label: 'Flights', icon: '✈️' }
+  ]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50">
       {/* Hero Background */}
@@ -54,79 +92,92 @@ function Results() {
       <div className="relative min-h-screen">
         <Navbar user={JSON.parse(localStorage.getItem("user") || "{}")} />
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-              Your
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-blue-600">
-                {" "}Travel Results
-              </span>
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover perfect hotels and transportation for your trip
-            </p>
-          </div>
-
-          {/* Image Search Preview */}
-{searchType === "image" && imagePreview && (
-  <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 mb-8">
-    <h2 className="text-2xl font-bold text-gray-900 mb-6">
-      Image-Based Search Results
-    </h2>
-    <img
-      src={imagePreview}
-      alt="Uploaded Preview"
-      className="w-48 rounded-xl border border-gray-200 shadow-lg"
-    />
-  </div>
-)}
-
-          {/* Trip Summary */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Trip Summary</h2>
-            <p className="text-gray-600 text-lg">{query}</p>
-            <p className="text-sm mt-3 text-gray-500">
-              Persona: <span className="text-pink-600 font-semibold capitalize">{persona}</span>
-            </p>
-          </div>
-
-          {/* Budget Section */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Estimated Budget Breakdown</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-6 rounded-2xl text-center border border-pink-200">
-                <div className="text-3xl mb-3">🏨</div>
-                <div className="text-sm text-gray-600 mb-2">Hotels</div>
-                <div className="text-2xl font-bold text-pink-600">₹18,000</div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Search Criteria Bar */}
+          <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-4 mb-6">
+            <div className="flex flex-wrap items-center gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📍</span>
+                <span className="font-medium text-gray-900">{getDestinationDisplay()}</span>
               </div>
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl text-center border border-blue-200">
-                <div className="text-3xl mb-3">🚖</div>
-                <div className="text-sm text-gray-600 mb-2">Cabs</div>
-                <div className="text-2xl font-bold text-blue-600">₹6,000</div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📅</span>
+                <span className="font-medium text-gray-900">{getDatesDisplay()}</span>
               </div>
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl text-center border border-green-200">
-                <div className="text-3xl mb-3">✈️</div>
-                <div className="text-sm text-gray-600 mb-2">Travel</div>
-                <div className="text-2xl font-bold text-green-600">₹12,000</div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">👤</span>
+                <span className="font-medium text-gray-900">{getGuestsDisplay()}</span>
               </div>
             </div>
           </div>
 
-          {/* Hotels Section */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommended Hotels</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {hotels.map((hotel, index) => (
-                <HotelCard key={index} hotel={hotel} />
+          {/* Tabs Navigation */}
+          <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 mb-8">
+            <div className="flex overflow-x-auto">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-4 font-medium transition-all duration-200 whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="text-lg">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Cab Section */}
-          <div className="mb-12">
+          {/* Tab Content */}
+          <div className="space-y-8">
+            {/* Hotels Tab (Default Active) */}
+            {activeTab === 'hotels' && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Hotels</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {hotels.map((hotel, index) => (
+                    <HotelCard key={index} hotel={hotel} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Homestays Tab */}
+            {activeTab === 'homestays' && (
+              <div className="text-center py-16">
+                <div className="text-gray-500 text-lg">Homestays coming soon...</div>
+              </div>
+            )}
+
+            {/* Packages Tab */}
+            {activeTab === 'packages' && (
+              <div className="text-center py-16">
+                <div className="text-gray-500 text-lg">Travel packages coming soon...</div>
+              </div>
+            )}
+
+            {/* Activities Tab */}
+            {activeTab === 'activities' && (
+              <div className="text-center py-16">
+                <div className="text-gray-500 text-lg">Activities coming soon...</div>
+              </div>
+            )}
+
+            {/* Flights Tab */}
+            {activeTab === 'flights' && (
+              <div className="text-center py-16">
+                <div className="text-gray-500 text-lg">Flights coming soon...</div>
+              </div>
+            )}
+          </div>
+
+          {/* Transportation Section (Always Visible) */}
+          <div className="mt-16">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Transportation Options</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cabs.map((cab, index) => (
                 <CabCard key={index} cab={cab} persona={persona} />
               ))}
@@ -134,7 +185,7 @@ function Results() {
           </div>
 
           {/* Map Section */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8">
+          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 mt-16">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Map View</h2>
             <MapView hotels={hotels} />
           </div>

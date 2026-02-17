@@ -13,6 +13,8 @@ const SearchSection = () => {
   const [whenOpen, setWhenOpen] = useState(false);
   const [whoOpen, setWhoOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
+  const [activeService, setActiveService] = useState("hotel");
+
   
   // Where state
   const [destination, setDestination] = useState('');
@@ -229,27 +231,66 @@ const SearchSection = () => {
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-pink-50 via-white to-blue-50">
+   <div className="relative min-h-screen overflow-hidden">
+
+{/* Background Image */}
+<div className="absolute inset-0 -z-10">
+  <img
+    src="/travel.png"
+    alt="travel background"
+    className="w-full h-full object-cover"
+  />
+  <div className="absolute inset-0 bg-black/40"></div>
+</div>
+
+
       {/* Hero Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-transparent to-blue-100/20"></div>
       
       {/* Hero Content */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
         <div className="text-center mb-12">
-          <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+
+         
+
+         <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 drop-shadow-xl">
+
             Find your next
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-blue-600">
               {" "}adventure
             </span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+         <p className="text-xl text-white/90 max-w-2xl mx-auto">
+
             Discover amazing places around the world with personalized travel experiences tailored just for you
           </p>
         </div>
-
+ {/* Travel Service Tabs */}
+<div className="flex justify-center gap-6 mb-10 flex-wrap">
+  {[
+    { id: "hotel", label: "Hotel", icon: "🏨" },
+    { id: "flight", label: "Flight", icon: "✈️" },
+    { id: "cab", label: "Cab", icon: "🚕" },
+    { id: "car", label: "Car Rental", icon: "🚗" },
+  ].map((service) => (
+    <button
+      key={service.id}
+      onClick={() => setActiveService(service.id)}
+      className={`flex flex-col items-center px-6 py-3 rounded-2xl transition-all duration-300 ${
+        activeService === service.id
+          ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg scale-105"
+          : "bg-white/70 backdrop-blur-md text-gray-700 hover:bg-gray-100"
+      }`}
+    >
+      <span className="text-2xl">{service.icon}</span>
+      <span className="text-sm font-medium mt-1">{service.label}</span>
+    </button>
+  ))}
+</div>
         {/* Search Card */}
         <div className="max-w-5xl mx-auto">
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-3 border border-white/20">
+        <div className="bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl p-3 border border-white/30">
+
             <div className="grid grid-cols-2 md:grid-cols-8 gap-1">
               {/* Trip Type Field */}
               <div ref={tripTypeRef} className="relative">
