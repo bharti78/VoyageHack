@@ -266,7 +266,7 @@ const SearchSection = () => {
                 </button>
 
                 {tripTypeOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] overflow-hidden" style={{minWidth: '280px', maxWidth: '90vw'}}>
                     <div className="p-6">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Choose your trip type</h3>
                       <div className="space-y-2">
@@ -321,7 +321,7 @@ const SearchSection = () => {
                 </button>
 
                 {whereOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] overflow-hidden" style={{minWidth: '320px', maxWidth: '90vw'}}>
                     <div className="p-6">
                       <div className="relative mb-6">
                         <input
@@ -393,7 +393,7 @@ const SearchSection = () => {
                 </button>
 
                 {whenOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden min-w-[800px]">
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] overflow-hidden" style={{minWidth: '800px', maxWidth: '90vw', left: '50%', transform: 'translateX(-50%)'}}>
                     <div className="p-8">
                       {/* Tabs */}
                       <div className="flex space-x-2 mb-8">
@@ -662,7 +662,7 @@ const SearchSection = () => {
                 </button>
 
                 {whoOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] overflow-hidden" style={{minWidth: '280px', maxWidth: '90vw'}}>
                     <div className="p-6">
                       <div className="space-y-4">
                         {/* Adults */}
@@ -793,7 +793,7 @@ const SearchSection = () => {
                 </button>
 
                 {budgetOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] overflow-hidden" style={{minWidth: '280px', maxWidth: '90vw'}}>
                     <div className="p-6">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Choose your budget range</h3>
                       <div className="space-y-2">
