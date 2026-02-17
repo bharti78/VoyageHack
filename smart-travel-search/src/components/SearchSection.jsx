@@ -14,6 +14,16 @@ const SearchSection = () => {
   const [whoOpen, setWhoOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [activeService, setActiveService] = useState("hotel");
+  // Background Slider Images
+const backgroundImages = [
+  "/travel1.jpeg",      
+  "/travel1.png",   
+  "/travel2.png",
+  "/travel4.png",
+];
+
+const [currentBg, setCurrentBg] = useState(0);
+
 
   
   // Where state
@@ -89,9 +99,24 @@ const SearchSection = () => {
       }
     };
 
+  
+
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentBg((prev) =>
+      prev === backgroundImages.length - 1 ? 0 : prev + 1
+    );
+  }, 4000);
+
+  return () => clearInterval(interval);
+}, []);
+
 
   // Image Upload functionality
   const handleImageUpload = (e) => {
@@ -233,15 +258,31 @@ const SearchSection = () => {
   return (
    <div className="relative min-h-screen overflow-hidden">
 
-{/* Background Image */}
-<div className="absolute inset-0 -z-10">
-  <img
-    src="/travel.png"
-    alt="travel background"
-    className="w-full h-full object-cover"
-  />
-  <div className="absolute inset-0 bg-black/40"></div>
+{/* Background Slider */}
+<div className="absolute inset-0 -z-20 overflow-hidden">
+  <div
+    className="flex w-full h-full transition-transform duration-1000 ease-in-out"
+    style={{
+      transform: `translateX(-${currentBg * 100}%)`,
+      width: `${backgroundImages.length * 100}%`
+    }}
+  >
+    {backgroundImages.map((img, index) => (
+      <img
+        key={index}
+        src={img}
+        alt="travel background"
+        className="w-full h-full object-cover flex-shrink-0"
+      />
+    ))}
+  </div>
 </div>
+
+
+
+{/* Dark Overlay */}
+<div className="absolute inset-0 bg-black/50 -z-10"></div>
+
 
 
       {/* Hero Background */}
@@ -279,7 +320,8 @@ const SearchSection = () => {
       className={`flex flex-col items-center px-6 py-3 rounded-2xl transition-all duration-300 ${
         activeService === service.id
           ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg scale-105"
-          : "bg-white/70 backdrop-blur-md text-gray-700 hover:bg-gray-100"
+          : "bg-white text-gray-700 shadow-md hover:bg-gray-100"
+
       }`}
     >
       <span className="text-2xl">{service.icon}</span>
@@ -289,7 +331,7 @@ const SearchSection = () => {
 </div>
         {/* Search Card */}
         <div className="max-w-5xl mx-auto">
-        <div className="bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl p-3 border border-white/30">
+        <div className="bg-white rounded-3xl shadow-2xl p-4 border border-gray-200">
 
             <div className="grid grid-cols-2 md:grid-cols-8 gap-1">
               {/* Trip Type Field */}
