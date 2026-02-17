@@ -15,11 +15,13 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar user={user} />
-      
-      {/* Hero Section with Search */}
-      <SearchSection />
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/travel.jpeg)' }}>
+      <div className="min-h-screen bg-black bg-opacity-40">
+        <Navbar user={user} />
+        
+        {/* Hero Section with Search */}
+        <SearchSection />
+      </div>
     </div>
   );
 };
