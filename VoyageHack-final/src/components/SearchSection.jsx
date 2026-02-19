@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700&display=swap');
@@ -606,6 +607,7 @@ function useSliderSizes(){
 
 /* ─── MAIN ─── */
 export default function TBOHomepage() {
+  const { isLoggedIn, user, persona, requireAuth, setShowRegister, setShowLogin, logout } = useAuth();
   // Expanded search state
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery]       = useState("");
@@ -690,6 +692,7 @@ export default function TBOHomepage() {
   const futureMonths=Array.from({length:12},(_,i)=>{ const d=addMonths(new Date(),i+1); return{year:d.getFullYear(),month:d.getMonth(),emoji:MONTH_EMOJIS[d.getMonth()]}; });
 
   function handleRedirectClick(){
+    if (!requireAuth()) return;
     const params=new URLSearchParams();
     if(destination)params.set("where",destination);
     if(whenValue())params.set("when",whenValue());
@@ -700,6 +703,7 @@ export default function TBOHomepage() {
   }
 
   function handleVoiceClick(){ setIsListening(l=>!l); }
+  function handleBookNow(){ if (!requireAuth()) return; alert("Proceeding to booking..."); }
   function handleImageUpload(e){ const f=e.target.files[0]; if(f)console.log("Image for search:",f.name); }
 
   const svWidth=visibleCards*cardW+(visibleCards-1)*GAP;
@@ -969,8 +973,29 @@ export default function TBOHomepage() {
           </div>
 
           <div className="tbo-nav-right">
-            <span className="already-reg">Already Registered?</span>
-            <button className="btn-book">Book Now</button>
+            {isLoggedIn ? (
+              <>
+                <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>
+                  ✓ {user?.name ? user.name.split(" ")[0] : "Logged in"}
+                  {persona ? ` · ${persona}` : ""}
+                </span>
+                <div style={{display:"flex",gap:6}}>
+                  <button className="btn-book" onClick={handleBookNow}>Book Now</button>
+                  <button className="btn-book" style={{background:"#e0e0e0",color:"#555"}} onClick={logout}>Logout</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="already-reg">
+                  Already Registered?{" "}
+                  <button onClick={() => setShowLogin(true)}
+                    style={{color:"#ff6600",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"inherit",textDecoration:"underline",padding:0}}>
+                    Sign in
+                  </button>
+                </span>
+                <button className="btn-book" onClick={() => setShowRegister(true)}>Book Now</button>
+              </>
+            )}
           </div>
         </nav>
 
