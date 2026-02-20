@@ -36,7 +36,7 @@ const css = `
   }
 
   /* Logo — vertically centred, left-edge matches hero text column */
-  .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; margin-top: 15px; }
+  .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; margin-top: 15px; justify-content: flex-end; margin-left: 40px;}
   .tbo-logo-img { height: 100px; width: auto; object-fit: contain; display: block; }
 
   .tbo-nav-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
@@ -61,7 +61,7 @@ const css = `
 
   box-shadow:0 6px 28px rgba(255,102,0,0.18);
   overflow:hidden;
-
+  margin-left: 40px;
   animation:expandIn .28s cubic-bezier(.34,1.3,.64,1) both;
 }
 
@@ -82,6 +82,7 @@ const css = `
 .expanded-search-input::placeholder{
   color:#aaa;
   font-size:1rem;
+  margin-left: 40px;
 }
 
 /* ICON BUTTONS BIGGER */
@@ -171,6 +172,7 @@ const css = `
     overflow: visible; cursor: pointer;
     transition: box-shadow 0.2s; position: relative;
     height:72px; 
+    margin-left: 40px;
   }
   .search-pill:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
   .search-pill.active { box-shadow: 0 6px 28px rgba(0,0,0,0.18); border-color: transparent; }
@@ -192,6 +194,7 @@ const css = `
   .pill-label { font-size: 0.70rem; font-weight: 700; color: #111; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
   .pill-value { font-size: 0.95rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 2px; }
   .pill-value.placeholder { color: #aaa; }
+   
 
   .pill-search-icon-btn {
     background: linear-gradient(135deg, #ff6600, #ff3366);
@@ -201,6 +204,7 @@ const css = `
     margin: 5px 3px 5px 3px; flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.2s;
     box-shadow: 0 3px 12px rgba(255,80,50,0.4);
+    margin-right: 20px;
   }
   .pill-search-icon-btn:hover { transform: scale(1.1); box-shadow: 0 5px 18px rgba(255,80,50,0.55); }
   .pill-search-icon-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; }
@@ -212,6 +216,7 @@ const css = `
     margin: 5px 6px 5px 2px; flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
     box-shadow: 0 3px 12px rgba(255,102,0,0.45);
+    margin-right: 20px;
   }
   .pill-redirect-btn:hover { transform: scale(1.12); box-shadow: 0 5px 18px rgba(255,80,50,0.55); background: #e05500; }
   .pill-redirect-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -902,7 +907,7 @@ export default function TBOHomepage() {
         <nav className={`tbo-nav${navScrolled?" scrolled":""}`}>
           {/* Real image logo aligned to hero title column */}
           <div className="tbo-logo-wrap">
-            <img src={TBO_LOGO_SRC} alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
           </div>
 
           {/* CHANGE 2: Search bar shifted right via margin-left:auto */}
