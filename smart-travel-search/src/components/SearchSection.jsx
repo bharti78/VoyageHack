@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
+/* ── EMBEDDED ACTUAL TBO LOGO ── */
+const TBO_LOGO_SRC = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABpAaEDASIAAhEBAxEB/8QAHAABAAIDAQEBAAAAAAAAAAAAAAcIBAUGAwIB/8QASBAAAQQBAgMEBgUJBgMJAAAAAQACAwQFBhESITEHQVFhEyJxgZGxCBQVMnQjMzU2QlJzobIWNILB0eEXN2IkQ1RWZJKU8PH/xAAbAQEAAgMBAQAAAAAAAAAAAAAABQYBAwQCB//EADURAAEDAwEFBQcEAgMAAAAAAAABAgMEBREhEhMxUXEGFCJBsTJhgaHB0fAVFjSRJTU24fH/2gAMAwEAAhEDEQA/ALloiIAiIgC8rNmvWj9JZnihZvtxSPDRv7SvVRf9JX9QofxjPkVupot9K2POMmqeTdRq/kSNBksdPKIochUlkd0ayZpJ9wKylVDsTJPaXiNz/wB4fkVa9dFfRpSSIxFzoaaOp7wxXYwFhHL4kEg5SkCP/UN/1WaqR3yResDc/nXfMrZb6BKtXZdjGDzWVa02MJnJdqKSOWNskT2yMcN2uadwR5FfS5rss/5d4L8Gz5LpVwSM2Hq3kdbHbTUdzCIi8HoIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAoL7edbYDM4GTBUZ5XXq13aRroiAOHcHn7VOiqP2i6ezdDUGWyVzGWIKct+UxzPbs1273Ebe0KXs8Ub5tpy6pwI65SPZFhqaLxPHsyy1LB62x+UyD3MrQPJeWt4iOR7lPn/GPQ/8A42z/APHKrNjaNvI3I6dGu+xYkOzI2Dclbz+wesf/AC7e/wDYpyso6ed6OldheqIRNLUzRNVI0ynQs/o/WOD1WLBw00sgr7CTjjLdt+iqHkP7/Y/iu+ZU/wD0dMFmMLFlhlcdPTMrmcHpW7cW26gDIf3+x/Fd8yue2RMinlZGuUTH1N1fI+SKNz0wupYLD9pendJ6EwdGw+S3eFKMugg2JZy/aPQezqsWt294p0/DYwVuOPf7zZWuPw2ChHT+Eymfvijiaclqc8yGjk0eJPcF1WW7Jta46ibb8cydrW7ubBIHuHuR9BRMdiVfEvvwG1lU5uY00T3FidIax0/qqAvxF5skjRu+B/qyM9rfDzG4W/VKMTkb2GykV+jM+tarv3a4ciD3g/6K2nZxqeLVmla2VYA2b83YYP2ZB1/196ibjbe64exctX5EjRV2/wDC7RToZpI4YnSzSMjjYC5z3HYNHiT3KNdSdtGlsZO6Ci2fKPadi6H1Y9/Jx6/BcF2/a5sZLLy6ax85ZQqu4bHAfz0g7j5Dw8VH2ltL5zU1l0GHovsFn339GM9pXXR2qPd72oXCcuH9nPU3B+3u4UJno9vWJklDbmDtwM3+8yVr9vdsFJOldU4PU9Q2MPeZPw/fjPJ7Pa0qtuf7LNZYak65Pj2zwsbxPNeQPLR5gc1zOnc1kdP5eHKYyd0NiF2/k4d7XDvB8FufaqadirTu165Q1MuE8LsTJp/RdJFp9F5+tqbTVPM1RwtnZ67N9zG8cnN9xW4Vbe1WOVruKE41yORFTgFrc/nMXgqf1rKW2QMP3QebnnwA716Z/J18Nh7OTtH8lAwuIHVx7gPaeSrTqfOX9Q5aTIX5S5zjsxgPqxt7mgeChLvdkoWo1qZcv5lSw2KxuuT1c5cMTivP3ISnd7YscyUtqYmxMwftPkDd/dzWywParp/ITNhuslxz3cg6T1me8jooywXZ7qbL0224ajYYXjdhmfwlw8gtTqPTuX0/YEOTqOi4vuPHNrvYVAfq10iRJXt8PvTQtH6HZZlWCN3jTk7X7FoI3sljbJG9r2OAc1zTuCD0IK+lFfYLPnXU7EMzHPxDfzL3n7r+8N8vHzW47Y9Uy4LCso0ZCy9d3AeOscY6n2nfYe/wVmjubFo+9PTCcvt18inS2eRtf3KNyOXPH78seZkav7RsLgZn1IuK9bZycyI+qw+Bd4+S453bJe9J6uGrcHnI7dRvjKF3K346dKF89iU8mjmT5ld2zsi1A6t6R1uk2Xbf0XEd/Zvtsqylyula5XQJhE5J9VLgtos1vajKlUVy81X0Tgh2elu1HC5WZlW+x2Onedmued4yfb3e9d+CCAQdwehVVc5ib+FyD6ORruhmbz2PRw8Qe8KXOw/VEt6rJgbspfLWbxQOceZZ4e5SNpvUskvd6lPF5Lw15KRV77PQwwd6pFy3zTjpzRTr8ZrDT9+G5Ky+yFtJxbOJvULdjtv5jdc/e7WNNQTmOFluy0H77GAA+zc7qEs1+mb34iT+orPwWlc9m6z7ONx8k0LDtx9AT4DfquF3aCtlXdxNTPuTPyJJvZe3wt3s712VxxVEx8fMnzS2ssDqN3oqFotsAbmCUcL9vEePuWtz3aVprFWX1hNLclYdnfV2gtB8OLp8FAUrLmNvOjeJqtqIlrhuWuaehWRg8Nks3bNXGVX2JANyG9GjxJWP3FVvakbWJt/nlzM/tOhY9ZXvXd45p68ic8J2m6YyU7YHzS0pHHZpnbs0/wCIdPeu0aQ5oc0ggjcEd6qxncNksJbFXJ1X15COJvF0cPEHvUq9hepZ7cU2AuSmQwM9JXc47ng32LfduPipC2XuWWbu9SmHeXlryVCLvPZ2GGn71SOy1OKcdOaKSmiIrMU4IiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAov+kt+oUX4xnyKlBR19IejLc7OppYmk/Vp2Sv2/d6E/zC66BUSpZnmc1YirA7HIhXsS/wCZmI/iH+kq16pzoDNR6f1fjstM0uhglBkA68J5HZW7xOSoZWjHex1uKzXkG7XxuBH+x8lJX1jt61+NMHFaXpu1b55MtUjyH9/sfxXfMq7m4VN9eYqXC6xyuNmYWmKy/g372E8TT72kFe7C5Np7eh5u6LstXqWJ7B8HVxOgaduONv1m+3080m3M79B7AF36ij6P2sqF7TsOm7VhkOQpgtiY923po+7h8SO8e9Slbs16daSzanjggjaXPkkcGtaPEkqLrmSJUOR/HP8A4d9I5iwt2eGCtf0icJVxOuG2qcbY2ZCATPY0bASAkOIHnyPtJW++jTkpa9XUlYkmKOBllo8HAOB+PL4Li+2PVcOrNYSW6RJo1mCCu4jbjAJJft5kn3bKQfozYZ7sPnMlKwiO1w1o9+8NBLv6h8FP1CKy3IkvHCev2IeFUdWqsfDX0IOtTyWbUtmZ3FJK8vefEk7lW47LMLVwehMVWrsaHy12Tzv25vkeA4k+O2+w8gFVDO4+bE5m5jZ2lslaZ0ZBHgeR945qyXYhrOjntLVMVNOxmUoQthfE47GRjRs17fHkBv5rzemufA1Wez+YM2tWtmVHcSRCARsRuCqp9t2GrYTtBuQ1GNjhna2w1jejS7qB7/mrR5K/TxtGW7fsxVq8TeJ8kjgAAqldpmom6o1jcysIcK5Ijg4uvA3kD7+q4rE1+9c5OGDquzm7tEXjkl36LluSTT2WpOcSyGyx7R4FzTv/AEhTCop+jPipamjbWSlaWi/Z/J797Gerv8eIe5d7/anTn2j9n/bVL6zxcPB6Ufe8N+m/ko66yxtqn5VEyvzO+2wyvp27LVXCeSeRx/b/AG3xabp1GuIbPY3d58I/3UbdmOKhy+s6VWw0OhaTK9p6ODRvspP7eMfJa0rDcjaXCpPu/bua7lv8dviom0Nmhp/U1TJPaXRMcWygdeE8ivnl3VG3RrpfZ8P9H06xI59le2D2/F/fl9CzbQGtDWgADkAO5a7UeEoZ/GOx+RjL4XODgWnZzSD3Hu8PesnG3qeRpx3KNiOeCQbtex24/wD1aDXes8dpeq3jLbFx7hw12u9bh35k+A2VvqJYGwq6VU2MfAodLDUOqEZCi7efii/Q6KlVr0qsdWrCyGCJoaxjBsAAoH7cbUk+u5YXn1a8EbGewji+bipvwGXoZzFxZHHTCSGQf4mHva4dxCiLt+xb4M/UyrGH0VqH0bnbftt/2I+BURf026Daj9nKLpy/ME92XXd3NWy+0qKmvHP5k2P0e6MLmZLIuaDM1zYmk9QNtypbUAdkOqq+nstLXyD+CnbADpO6Nw6E+SniO7Tkqi1HbgfXI39KJAWbeO/RbLBNE6jaxq6pnJq7UU8za9z3Jo7GF+HAjzt/oQSabqZEtAsQWRGHd5a4HcfEBR/2Pyvj7Qsc1p2EnpGO8xwOP+QW87aNX1MzJBh8XM2atXeZJZW/de/bYAHvA3PPzWF2HYyS3rFt4MPoqUbnF3g5w4QP5lQdU9k93YsOuqfLiWSijfTWF6T6aOwi+WeHzOOzX6Zu/iJP6irEdmDGs0JiQxoaDACdh1J6lV3zX6Zu/iJP6irE9mf6iYn8OF77N/y5On1NXa3+DF1T0UiPtvYxmu5S1obxQRk7d52XWfR5Yz7NysnCOP0sY379tiuV7cv16k/Dx/JdX9Hn9FZX+Mz5FKNP807q70UV6r+3WdG+qH19IVjDhsXIWjjFhzQ7bmAW8x/ILkOw8ka7i2PWvJ/kuw+kL+gsZ+Jd/SuO7EP18i/gSf5LNb/um9W/Qxbv+PP6O9VLAIiK6Hz0IiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAvG9VgvUpqdqMSwTsMcjD0LSNivZERcaoFTJVbtL7OMtpW/LNXhlt4pziYp2N34B4P8AAjx6LiI5ZY9/RyPZv14XEK772te0tc0OaeoI3C0tnSOlrMhlsadxUrz1c6qwk/yVggvitbiVuV5kPLaUV2Y3YIu+i7JJJDmfSSPfs6PbicT4rfdtvZ4/VFdmXxTW/aldnA5nT07BzA9o57Lv8RhcRiBIMVjKlESbcfoIms4vbss9R0tc7vKzx6HYykTcbl+pSS3WuY646vahmrWInc2vBa5pXpcymTuRCK5kbliNvRks7nge4lXDzensHm2huWxVS5t0MsQLh7D1C09bs30NXmEsem6ZcDuOPiePg4kKXbfIlTL2LkjnWmRFw12hW3Qui8zq3IMho13srB35ay5uzGDv5958lazTGGp6fwdXEUWcMNdnCD3uPe4+ZPNZ1WvBVhbBWhjhiaNmsjaGge4L0UTXXB9WqJjCJ5EjSUbadM8VIi7cOzebOPOocHEHXmt2sQDkZQOhH/V81X97bVG2WuE1axE7Yg7sew/MFXdWozmmNPZs75bD07bu574xxD/EOa6qK7ugZu5Eyhz1VtSV22xcKU9vZLI3mtbev2rQb90TTOft7Nyur7Nez3K6tvxyOikrYtrt5bLm7cQ8G+JVhaPZ3omnMJoNOUuMHcGQGQD3OJC6eKOOKNscTGsY0bBrRsAt897TY2YW46mqK1LtZldk53VVOTGdn9ujg4jF9XqejhZH1a0Dbl57KtnPi7+Lf3q255jYrR/2R0z9ofaH2LU+scXFxcHLfx26b+5UC8WmSvka9r8Y5+pf7DfYrZE+N7M51THp0PPSlaW/oWlUzMZkdNVDJmv6lp6b+e2yhXXuh8jpu5JJFG+zjid45mjfhHg7wKsUvx7WvaWvaHNPIgjcFdFbaY6uFrHL4mpov3OW3XyahndIxPC5cq3y+HIqfVuW6u/1W1PBxdfRyFu/wXyxli3ZDWNlnnkPIAFznH5lWUuaM0rblMs+Dpl55ktZwb/DZZuJwOGxXPHYyrWP7zIxxH39VBN7MTKuHSJs/H0LK/tjTo3aZEu18PX/AKON7HdJ5PBVpb+RmkhdZaAKgPID953muw1Vg6mocLNjLg9V/rMeOrHjo4f/AHxW0RWiCiihg3CJlvv8ymVNxmqKnvSrh2c6eWOBWXVmlMvpy06O5Xc6Df1J2Ddjh7e72LRbnbbc7eCtrLHHKwskY17T1DhuCtY7TennSekODxpf+8azN/kq5P2Xy7MT8J7y2U3bPDMTx5Xmi/QrnpvTuW1BbbBjqj3tJ2dKRsxntKsHofTVXTGGbShIkmceKeXb77v9Fu4IYYIxHBEyJg6NY0ABfalbZZoqFdvO07n9iEvHaCa4psImyzlz6lUs1+mbv4iT+oqxXZn+omJ/DhZz9N6ee9z34PGuc47kmswkn4LY1oIK0DIK0McMTBs1jGhrWjyAWu12h9FM6RzkXKfU3Xm+x3CnZE1ipsr9MEDduX69Sfh4/kur+jz+isr/ABo/kVId7C4e9OZ7uLpWZSNuOWBrnbe0heuPx2PxzHsoUq9Vrzu4QxhgJ89kgtD469apXJhVXTqKm+xzWxtEjFyiImehHX0hf0FjPxLv6Vx3Yh+vkX8CT/JTvkMfQyLGx36Ve0xh3a2aMPAPiN140sJh6M4npYqlWlA2D4oGtdt7QEntD5a5KpHJhMadBS32OG2uolYuVRdepnoiKdK0EREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREBqdSxZuSux+FyFamYw50vpoPScQ25bcxt3rj8TndVSaGsaqs5ClJH9UfJHA2tsWvB2BJ35jkVIdhpfBIxvVzSB8FyFHTOQg7Ln6ae+H666u+MEO9TcknqgMGTOapw1DG5jJ3MdfpXHwtfDHCY5Gek224Tvz23WdrrUuUx2RjpYOGGeStWdfviTugaQOEf9R3PLryWHFoM0J8JfpbT2KfCLENmZz4z6oBczfoQeiyKWjLdq/ksplcpbr270vNlObZgibyY08uew3+KGDMyOop6ubwc7HxvwuVb6MP4ebJXDdm58+m3ivLPaiyEeeyFPG+i+r4yg6e05zd/yrhuxnly5+wrFg0feOibumrFhjhDKX4yfi9Zmx4mb+BB5e9ZWE0zfq6Qyda7NFNmMmZJLMoPql7uTQD4AbfzQya7SWcy2Vkx8kmsMDI6fhfJSjjb6bbq5g9bffbfuW/0fl7mUs5iO0WFtS66GLhbt6oHetFpfC6ixX1CF+ndOAVw1j7THfltuhcDw9dt+9emPxuscLkco7G08VZr3LTp2madzXDfu2AWTBvtc5ixg9OT5CrC2WVrmtBcCWsBO3G7bnsOq12mLuYsMltyajxGYqCBzv+zRcLo39w5E8uvXmt3lW5eTDAUW0xeLWl7JtzGf3m/7rlMRpfKv1MzM2qOLxIiryxOiouJFgvGw4+QGw69OqwZMGzrvLU9K6bzMkLLBuyv+txxx8yxvMlvgQAT7luO0DWQw+EqT4cstWLobJC4DiaIuRMh8tiPivDE6SydXHaVrSPrl2KmkfZ2cdnNc0jYcufVfFrs/bXw+VrY2wXy2tmVmzOPDXh4+L0Y8tyf5LJg9shldR3NZNwmKv06bG41ltz5q/pNyXcJHUeKwresc1Ww96OZtT7QoZCGrJLE0mKVryOYB6HYrYX9GHJ6xbkr73Cm3GtrgQzOY/wBIHb937O269NTaQYdJ/ZOna8ELxZjn/KOPrlp3Jc7mSVgG51nkLGK0tkMjULRPXhL2cQ3G/sXM5jP5x+bw+Np5Kjj228cbUktiIOHED0HMeKy8nV1hmsHkcZkKWKrtsVyyN8U7nHi3HXcdF+WdHm9qLEWsjXq2aVPHGvLG/nvJvyICyZPm9l87i6+I9NlKOQddykVd0sMPC0Ru6jqefmtff1LlX6szONGpsNhoKMkbYm3GN4pA5gJI3cOh+a3me0w2SLDQYavWqwUslHakYPVHCDz281p7um85DqrMZKthsFk4L8kb2G6d3R8LA3YeqeqGDKzOU1EzLadw2PylEzZCCZ8tr6vxMcWNDgWjfoefesrG5jOY7UtXBah+q2BeY41LddpZu5o3cxzT0O3PcLFzGI1NLlMBmaVPGNtY+GZktcylsQ4wGgNIHQALMxmFzV7UVbOaikqsdSY5tWtWJLWucNi4uPU7clgHVoiIZCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiID//Z";
+
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700&display=swap');
 
@@ -8,28 +11,41 @@ const css = `
   html, body { width: 100%; overflow-x: hidden; }
   .tbo-wrap { font-family: 'DM Sans', sans-serif; color: #333; background: #fff; width: 100%; overflow-x: hidden; }
 
-  /* ── NAVBAR ── */
+  /* ── HERO SECTION WRAPPER — nav + hero as one seamless unit ── */
+  .tbo-hero-section {
+    background: #fff;
+    /* very subtle warm gradient so it reads as one surface */
+    background: linear-gradient(160deg, #ffffff 0%, #fff8f4 55%, #fff3e8 100%);
+  }
+
+  /* ── NAVBAR — seamlessly blended into hero, no divider ── */
   .tbo-nav {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 3%;
-    border-bottom: none; background: #fff;
+    padding: 0 clamp(24px,4%,80px);
+    border-bottom: none; background: transparent;
     position: sticky; top: 0; z-index: 500;
     box-shadow: none;
-    gap: 10px; min-height: 90px;
+    gap: 16px; min-height: 96px;
+    /* sticky bg so nav stays readable when scrolled */
+    backdrop-filter: blur(0px);
   }
-  .tbo-logo-wrap { display: flex; flex-direction: column; line-height: 1; flex-shrink: 0; }
-  .tbo-logo-text { display: flex; align-items: baseline; }
-  .logo-tbo  { font-size: clamp(1.3rem,2.5vw,1.9rem); font-weight: 800; color: #0059b3; letter-spacing: -1px; font-family: 'Playfair Display', serif; }
-  .logo-dot  { color: #ff6600; font-size: clamp(1.3rem,2.5vw,1.9rem); font-weight: 800; }
-  .logo-com  { font-size: clamp(1.3rem,2.5vw,1.9rem); font-weight: 800; color: #0059b3; letter-spacing: -1px; font-family: 'Playfair Display', serif; }
-  .logo-sub  { font-size: 0.46rem; color: #999; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+  .tbo-nav.scrolled {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 16px rgba(0,0,0,0.07);
+  }
+
+  /* Logo — vertically centred, left-edge matches hero text column */
+  .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; }
+  .tbo-logo-img { height: 54px; width: auto; object-fit: contain; display: block; }
+
   .tbo-nav-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
   .already-reg { font-size: 0.66rem; color: #888; white-space: nowrap; }
   .btn-book { background: #ff6600; color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s, transform 0.15s; }
   .btn-book:hover { background: #e05500; transform: scale(1.03); }
 
-  /* ── SEARCH CONTAINER ── */
-  .search-bar-container { flex: 1; max-width: 820px; min-width: 0; position: relative; }
+  /* ── CHANGE 2: Search shifted right — no flex:1, use margin-left auto ── */
+  .search-bar-container { max-width: 700px; width: 100%; min-width: 0; position: relative; margin-left: auto; }
 
   /* ── EXPANDED TEXT SEARCH ── */
   .expanded-search-bar {
@@ -101,7 +117,6 @@ const css = `
   .pill-value { font-size: 0.75rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 2px; }
   .pill-value.placeholder { color: #aaa; }
 
-  /* Search icon btn — opens expanded search */
   .pill-search-icon-btn {
     background: linear-gradient(135deg, #ff6600, #ff3366);
     border: none; cursor: pointer;
@@ -114,7 +129,6 @@ const css = `
   .pill-search-icon-btn:hover { transform: scale(1.1); box-shadow: 0 5px 18px rgba(255,80,50,0.55); }
   .pill-search-icon-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; }
 
-  /* Redirect arrow btn */
   .pill-redirect-btn {
     background: #ff6600; border: none; cursor: pointer;
     width: 40px; height: 40px; border-radius: 50%;
@@ -141,7 +155,6 @@ const css = `
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  /* TYPE */
   .type-dropdown { width: 330px; padding: 18px; }
   .type-dropdown-title { font-size: 0.76rem; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
   .type-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
@@ -156,7 +169,6 @@ const css = `
   .type-card-label { font-size: 0.66rem; font-weight: 600; color: #333; text-align: center; }
   .type-card.active .type-card-label { color: #ff6600; }
 
-  /* WHERE */
   .where-dropdown { width: 370px; padding: 16px; }
   .where-search-input {
     width: 100%; padding: 10px 14px; border: 1.5px solid #e0e0e0;
@@ -172,7 +184,6 @@ const css = `
   .dest-country { font-size: 0.7rem; color: #888; margin-top: 1px; }
   .dest-section-label { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; padding: 7px 10px 3px; }
 
-  /* WHEN */
   .when-dropdown { width: 600px; }
   .when-tabs { display: flex; border-bottom: 1px solid #f0f0f0; padding: 14px 14px 0; gap: 4px; }
   .when-tab { padding: 7px 14px; border-radius: 24px; border: none; background: none; cursor: pointer; font-size: 0.78rem; font-weight: 500; color: #777; font-family: 'DM Sans',sans-serif; transition: all 0.2s; }
@@ -229,7 +240,6 @@ const css = `
   .month-card.active { border-color: #111; background: #f8f8f8; }
   .month-card:hover:not(.active) { border-color: #bbb; }
 
-  /* WHO */
   .who-dropdown { width: 310px; padding: 16px; }
   .guest-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f5f5f5; }
   .guest-row:last-child { border-bottom: none; }
@@ -241,7 +251,6 @@ const css = `
   .guest-btn:disabled { opacity: 0.3; cursor: default; }
   .guest-count { font-size: 0.9rem; font-weight: 600; color: #111; min-width: 18px; text-align: center; }
 
-  /* BUDGET */
   .budget-dropdown { width: 310px; padding: 16px; }
   .budget-title { font-size: 0.74rem; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
   .budget-options { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
@@ -269,7 +278,6 @@ const css = `
   .budget-slider::-webkit-slider-thumb:active { transform: scale(1.2); cursor: grabbing; }
   .budget-range-values { display: flex; justify-content: space-between; margin-top: 7px; font-size: 0.7rem; color: #888; }
 
-  /* DROPDOWN FOOTER */
   .dropdown-footer { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-top: 1px solid #f0f0f0; }
   .btn-clear { background: none; border: none; font-size: 0.78rem; font-weight: 600; text-decoration: underline; cursor: pointer; color: #555; font-family: 'DM Sans',sans-serif; }
   .btn-apply { background: linear-gradient(135deg,#ff6600,#ff3366); color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans',sans-serif; box-shadow: 0 4px 14px rgba(255,80,50,0.4); transition: transform 0.15s, box-shadow 0.2s; }
@@ -280,31 +288,31 @@ const css = `
   .side-circle-right { position: fixed; right: -22px; top: 40%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #ff6600; z-index: 10; }
   .side-circle-left2 { position: fixed; left: -22px; top: 75%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #003399; z-index: 10; }
 
-  /* HERO */
-  .tbo-hero { display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: clamp(32px,4vw,60px) 5%; gap: clamp(20px,3vw,48px); max-width: 1240px; margin: 0 auto; width: 100%; }
-  .hero-title { font-size: clamp(1.4rem,3vw,2.4rem); font-weight: 700; color: #1a1a1a; line-height: 1.2; font-family: 'Playfair Display',serif; }
+  /* ── HERO — top padding minimal so it flows from navbar; left matches navbar exactly ── */
+  .tbo-hero { display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 0 clamp(24px,4%,80px) clamp(48px,6vw,96px); gap: clamp(24px,3vw,56px); max-width: 1600px; margin: 0 auto; width: 100%; }
+  .hero-title { font-size: clamp(1.6rem,3.2vw,2.8rem); font-weight: 700; color: #1a1a1a; line-height: 1.2; font-family: 'Playfair Display',serif; }
   .hero-title .red-dot { color: #ff3300; }
-  .hero-body { font-size: clamp(0.78rem,1.2vw,0.9rem); color: #555; line-height: 1.72; margin-top: 16px; }
-  .register-label { font-size: 0.78rem; color: #555; font-weight: 600; margin-top: 22px; margin-bottom: 12px; }
+  .hero-body { font-size: clamp(0.82rem,1.2vw,0.96rem); color: #555; line-height: 1.75; margin-top: 18px; }
+  .register-label { font-size: 0.82rem; color: #555; font-weight: 600; margin-top: 24px; margin-bottom: 14px; }
   .hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn-become { background: #003399; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-size: clamp(0.75rem,1.1vw,0.88rem); font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s; }
+  .btn-become { background: #003399; color: #fff; border: none; padding: 11px 24px; border-radius: 20px; font-size: clamp(0.78rem,1.1vw,0.9rem); font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s; }
   .btn-become:hover { background: #002277; }
-  .btn-agent { background: #ff6600; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-size: clamp(0.75rem,1.1vw,0.88rem); font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s; }
+  .btn-agent { background: #ff6600; color: #fff; border: none; padding: 11px 24px; border-radius: 20px; font-size: clamp(0.78rem,1.1vw,0.9rem); font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s; }
   .btn-agent:hover { background: #e05500; }
-  .hero-video-wrap { border-radius: 14px; overflow: hidden; width: 100%; aspect-ratio: 16/10; background: #000; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .hero-video-wrap { border-radius: 16px; overflow: hidden; width: 100%; aspect-ratio: 16/10; background: #000; box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
   .hero-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  /* NUMBERS */
-  .tbo-numbers { text-align: center; padding: clamp(36px,5vw,72px) 5%; background: #f8f9fb; }
-  .tbo-numbers h2 { font-size: clamp(1.2rem,2.6vw,1.8rem); font-weight: 700; color: #1a1a1a; margin-bottom: 36px; font-family: 'Playfair Display',serif; }
-  .stats-row { display: flex; justify-content: center; gap: clamp(28px,7vw,96px); flex-wrap: wrap; }
+  /* NUMBERS — wider, bigger stats */
+  .tbo-numbers { text-align: center; padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #f8f9fb; }
+  .tbo-numbers h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 40px; font-family: 'Playfair Display',serif; }
+  .stats-row { display: flex; justify-content: center; gap: clamp(40px,8vw,140px); flex-wrap: wrap; }
   .stat-item { display: flex; flex-direction: column; align-items: center; }
-  .stat-num { font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 700; color: #0059b3; line-height: 1; font-family: 'Playfair Display',serif; }
-  .stat-label { font-size: clamp(0.74rem,1.1vw,0.88rem); color: #666; margin-top: 7px; font-weight: 500; }
+  .stat-num { font-size: clamp(2rem,4.5vw,3.2rem); font-weight: 700; color: #0059b3; line-height: 1; font-family: 'Playfair Display',serif; }
+  .stat-label { font-size: clamp(0.78rem,1.1vw,0.92rem); color: #666; margin-top: 8px; font-weight: 500; }
 
   /* BRANDS MARQUEE */
   .tbo-our-brands { padding: clamp(36px,5vw,64px) 0; text-align: center; background: #fff; }
-  .tbo-our-brands h2 { font-size: clamp(1.2rem,2.6vw,1.8rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
+  .tbo-our-brands h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
   .brands-marquee-wrap { position: relative; width: 100%; overflow: hidden; }
   .brands-marquee-wrap::before,.brands-marquee-wrap::after { content: ''; position: absolute; top: 0; bottom: 0; width: 90px; z-index: 2; pointer-events: none; }
   .brands-marquee-wrap::before { left: 0; background: linear-gradient(to right,#fff,transparent); }
@@ -312,46 +320,46 @@ const css = `
   .brands-marquee-track { display: flex; align-items: center; gap: 64px; width: max-content; animation: marquee-scroll 22s linear infinite; padding: 6px 0; }
   .brands-marquee-track:hover { animation-play-state: paused; }
   @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-  .brand-logo-img { height: clamp(30px,4vw,50px); width: auto; max-width: 140px; object-fit: contain; filter: grayscale(30%); opacity: 0.8; transition: filter 0.3s, opacity 0.3s, transform 0.3s; }
+  .brand-logo-img { height: clamp(34px,4vw,56px); width: auto; max-width: 160px; object-fit: contain; filter: grayscale(30%); opacity: 0.8; transition: filter 0.3s, opacity 0.3s, transform 0.3s; }
   .brand-logo-img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.1); }
 
-  /* VALUE */
-  .tbo-value { padding: clamp(36px,5vw,68px) 5%; background: #f8f9fb; }
-  .tbo-value h2 { font-size: clamp(1.2rem,2.6vw,1.8rem); font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 24px; font-family: 'Playfair Display',serif; }
+  /* VALUE — wider content area, bigger blob image */
+  .tbo-value { padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #f8f9fb; }
+  .tbo-value h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 24px; font-family: 'Playfair Display',serif; }
   .value-tabs { display: flex; justify-content: center; gap: clamp(18px,4vw,60px); border-bottom: 2px solid #ddd; flex-wrap: wrap; }
-  .value-tab { background: none; border: none; cursor: pointer; font-size: clamp(0.8rem,1.2vw,0.95rem); font-weight: 600; color: #777; padding: 9px 5px; position: relative; transition: color 0.2s; white-space: nowrap; font-family: 'DM Sans',sans-serif; }
+  .value-tab { background: none; border: none; cursor: pointer; font-size: clamp(0.84rem,1.2vw,1rem); font-weight: 600; color: #777; padding: 9px 5px; position: relative; transition: color 0.2s; white-space: nowrap; font-family: 'DM Sans',sans-serif; }
   .value-tab.active { color: #ff6600; }
   .value-tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 3px; background: #ff6600; border-radius: 2px 2px 0 0; }
-  .value-content-area { display: grid; grid-template-columns: auto 1fr; gap: clamp(20px,3vw,52px); align-items: flex-start; max-width: 940px; margin: 30px auto 0; width: 100%; }
-  .value-blob-img { width: clamp(160px,21vw,260px); height: clamp(160px,21vw,260px); object-fit: cover; border-radius: 50% 40% 50% 40%; flex-shrink: 0; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+  .value-content-area { display: grid; grid-template-columns: auto 1fr; gap: clamp(24px,4vw,64px); align-items: flex-start; max-width: 1300px; margin: 36px auto 0; width: 100%; }
+  .value-blob-img { width: clamp(180px,24vw,340px); height: clamp(180px,24vw,340px); object-fit: cover; border-radius: 50% 40% 50% 40%; flex-shrink: 0; box-shadow: 0 6px 32px rgba(0,0,0,0.14); }
   .value-scroll-container { overflow: hidden; }
-  .value-scroll-area { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-right: 12px; }
+  .value-scroll-area { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; padding-right: 12px; }
   .value-scroll-area::-webkit-scrollbar { width: 4px; }
   .value-scroll-area::-webkit-scrollbar-track { background: #eee; border-radius: 4px; }
   .value-scroll-area::-webkit-scrollbar-thumb { background: #bbb; border-radius: 4px; }
-  .value-point { display: flex; gap: 12px; align-items: flex-start; }
-  .vp-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff3300; margin-top: 6px; flex-shrink: 0; }
-  .vp-title { font-weight: 700; font-size: clamp(0.84rem,1.2vw,0.96rem); color: #1a1a1a; }
-  .vp-desc  { font-size: clamp(0.74rem,1vw,0.84rem); color: #666; line-height: 1.65; margin-top: 4px; }
+  .value-point { display: flex; gap: 14px; align-items: flex-start; }
+  .vp-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff3300; margin-top: 6px; flex-shrink: 0; }
+  .vp-title { font-weight: 700; font-size: clamp(0.88rem,1.2vw,1.02rem); color: #1a1a1a; }
+  .vp-desc  { font-size: clamp(0.78rem,1vw,0.88rem); color: #666; line-height: 1.68; margin-top: 5px; }
 
   /* PARTNER BRANDS */
-  .tbo-partner-brands { padding: clamp(36px,5vw,68px) 5%; text-align: center; }
-  .tbo-partner-brands h2 { font-size: clamp(1.2rem,2.6vw,1.8rem); font-weight: 700; color: #1a1a1a; margin-bottom: 28px; font-family: 'Playfair Display',serif; }
-  .partner-row { display: flex; justify-content: center; align-items: center; gap: clamp(20px,4vw,64px); flex-wrap: wrap; }
-  .hilton-box { border: 2px solid #1c1c1c; padding: 5px 15px; font-size: clamp(0.9rem,1.5vw,1.1rem); font-weight: 800; letter-spacing: 2px; color: #1c1c1c; white-space: nowrap; }
+  .tbo-partner-brands { padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); text-align: center; }
+  .tbo-partner-brands h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
+  .partner-row { display: flex; justify-content: center; align-items: center; gap: clamp(28px,5vw,80px); flex-wrap: wrap; }
+  .hilton-box { border: 2px solid #1c1c1c; padding: 6px 18px; font-size: clamp(1rem,1.6vw,1.3rem); font-weight: 800; letter-spacing: 2px; color: #1c1c1c; white-space: nowrap; }
   .expedia-wrap { display: flex; flex-direction: column; align-items: flex-start; }
-  .expedia-top { font-size: clamp(0.9rem,1.5vw,1.1rem); font-weight: 700; color: #1c1c1c; display: flex; align-items: center; gap: 6px; }
+  .expedia-top { font-size: clamp(1rem,1.6vw,1.3rem); font-weight: 700; color: #1c1c1c; display: flex; align-items: center; gap: 6px; }
   .expedia-sub { font-size: 0.6rem; color: #666; letter-spacing: 0.6px; margin-left: 20px; }
 
   /* GROWTH STORIES */
-  .tbo-growth { padding: clamp(36px,5vw,68px) 0; text-align: center; }
-  .tbo-growth h2 { font-size: clamp(1.2rem,2.6vw,1.8rem); font-weight: 700; color: #1a1a1a; margin-bottom: 24px; font-family: 'Playfair Display',serif; }
+  .tbo-growth { padding: clamp(40px,5vw,80px) 0; text-align: center; }
+  .tbo-growth h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 28px; font-family: 'Playfair Display',serif; }
   .slider-wrapper { display: flex; align-items: center; justify-content: center; }
   .slider-viewport { overflow: hidden; }
   .slider-track { display: flex; gap: 18px; transition: transform 0.45s cubic-bezier(0.4,0,0.2,1); }
   .growth-card { flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 16px rgba(0,0,0,0.14); transition: transform 0.2s, box-shadow 0.2s; }
   .growth-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px rgba(0,0,0,0.2); }
-  .gc-video-wrap { position: relative; height: clamp(120px,15vw,165px); overflow: hidden; background: #111; }
+  .gc-video-wrap { position: relative; height: clamp(130px,16vw,190px); overflow: hidden; background: #111; }
   .gc-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gc-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.22); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
   .gc-overlay:hover { background: rgba(0,0,0,0.35); }
@@ -362,8 +370,8 @@ const css = `
   .gc-info.tan-info    { background: #996622; }
   .gc-info.green-info  { background: #335533; }
   .gc-info.blue-info   { background: #1a3d88; }
-  .gc-name { font-size: clamp(0.72rem,1.1vw,0.84rem); font-weight: 700; }
-  .gc-org  { font-size: clamp(0.62rem,0.95vw,0.74rem); opacity: 0.88; margin-top: 2px; }
+  .gc-name { font-size: clamp(0.72rem,1.1vw,0.86rem); font-weight: 700; }
+  .gc-org  { font-size: clamp(0.62rem,0.95vw,0.76rem); opacity: 0.88; margin-top: 2px; }
   .slider-arrow, .awards-arrow { background: #fff; border: 1.5px solid #ddd; border-radius: 50%; width: 40px; height: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: all 0.2s; color: #444; margin: 0 9px; }
   .slider-arrow:hover, .awards-arrow:hover { background: #ff6600; border-color: #ff6600; color: #fff; transform: scale(1.1); }
   .slider-arrow:disabled, .awards-arrow:disabled { opacity: 0.28; cursor: default; transform: none; }
@@ -372,21 +380,21 @@ const css = `
   .gdot.active, .adot.active { background: #ff6600; transform: scale(1.3); }
 
   /* AWARDS */
-  .tbo-awards { padding: clamp(36px,5vw,68px) 0; text-align: center; background: #f8f9fb; }
-  .tbo-awards h2 { font-size: clamp(1.2rem,2.6vw,1.8rem); font-weight: 700; color: #1a1a1a; margin-bottom: 28px; font-family: 'Playfair Display',serif; }
+  .tbo-awards { padding: clamp(40px,5vw,80px) 0; text-align: center; background: #f8f9fb; }
+  .tbo-awards h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
   .awards-slider-wrapper { display: flex; align-items: center; justify-content: center; }
   .awards-viewport { overflow: hidden; }
   .awards-track { display: flex; gap: 22px; transition: transform 0.45s cubic-bezier(0.4,0,0.2,1); }
   .award-item { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .award-img { width: 100%; max-width: 100px; aspect-ratio: 1; object-fit: contain; transition: transform 0.25s; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.13)); }
+  .award-img { width: 100%; max-width: 120px; aspect-ratio: 1; object-fit: contain; transition: transform 0.25s; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.13)); }
   .award-item:hover .award-img { transform: scale(1.12); }
-  .award-label { font-size: clamp(0.56rem,0.88vw,0.68rem); color: #666; text-align: center; line-height: 1.45; }
+  .award-label { font-size: clamp(0.58rem,0.9vw,0.72rem); color: #666; text-align: center; line-height: 1.45; }
 
   /* FOOTER */
-  .tbo-footer { background: #003380; color: #ccc; padding: 20px 5% 14px; }
+  .tbo-footer { background: #003380; color: #ccc; padding: 22px clamp(24px,4%,80px) 16px; }
   .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
   .footer-links { display: flex; gap: 0; flex-wrap: wrap; align-items: center; }
-  .footer-links a { color: #ccc; font-size: clamp(0.6rem,0.95vw,0.75rem); text-decoration: none; padding: 2px 7px; transition: color 0.2s; white-space: nowrap; }
+  .footer-links a { color: #ccc; font-size: clamp(0.62rem,0.95vw,0.78rem); text-decoration: none; padding: 2px 8px; transition: color 0.2s; white-space: nowrap; }
   .footer-links a:hover { color: #fff; }
   .footer-sep { color: #556; }
   .footer-social { display: flex; gap: 8px; }
@@ -397,11 +405,11 @@ const css = `
   /* RESPONSIVE */
   @media (max-width: 1000px) {
     .side-circle-left,.side-circle-left2,.side-circle-right { display: none; }
-    .tbo-hero { grid-template-columns: 1fr; }
-    .hero-video-wrap { aspect-ratio: 16/9; max-height: 320px; }
+    .tbo-hero { grid-template-columns: 1fr; padding: 0 4% clamp(40px,5vw,64px); }
+    .hero-video-wrap { aspect-ratio: 16/9; max-height: 360px; }
     .value-content-area { grid-template-columns: 1fr; justify-items: center; }
-    .value-blob-img { width: 190px; height: 190px; }
-    .search-bar-container { order: 3; width: 100%; max-width: 100%; }
+    .value-blob-img { width: 220px; height: 220px; }
+    .search-bar-container { order: 3; width: 100%; max-width: 100%; margin-left: 0; }
     .tbo-nav { flex-wrap: wrap; min-height: auto; padding: 10px 4%; }
     .cal-container { flex-direction: column; }
     .when-dropdown { width: min(96vw,600px); }
@@ -409,7 +417,7 @@ const css = `
     .who-dropdown,.budget-dropdown,.type-dropdown { width: min(96vw,310px); }
   }
   @media (max-width: 640px) {
-    .stats-row { gap: 18px; }
+    .stats-row { gap: 22px; }
     .footer-inner { flex-direction: column; align-items: flex-start; }
     .value-tabs { gap: 10px; }
     .dropdown-panel { left: 8px !important; right: 8px; transform: none !important; }
@@ -435,7 +443,6 @@ const destinations = [
   { city:"Istanbul",  country:"Turkey",      emoji:"🕌" },
   { city:"Rome",      country:"Italy",       emoji:"🏛️" },
 ];
-
 const TRAVEL_TYPES = [
   { id:"mountains", label:"Mountains", icon:"⛰️" },
   { id:"beach",     label:"Beach",     icon:"🏖️" },
@@ -447,24 +454,20 @@ const TRAVEL_TYPES = [
   { id:"heritage",  label:"Heritage",  icon:"🏛️" },
   { id:"wellness",  label:"Wellness",  icon:"🧘" },
 ];
-
 const BUDGET_OPTIONS = [
-  { id:"budget",   label:"Budget",   range:"Up to ₹30,000",         icon:"🪙" },
-  { id:"standard", label:"Standard", range:"₹30,000 – ₹80,000",    icon:"💳" },
-  { id:"premium",  label:"Premium",  range:"₹80,000 – ₹1,50,000",  icon:"💎" },
-  { id:"luxury",   label:"Luxury",   range:"₹1,50,000+",            icon:"👑" },
+  { id:"budget",   label:"Budget",   range:"Up to ₹30,000",        icon:"🪙" },
+  { id:"standard", label:"Standard", range:"₹30,000 – ₹80,000",   icon:"💳" },
+  { id:"premium",  label:"Premium",  range:"₹80,000 – ₹1,50,000", icon:"💎" },
+  { id:"luxury",   label:"Luxury",   range:"₹1,50,000+",           icon:"👑" },
 ];
-
 const MONTHS_LIST  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_EMOJIS = ["❄️","🌸","🌧️","🌷","☀️","🏖️","🌞","🌻","🍂","🎃","🍁","🎄"];
 const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
-
 function getDaysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
 function getFirstDayOfMonth(y,m){ return new Date(y,m,1).getDay(); }
 function formatDate(d){ if(!d)return ""; return `${MONTHS_LIST[d.getMonth()]} ${d.getDate()}`; }
 function addMonths(date,n){ const d=new Date(date); d.setMonth(d.getMonth()+n); return d; }
 
-/* ─── CALENDAR ─── */
 function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHover, showPrev, showNext, onPrev, onNext }) {
   const days=getDaysInMonth(year,month), firstDay=getFirstDayOfMonth(year,month);
   const today=new Date(); today.setHours(0,0,0,0);
@@ -508,7 +511,6 @@ function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHove
   );
 }
 
-/* ─── CIRCLE SELECTOR ─── */
 function CircleSelector({ duration, onChange }) {
   const svgRef=useRef(null); const dragging=useRef(false);
   const R=80,CX=100,CY=100,min=1,max=12;
@@ -540,7 +542,6 @@ function CircleSelector({ duration, onChange }) {
   );
 }
 
-/* ─── PAGE DATA ─── */
 const valueContent = {
   "Travel buyers":[
     {title:"Customer support",desc:"Benefit from round-the-clock customer support in your local language, ensuring seamless service and customer satisfaction, with over 500 account managers offering warm and dedicated assistance."},
@@ -559,45 +560,45 @@ const valueContent = {
   ],
 };
 const stories=[
-  {name:"Dinesh Poojary",      org:"Travel Agent",                 info:"orange-info",video:"https://www.tbo.com/img/testimonials/agent/Dinesh-Poojary.mp4"},
-  {name:"Gautam Vij",          org:"KBS Tours and Travels, India", info:"blue-info",  video:"https://www.tbo.com/img/testimonials/agent/Gautam-Vij.mp4"},
-  {name:"Sebastian Sierra",    org:"Travel Agent",                 info:"green-info", video:"https://www.tbo.com/img/testimonials/agent/Sebastian-Sierra.mp4"},
-  {name:"Stuart Lee",          org:"Travel Agent",                 info:"tan-info",   video:"https://www.tbo.com/img/testimonials/agent/Stuart-Lee.mp4"},
-  {name:"UAE Agent",           org:"UAE",                          info:"orange-info",video:"https://www.tbo.com/img/testimonials/agent/UAEAgenta.mp4"},
-  {name:"Mr. Kuljit Singh Hayer",org:"Universal Travels, India",  info:"green-info", video:"https://www.tbo.com/img/testimonials/agent/KuljitSingh.mp4"},
-  {name:"Fortun Plumley",      org:"Travel Agent",                 info:"blue-info",  video:"https://www.tbo.com/img/testimonials/agent/Fortun-PlumLey.mp4"},
+  {name:"Dinesh Poojary",org:"Travel Agent",info:"orange-info",video:"https://www.tbo.com/img/testimonials/agent/Dinesh-Poojary.mp4"},
+  {name:"Gautam Vij",org:"KBS Tours and Travels, India",info:"blue-info",video:"https://www.tbo.com/img/testimonials/agent/Gautam-Vij.mp4"},
+  {name:"Sebastian Sierra",org:"Travel Agent",info:"green-info",video:"https://www.tbo.com/img/testimonials/agent/Sebastian-Sierra.mp4"},
+  {name:"Stuart Lee",org:"Travel Agent",info:"tan-info",video:"https://www.tbo.com/img/testimonials/agent/Stuart-Lee.mp4"},
+  {name:"UAE Agent",org:"UAE",info:"orange-info",video:"https://www.tbo.com/img/testimonials/agent/UAEAgenta.mp4"},
+  {name:"Mr. Kuljit Singh Hayer",org:"Universal Travels, India",info:"green-info",video:"https://www.tbo.com/img/testimonials/agent/KuljitSingh.mp4"},
+  {name:"Fortun Plumley",org:"Travel Agent",info:"blue-info",video:"https://www.tbo.com/img/testimonials/agent/Fortun-PlumLey.mp4"},
 ];
 const awards=[
-  {img:"https://www.tbo.com/img/awards/TWMGold_Award_2024.png",          label:"TWM Gold Award 2024"},
-  {img:"https://www.tbo.com/img/awards/BDD_B2B_campaign.png",            label:"Best Data Driven B2B Campaign"},
-  {img:"https://www.tbo.com/img/awards/BTDC_Y_2024.png",                 label:"Best Travel Distribution Company 2024"},
-  {img:"https://www.tbo.com/img/awards/EoTYAward_2024.png",              label:"Entrepreneur of the Year 2024"},
-  {img:"https://www.tbo.com/img/awards/OTM_of_the_year.png",             label:"OTM of the Year"},
-  {img:"https://www.tbo.com/img/awards/MEB_B2B_Travel_Portal_2025.png",  label:"Middle East's Best B2B Travel Portal 2025"},
+  {img:"https://www.tbo.com/img/awards/TWMGold_Award_2024.png",label:"TWM Gold Award 2024"},
+  {img:"https://www.tbo.com/img/awards/BDD_B2B_campaign.png",label:"Best Data Driven B2B Campaign"},
+  {img:"https://www.tbo.com/img/awards/BTDC_Y_2024.png",label:"Best Travel Distribution Company 2024"},
+  {img:"https://www.tbo.com/img/awards/EoTYAward_2024.png",label:"Entrepreneur of the Year 2024"},
+  {img:"https://www.tbo.com/img/awards/OTM_of_the_year.png",label:"OTM of the Year"},
+  {img:"https://www.tbo.com/img/awards/MEB_B2B_Travel_Portal_2025.png",label:"Middle East's Best B2B Travel Portal 2025"},
   {img:"https://www.tbo.com/img/awards/LAB_B2B_Travel_Provider_2025.png",label:"Latin America's Best B2B Travel Provider 2025"},
-  {img:"https://www.tbo.com/img/awards/ttm.jpg",                         label:"TTM Award"},
+  {img:"https://www.tbo.com/img/awards/ttm.jpg",label:"TTM Award"},
 ];
 const brandLogos=[
-  {src:"https://www.tbo.com/img/logos/sabre-min.png",          alt:"Sabre"},
-  {src:"https://www.tbo.com/img/brands/bookabed-min.png",      alt:"Bookabed"},
-  {src:"https://www.tbo.com/img/brands/zamzamlogo-min.png",    alt:"Zamzam"},
-  {src:"https://www.tbo.com/img/brands/jumbonline-min.png",    alt:"JumbOnline"},
-  {src:"https://www.tbo.com/img/brands/paxes-min.png",         alt:"PAXES"},
-  {src:"https://www.tbo.com/img/brands/kizanlogo-min.png",     alt:"Kizan"},
-  {src:"https://www.tbo.com/img/brands/tboacademy-min.png",    alt:"TBO Academy"},
-  {src:"https://www.tbo.com/img/brands/classic-vacations.png", alt:"Classic Vacations"},
+  {src:"https://www.tbo.com/img/logos/sabre-min.png",alt:"Sabre"},
+  {src:"https://www.tbo.com/img/brands/bookabed-min.png",alt:"Bookabed"},
+  {src:"https://www.tbo.com/img/brands/zamzamlogo-min.png",alt:"Zamzam"},
+  {src:"https://www.tbo.com/img/brands/jumbonline-min.png",alt:"JumbOnline"},
+  {src:"https://www.tbo.com/img/brands/paxes-min.png",alt:"PAXES"},
+  {src:"https://www.tbo.com/img/brands/kizanlogo-min.png",alt:"Kizan"},
+  {src:"https://www.tbo.com/img/brands/tboacademy-min.png",alt:"TBO Academy"},
+  {src:"https://www.tbo.com/img/brands/classic-vacations.png",alt:"Classic Vacations"},
 ];
 const footerLinks=["Home","About Us","Careers","Privacy Policy","Terms and Conditions","Sanctions Policy","Investors","Media","Contact Us"];
 
 function useSliderSizes(){
-  const [sizes,setSizes]=useState({cardW:210,visibleCards:4,awardW:120,visibleAwards:5});
+  const [sizes,setSizes]=useState({cardW:210,visibleCards:4,awardW:130,visibleAwards:5});
   useEffect(()=>{
     function calc(){
       const W=window.innerWidth; let vc,cw,va,aw;
       if(W<480){vc=1;cw=Math.floor(W*0.86);va=2;aw=Math.floor((W*0.86-22)/2);}
       else if(W<640){vc=2;cw=Math.floor((W*0.86-18)/2);va=3;aw=Math.floor((W*0.86-44)/3);}
       else if(W<1000){vc=3;cw=Math.floor((W*0.86-36)/3);va=4;aw=Math.floor((W*0.86-66)/4);}
-      else{vc=4;cw=Math.min(230,Math.floor((W*0.78-54)/4));va=5;aw=Math.min(130,Math.floor((W*0.78-88)/5));}
+      else{vc=4;cw=Math.min(260,Math.floor((W*0.82-54)/4));va=5;aw=Math.min(150,Math.floor((W*0.82-88)/5));}
       setSizes({cardW:cw,visibleCards:vc,awardW:aw,visibleAwards:va});
     }
     calc(); window.addEventListener("resize",calc); return()=>window.removeEventListener("resize",calc);
@@ -605,24 +606,16 @@ function useSliderSizes(){
   return sizes;
 }
 
-/* ─── MAIN ─── */
 export default function TBOHomepage() {
   const { isLoggedIn, user, persona, requireAuth, setShowRegister, setShowLogin, logout } = useAuth();
-  // Expanded search state
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery]       = useState("");
   const [isListening, setIsListening]       = useState(false);
   const fileInputRef = useRef(null);
-
-  // Filter panels
-  const [openPanel, setOpenPanel] = useState(null); // 'type'|'where'|'when'|'who'|'budget'
-
-  // Type
+  const [openPanel, setOpenPanel] = useState(null);
   const [selectedTypes, setSelectedTypes] = useState([]);
-  // Where
   const [destQuery, setDestQuery]     = useState("");
   const [destination, setDestination] = useState("");
-  // When
   const [whenTab, setWhenTab]           = useState("Dates");
   const [calMonth, setCalMonth]         = useState({y:new Date().getFullYear(),m:new Date().getMonth()});
   const [startDate, setStartDate]       = useState(null);
@@ -632,19 +625,16 @@ export default function TBOHomepage() {
   const [monthsDuration, setMonthsDuration] = useState(3);
   const [stayType, setStayType]         = useState(null);
   const [selectedMonths, setSelectedMonths] = useState([]);
-  // Who
   const [guests, setGuests] = useState({adults:1,children:0,infants:0,pets:0});
-  // Budget
   const [selectedBudget, setSelectedBudget] = useState(null);
   const [budgetSlider, setBudgetSlider]     = useState(50);
-
-  // Page
   const [activeTab,setActiveTab]     = useState("Travel buyers");
   const [playingIdx,setPlayingIdx]   = useState(null);
   const [slideIdx,setSlideIdx]       = useState(0);
   const [isPaused,setIsPaused]       = useState(false);
   const [awardIdx,setAwardIdx]       = useState(0);
   const [awardPaused,setAwardPaused] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
 
   const searchRef = useRef(null);
   const videoRefs = useState(()=>stories.map(()=>({current:null})))[0];
@@ -654,18 +644,22 @@ export default function TBOHomepage() {
   const maxAward=Math.max(0,awards.length-visibleAwards);
 
   useEffect(()=>{
+    function onScroll(){ setNavScrolled(window.scrollY > 20); }
+    window.addEventListener("scroll", onScroll, {passive:true});
+    return()=>window.removeEventListener("scroll", onScroll);
+  },[]);
+
+  useEffect(()=>{
     function handle(e){ if(searchRef.current&&!searchRef.current.contains(e.target)){ setOpenPanel(null); if(searchExpanded)setSearchExpanded(false); } }
     document.addEventListener("mousedown",handle);
     return()=>document.removeEventListener("mousedown",handle);
   },[searchExpanded]);
-
   useEffect(()=>{ if(isPaused||playingIdx!==null)return; const t=setInterval(()=>setSlideIdx(p=>p>=maxSlide?0:p+1),3000); return()=>clearInterval(t); },[isPaused,playingIdx,maxSlide]);
   useEffect(()=>{ if(awardPaused)return; const t=setInterval(()=>setAwardIdx(p=>p>=maxAward?0:p+1),2500); return()=>clearInterval(t); },[awardPaused,maxAward]);
   useEffect(()=>{ if(slideIdx>maxSlide)setSlideIdx(maxSlide); },[maxSlide]);
   useEffect(()=>{ if(awardIdx>maxAward)setAwardIdx(maxAward); },[maxAward]);
 
   const handlePlay=(i)=>{ if(playingIdx!==null&&playingIdx!==i&&videoRefs[playingIdx].current)videoRefs[playingIdx].current.pause(); setPlayingIdx(i); };
-
   const filtered=destQuery?destinations.filter(d=>d.city.toLowerCase().includes(destQuery.toLowerCase())||d.country.toLowerCase().includes(destQuery.toLowerCase())):destinations;
   const recents=filtered.filter(d=>d.recent), others=filtered.filter(d=>!d.recent);
 
@@ -673,14 +667,12 @@ export default function TBOHomepage() {
     if(!startDate||(startDate&&endDate)){setStartDate(date);setEndDate(null);setHoverDate(null);}
     else{if(date<startDate){setStartDate(date);setEndDate(null);}else setEndDate(date);}
   }
-
   function whenValue(){
     if(whenTab==="Dates"&&startDate){ if(endDate)return`${formatDate(startDate)} – ${formatDate(endDate)}`; return formatDate(startDate); }
     if(whenTab==="Months")return`${formatDate(new Date())} – ${formatDate(addMonths(new Date(),monthsDuration))}`;
     if(whenTab==="Flexible"&&stayType&&selectedMonths.length>0)return`${stayType} · ${selectedMonths.length} mo`;
     return null;
   }
-
   const totalGuests=guests.adults+guests.children;
   function whoValue(){ if(totalGuests===0)return null; let s=`${totalGuests} guest${totalGuests!==1?"s":""}`; if(guests.infants)s+=`, ${guests.infants} infant${guests.infants!==1?"s":""}`; if(guests.pets)s+=`, ${guests.pets} pet${guests.pets!==1?"s":""}`; return s; }
   function typeValue(){ if(!selectedTypes.length)return null; if(selectedTypes.length===1)return TRAVEL_TYPES.find(t=>t.id===selectedTypes[0])?.label; return`${selectedTypes.length} types`; }
@@ -701,7 +693,6 @@ export default function TBOHomepage() {
     if(budgetValue())params.set("budget",budgetValue());
     alert(`Search with filters:\n${decodeURIComponent(params.toString())}`);
   }
-
   function handleVoiceClick(){ setIsListening(l=>!l); }
   function handleBookNow(){ if (!requireAuth()) return; alert("Proceeding to booking..."); }
   function handleImageUpload(e){ const f=e.target.files[0]; if(f)console.log("Image for search:",f.name); }
@@ -715,25 +706,22 @@ export default function TBOHomepage() {
       <div className="tbo-wrap">
         <div className="side-circle-left"/><div className="side-circle-left2"/><div className="side-circle-right"/>
 
+        {/* ── HERO SECTION: nav + hero share one seamless background ── */}
+        <div className="tbo-hero-section">
         {/* ── NAVBAR ── */}
-        <nav className="tbo-nav">
+        <nav className={`tbo-nav${navScrolled?" scrolled":""}`}>
+          {/* Real image logo aligned to hero title column */}
           <div className="tbo-logo-wrap">
-            <div className="tbo-logo-text">
-              <span className="logo-tbo">tbo</span><span className="logo-dot">.</span><span className="logo-com">com</span>
-            </div>
-            <span className="logo-sub">TRAVEL SIMPLIFIED</span>
+            <img src={TBO_LOGO_SRC} alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
           </div>
 
-          {/* ── SEARCH AREA ── */}
+          {/* CHANGE 2: Search bar shifted right via margin-left:auto */}
           <div className="search-bar-container" ref={searchRef}>
             {openPanel && !searchExpanded && <div className="dropdown-overlay" onClick={()=>setOpenPanel(null)}/>}
-
             {searchExpanded ? (
-              /* ── EXPANDED TEXT SEARCH BAR ── */
               <div className="expanded-search-bar">
                 <input className="expanded-search-input" placeholder="Search destinations, hotels, activities..."
                   value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus aria-label="Search"/>
-                {/* Mic / Voice */}
                 <div className={isListening?"voice-active":""}>
                   <button className="exp-icon-btn" onClick={handleVoiceClick} title={isListening?"Stop":"Voice search"} aria-label="Voice search">
                     <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -742,7 +730,6 @@ export default function TBOHomepage() {
                     </svg>
                   </button>
                 </div>
-                {/* Image upload */}
                 <button className="exp-icon-btn" onClick={()=>fileInputRef.current?.click()} title="Search by image" aria-label="Image search">
                   <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -751,59 +738,37 @@ export default function TBOHomepage() {
                   </svg>
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImageUpload}/>
-                {/* Close */}
                 <button className="exp-close-btn" onClick={()=>{setSearchExpanded(false);setSearchQuery("");setIsListening(false);}} aria-label="Close search">✕</button>
               </div>
             ) : (
-              /* ── FILTER PILL ── */
               <div className={`search-pill ${openPanel?"active":""}`}>
-
-                {/* TYPE */}
-                <div className={`pill-section ${openPanel==="type"?"open":""}`} style={{maxWidth:120}}
-                  onClick={()=>setOpenPanel(openPanel==="type"?null:"type")} role="button" aria-label="Travel type">
+                <div className={`pill-section ${openPanel==="type"?"open":""}`} style={{maxWidth:120}} onClick={()=>setOpenPanel(openPanel==="type"?null:"type")} role="button" aria-label="Travel type">
                   <span className="pill-label">Type</span>
                   <span className={`pill-value ${!typeValue()?"placeholder":""}`}>{typeValue()||"Any type"}</span>
                 </div>
-
-                {/* WHERE */}
-                <div className={`pill-section ${openPanel==="where"?"open":""}`} style={{maxWidth:155}}
-                  onClick={()=>setOpenPanel(openPanel==="where"?null:"where")} role="button" aria-label="Where">
+                <div className={`pill-section ${openPanel==="where"?"open":""}`} style={{maxWidth:155}} onClick={()=>setOpenPanel(openPanel==="where"?null:"where")} role="button" aria-label="Where">
                   <span className="pill-label">Where</span>
                   <span className={`pill-value ${!destination?"placeholder":""}`}>{destination||"Destination"}</span>
                 </div>
-
-                {/* WHEN */}
-                <div className={`pill-section ${openPanel==="when"?"open":""}`} style={{maxWidth:145}}
-                  onClick={()=>setOpenPanel(openPanel==="when"?null:"when")} role="button" aria-label="When">
+                <div className={`pill-section ${openPanel==="when"?"open":""}`} style={{maxWidth:145}} onClick={()=>setOpenPanel(openPanel==="when"?null:"when")} role="button" aria-label="When">
                   <span className="pill-label">When</span>
                   <span className={`pill-value ${!whenValue()?"placeholder":""}`}>{whenValue()||"Add dates"}</span>
                 </div>
-
-                {/* WHO */}
-                <div className={`pill-section ${openPanel==="who"?"open":""}`} style={{maxWidth:135}}
-                  onClick={()=>setOpenPanel(openPanel==="who"?null:"who")} role="button" aria-label="Who">
+                <div className={`pill-section ${openPanel==="who"?"open":""}`} style={{maxWidth:135}} onClick={()=>setOpenPanel(openPanel==="who"?null:"who")} role="button" aria-label="Who">
                   <span className="pill-label">Who</span>
                   <span className={`pill-value ${!whoValue()?"placeholder":""}`}>{whoValue()||"Guests"}</span>
                 </div>
-
-                {/* BUDGET */}
-                <div className={`pill-section ${openPanel==="budget"?"open":""}`} style={{maxWidth:120}}
-                  onClick={()=>setOpenPanel(openPanel==="budget"?null:"budget")} role="button" aria-label="Budget">
+                <div className={`pill-section ${openPanel==="budget"?"open":""}`} style={{maxWidth:120}} onClick={()=>setOpenPanel(openPanel==="budget"?null:"budget")} role="button" aria-label="Budget">
                   <span className="pill-label">Budget</span>
                   <span className={`pill-value ${!budgetValue()?"placeholder":""}`}>{budgetValue()||"Any"}</span>
                 </div>
-
-                {/* REDIRECT ARROW — go to results */}
                 <button className="pill-redirect-btn" onClick={handleRedirectClick} aria-label="Go to search results" title="Search with filters">
                   <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
                 </button>
-
-                {/* SEARCH ICON — opens text search */}
                 <button className="pill-search-icon-btn" onClick={()=>{setOpenPanel(null);setSearchExpanded(true);}} aria-label="Text search" title="Search by typing">
                   <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </button>
 
-                {/* ── TYPE DROPDOWN ── */}
                 {openPanel==="type"&&(
                   <div className="dropdown-panel type-dropdown" style={{left:0}}>
                     <div className="type-dropdown-title">Travel Style</div>
@@ -821,12 +786,9 @@ export default function TBOHomepage() {
                     </div>
                   </div>
                 )}
-
-                {/* ── WHERE DROPDOWN ── */}
                 {openPanel==="where"&&(
                   <div className="dropdown-panel where-dropdown" style={{left:"15%"}}>
-                    <input className="where-search-input" placeholder="Search destinations"
-                      value={destQuery} onChange={e=>setDestQuery(e.target.value)} autoFocus aria-label="Destination"/>
+                    <input className="where-search-input" placeholder="Search destinations" value={destQuery} onChange={e=>setDestQuery(e.target.value)} autoFocus aria-label="Destination"/>
                     <div className="dest-list">
                       {!destQuery&&recents.length>0&&(
                         <><div className="dest-section-label">Recent searches</div>
@@ -848,8 +810,6 @@ export default function TBOHomepage() {
                     </div>
                   </div>
                 )}
-
-                {/* ── WHEN DROPDOWN ── */}
                 {openPanel==="when"&&(
                   <div className="dropdown-panel when-dropdown" style={{left:"50%",transform:"translateX(-50%)"}}>
                     <div className="when-tabs">
@@ -910,8 +870,6 @@ export default function TBOHomepage() {
                     </div>
                   </div>
                 )}
-
-                {/* ── WHO DROPDOWN ── */}
                 {openPanel==="who"&&(
                   <div className="dropdown-panel who-dropdown" style={{right:"17%",left:"auto"}}>
                     <div style={{paddingBottom:4}}>
@@ -919,11 +877,9 @@ export default function TBOHomepage() {
                         <div className="guest-row" key={g.key}>
                           <div><div className="guest-type">{g.label}</div><div className="guest-age">{g.sub}</div></div>
                           <div className="guest-counter">
-                            <button className="guest-btn" disabled={guests[g.key]===0||(g.key==="adults"&&guests[g.key]<=1)}
-                              onClick={()=>setGuests(p=>({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>−</button>
+                            <button className="guest-btn" disabled={guests[g.key]===0||(g.key==="adults"&&guests[g.key]<=1)} onClick={()=>setGuests(p=>({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>−</button>
                             <span className="guest-count">{guests[g.key]}</span>
-                            <button className="guest-btn" disabled={guests[g.key]>=16}
-                              onClick={()=>setGuests(p=>({...p,[g.key]:p[g.key]+1}))}>+</button>
+                            <button className="guest-btn" disabled={guests[g.key]>=16} onClick={()=>setGuests(p=>({...p,[g.key]:p[g.key]+1}))}>+</button>
                           </div>
                         </div>
                       ))}
@@ -934,15 +890,12 @@ export default function TBOHomepage() {
                     </div>
                   </div>
                 )}
-
-                {/* ── BUDGET DROPDOWN ── */}
                 {openPanel==="budget"&&(
                   <div className="dropdown-panel budget-dropdown" style={{right:"8%",left:"auto"}}>
                     <div className="budget-title">Select Budget</div>
                     <div className="budget-options">
                       {BUDGET_OPTIONS.map(b=>(
-                        <div key={b.id} className={`budget-option ${selectedBudget===b.id?"active":""}`}
-                          onClick={()=>setSelectedBudget(selectedBudget===b.id?null:b.id)}>
+                        <div key={b.id} className={`budget-option ${selectedBudget===b.id?"active":""}`} onClick={()=>setSelectedBudget(selectedBudget===b.id?null:b.id)}>
                           <span className="budget-option-icon">{b.icon}</span>
                           <div className="budget-option-info">
                             <div className="budget-option-label">{b.label}</div>
@@ -967,7 +920,6 @@ export default function TBOHomepage() {
                     </div>
                   </div>
                 )}
-
               </div>
             )}
           </div>
@@ -975,10 +927,7 @@ export default function TBOHomepage() {
           <div className="tbo-nav-right">
             {isLoggedIn ? (
               <>
-                <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>
-                  ✓ {user?.name ? user.name.split(" ")[0] : "Logged in"}
-                  {persona ? ` · ${persona}` : ""}
-                </span>
+                <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>✓ {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` · ${persona}` : ""}</span>
                 <div style={{display:"flex",gap:6}}>
                   <button className="btn-book" onClick={handleBookNow}>Book Now</button>
                   <button className="btn-book" style={{background:"#e0e0e0",color:"#555"}} onClick={logout}>Logout</button>
@@ -986,12 +935,8 @@ export default function TBOHomepage() {
               </>
             ) : (
               <>
-                <span className="already-reg">
-                  Already Registered?{" "}
-                  <button onClick={() => setShowLogin(true)}
-                    style={{color:"#ff6600",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"inherit",textDecoration:"underline",padding:0}}>
-                    Sign in
-                  </button>
+                <span className="already-reg">Already Registered?{" "}
+                  <button onClick={() => setShowLogin(true)} style={{color:"#ff6600",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"inherit",textDecoration:"underline",padding:0}}>Sign in</button>
                 </span>
                 <button className="btn-book" onClick={() => setShowRegister(true)}>Book Now</button>
               </>
@@ -1004,7 +949,7 @@ export default function TBOHomepage() {
           <div>
             <h1 className="hero-title">Simplifying Travel<span className="red-dot">.</span><br/>Enabling Growth</h1>
             <p className="hero-body">We are one of the leading global travel distribution platforms, simplifying the travel business for both suppliers and buyers. Our suppliers include hotels, airlines, cruises, car rentals, transfers, and rail services. Our buyers consist of retail and API buyers such as travel agencies, independent travel advisors, and enterprise buyers including tour operators, travel management companies, online travel companies, super-apps, and loyalty apps.</p>
-            <p className="hero-body" style={{marginTop:12}}>Our platform enables seamless transactions, connecting over 159,000 buyers with over 1 million suppliers across 100+ countries.</p>
+            <p className="hero-body" style={{marginTop:14}}>Our platform enables seamless transactions, connecting over 159,000 buyers with over 1 million suppliers across 100+ countries.</p>
             <p className="register-label">Register with us:</p>
             <div className="hero-btns">
               <button className="btn-become">Become TBO Partner</button>
@@ -1015,6 +960,7 @@ export default function TBOHomepage() {
             <video src="https://www.tbo.com/img/videos/The-World-of-TBO-Group.mp4?var=300420244" autoPlay muted loop playsInline/>
           </div>
         </div>
+        </div>{/* end tbo-hero-section */}
 
         {/* ── NUMBERS ── */}
         <section className="tbo-numbers">
@@ -1065,9 +1011,9 @@ export default function TBOHomepage() {
           <div className="partner-row">
             <div className="expedia-wrap"><div className="expedia-top"><span style={{color:"#e05500"}}>⬡</span> expedia</div><div className="expedia-sub">group</div></div>
             <div className="hilton-box">Hilton</div>
-            <div style={{fontWeight:700,fontSize:"clamp(0.9rem,1.5vw,1.1rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>Derby</span>Soft</div>
-            <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,fontSize:"clamp(0.9rem,1.5vw,1.05rem)"}}><span>●</span> Roibos</div>
-            <div style={{fontSize:"clamp(0.9rem,1.5vw,1.05rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>ibs</span><span style={{fontWeight:700}}>software</span></div>
+            <div style={{fontWeight:700,fontSize:"clamp(1rem,1.6vw,1.3rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>Derby</span>Soft</div>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,fontSize:"clamp(1rem,1.6vw,1.2rem)"}}><span>●</span> Roibos</div>
+            <div style={{fontSize:"clamp(1rem,1.6vw,1.2rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>ibs</span><span style={{fontWeight:700}}>software</span></div>
           </div>
         </section>
 
