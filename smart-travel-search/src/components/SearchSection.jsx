@@ -11,11 +11,11 @@ const css = `
   /* ── NAVBAR ── */
   .tbo-nav {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 3%;
-    border-bottom: 1px solid #ebebeb; background: #fff;
+    padding: 20px 3%;
+    border-bottom: none; background: #fff;
     position: sticky; top: 0; z-index: 500;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-    gap: 10px; min-height: 68px;
+    box-shadow: none;
+    gap: 10px; min-height: 90px;
   }
   .tbo-logo-wrap { display: flex; flex-direction: column; line-height: 1; flex-shrink: 0; }
   .tbo-logo-text { display: flex; align-items: baseline; }
@@ -281,7 +281,7 @@ const css = `
   .side-circle-left2 { position: fixed; left: -22px; top: 75%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #003399; z-index: 10; }
 
   /* HERO */
-  .tbo-hero { display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: clamp(24px,4vw,56px) 5%; gap: clamp(20px,3vw,48px); max-width: 1240px; margin: 0 auto; width: 100%; }
+  .tbo-hero { display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: clamp(32px,4vw,60px) 5%; gap: clamp(20px,3vw,48px); max-width: 1240px; margin: 0 auto; width: 100%; }
   .hero-title { font-size: clamp(1.4rem,3vw,2.4rem); font-weight: 700; color: #1a1a1a; line-height: 1.2; font-family: 'Playfair Display',serif; }
   .hero-title .red-dot { color: #ff3300; }
   .hero-body { font-size: clamp(0.78rem,1.2vw,0.9rem); color: #555; line-height: 1.72; margin-top: 16px; }
