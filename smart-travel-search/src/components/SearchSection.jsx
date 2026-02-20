@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
+/* ── EMBEDDED ACTUAL TBO LOGO ── */
+
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700&display=swap');
 
@@ -8,14 +10,17 @@ const css = `
   html, body { width: 100%; overflow-x: hidden; }
   .tbo-wrap { font-family: 'DM Sans', sans-serif; color: #333; background: #fff; width: 100%; overflow-x: hidden; }
 
+  /* ── HERO SECTION WRAPPER — nav + hero as one seamless unit ── */
   .tbo-hero-section {
     background: #fff;
+    /* very subtle warm gradient so it reads as one surface */
     background: linear-gradient(160deg, #ffffff 0%, #fff8f4 55%, #fff3e8 100%);
   }
-  .tbo-hero-section {
-    background: #ffffff;
-  }
+    .tbo-hero-section {
+  background: #ffffff;
+}
 
+  /* ── NAVBAR — seamlessly blended into hero, no divider ── */
   .tbo-nav {
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 clamp(24px,4%,80px);
@@ -23,6 +28,7 @@ const css = `
     position: sticky; top: 0; z-index: 500;
     box-shadow: none;
     gap: 16px; min-height: 96px;
+    /* sticky bg so nav stays readable when scrolled */
     backdrop-filter: blur(0px);
   }
   .tbo-nav.scrolled {
@@ -31,6 +37,7 @@ const css = `
     box-shadow: 0 1px 16px rgba(0,0,0,0.07);
   }
 
+  /* Logo — vertically centred, left-edge matches hero text column */
   .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; margin-top: 15px; justify-content: flex-end; margin-left: 40px;}
   .tbo-logo-img { height: 100px; width: auto; object-fit: contain; display: block; }
 
@@ -39,58 +46,148 @@ const css = `
   .btn-book { background: #ff6600; color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 1.0rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s, transform 0.15s; }
   .btn-book:hover { background: #e05500; transform: scale(1.03); }
 
+  /* ── CHANGE 2: Search shifted right — no flex:1, use margin-left auto ── */
   .search-bar-container { max-width: 800px; width: 100%; min-width: 0; position: relative; margin:0 auto; transform: translateX(-50px); height:72px;}
 
-  .expanded-search-bar{
-    display:flex; align-items:center; height:72px; padding:0 10px 0 22px;
-    border:2px solid #ff6600; border-radius:70px; background:#fff;
-    box-shadow:0 6px 28px rgba(255,102,0,0.18); overflow:hidden; margin-left: 40px;
-    animation:expandIn .28s cubic-bezier(.34,1.3,.64,1) both;
-  }
-  .expanded-search-input{
-    flex:1; border:none; outline:none; font-size:1.05rem;
-    font-family:'DM Sans',sans-serif; color:#111; background:transparent; padding:0 14px 0 0;
-  }
-  .expanded-search-input::placeholder{ color:#aaa; font-size:1rem; margin-left: 40px; }
-  .exp-icon-btn{
-    width:44px; height:44px; border-radius:50%; border:none; background:#f5f5f5; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; margin:0 4px; color:#666;
-    position:relative; flex-shrink:0; transition:background .15s;
-  }
-  .exp-icon-btn svg{ width:20px; height:20px; }
-  .exp-close-btn{
-    width:42px; height:42px; border-radius:50%; border:none; background:#f0f0f0; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; margin-left:6px; font-size:1.1rem;
-    color:#666; flex-shrink:0; transition:background .15s;
-  }
-  .exp-icon-btn:hover{ background:#ffe8d6; color:#ff6600; }
-  .exp-close-btn:hover{ background:#ddd; }
+  /* ── EXPANDED TEXT SEARCH — LARGE ── */
+.expanded-search-bar{
+  display:flex;
+  align-items:center;
 
-  @keyframes pulse-ring{
-    0%{transform:scale(1);opacity:.7;}
-    100%{transform:scale(1.6);opacity:0;}
-  }
-  .voice-active .exp-icon-btn{ background:#ffece6!important; color:#ff3300!important; }
-  .voice-active .exp-icon-btn::before{
-    content:''; position:absolute; inset:-4px; border-radius:50%;
-    border:2px solid #ff3300; animation:pulse-ring 1s ease-out infinite;
-  }
+  height:72px;                     /* 🔥 increased */
+  padding:0 10px 0 22px;           /* balanced spacing */
 
+  border:2px solid #ff6600;
+  border-radius:70px;
+  background:#fff;
+
+  box-shadow:0 6px 28px rgba(255,102,0,0.18);
+  overflow:hidden;
+  margin-left: 40px;
+  animation:expandIn .28s cubic-bezier(.34,1.3,.64,1) both;
+}
+
+/* INPUT TEXT BIGGER */
+.expanded-search-input{
+  flex:1;
+  border:none;
+  outline:none;
+
+  font-size:1.05rem;              /* 🔥 bigger text */
+  font-family:'DM Sans',sans-serif;
+  color:#111;
+  background:transparent;
+
+  padding:0 14px 0 0;
+}
+
+.expanded-search-input::placeholder{
+  color:#aaa;
+  font-size:1rem;
+  margin-left: 40px;
+}
+
+/* ICON BUTTONS BIGGER */
+.exp-icon-btn{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  border:none;
+
+  background:#f5f5f5;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  margin:0 4px;
+  color:#666;
+  position:relative;
+  flex-shrink:0;
+
+  transition:background .15s;
+}
+
+.exp-icon-btn svg{
+  width:20px;
+  height:20px;
+}
+
+/* CLOSE BUTTON */
+.exp-close-btn{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  border:none;
+
+  background:#f0f0f0;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  margin-left:6px;
+  font-size:1.1rem;
+  color:#666;
+  flex-shrink:0;
+
+  transition:background .15s;
+}
+
+/* HOVER */
+.exp-icon-btn:hover{
+  background:#ffe8d6;
+  color:#ff6600;
+}
+
+.exp-close-btn:hover{
+  background:#ddd;
+}
+
+/* VOICE ACTIVE ANIMATION — UNCHANGED */
+@keyframes pulse-ring{
+  0%{transform:scale(1);opacity:.7;}
+  100%{transform:scale(1.6);opacity:0;}
+}
+
+.voice-active .exp-icon-btn{
+  background:#ffece6!important;
+  color:#ff3300!important;
+}
+
+.voice-active .exp-icon-btn::before{
+  content:'';
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  border:2px solid #ff3300;
+  animation:pulse-ring 1s ease-out infinite;
+}
+
+  /* ── FILTER PILL ── */
   .search-pill {
     display: flex; align-items: stretch;
     border: 1.5px solid #e4e4e4; border-radius: 50px; background: #fff;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: visible; cursor: pointer;
-    transition: box-shadow 0.2s; position: relative; height:72px; margin-left: 40px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    overflow: visible; cursor: pointer;
+    transition: box-shadow 0.2s; position: relative;
+    height:72px; 
+    margin-left: 40px;
   }
   .search-pill:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
   .search-pill.active { box-shadow: 0 6px 28px rgba(0,0,0,0.18); border-color: transparent; }
 
   .pill-section {
-    flex: 1; padding: 0 18px; display: flex; flex-direction: column; justify-content: center;
-    min-width: 0; cursor: pointer; border-radius: 50px; transition: background 0.15s; position: relative;
+    flex: 1; padding: 0 18px;
+    display: flex; flex-direction: column; justify-content: center;
+    min-width: 0; cursor: pointer; border-radius: 50px;
+    transition: background 0.15s; position: relative;
   }
   .pill-section::after {
-    content: ''; position: absolute; right: 0; top: 20%; bottom: 20%; width: 1px; background: #e4e4e4;
+    content: ''; position: absolute; right: 0; top: 20%; bottom: 20%;
+    width: 1px; background: #e4e4e4;
   }
   .pill-section:last-of-type::after { display: none; }
   .pill-section:hover { background: #f5f5f5; }
@@ -99,30 +196,42 @@ const css = `
   .pill-label { font-size: 0.70rem; font-weight: 700; color: #111; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
   .pill-value { font-size: 0.95rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 2px; }
   .pill-value.placeholder { color: #aaa; }
+   
 
   .pill-search-icon-btn {
-    background: linear-gradient(135deg, #ff6600, #ff3366); border: none; cursor: pointer;
-    width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    margin: 5px 3px 5px 3px; flex-shrink: 0; transition: transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 3px 12px rgba(255,80,50,0.4); margin-right: 20px;
+    background: linear-gradient(135deg, #ff6600, #ff3366);
+    border: none; cursor: pointer;
+    width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 5px 3px 5px 3px; flex-shrink: 0;
+    transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 3px 12px rgba(255,80,50,0.4);
+    margin-right: 20px;
   }
   .pill-search-icon-btn:hover { transform: scale(1.1); box-shadow: 0 5px 18px rgba(255,80,50,0.55); }
   .pill-search-icon-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; }
 
   .pill-redirect-btn {
-    background: #ff6600; border: none; cursor: pointer; width: 50px; height: 50px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; margin: 5px 6px 5px 2px; flex-shrink: 0;
+    background: #ff6600; border: none; cursor: pointer;
+    width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 5px 6px 5px 2px; flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
-    box-shadow: 0 3px 12px rgba(255,102,0,0.45); margin-right: 20px;
+    box-shadow: 0 3px 12px rgba(255,102,0,0.45);
+    margin-right: 20px;
   }
   .pill-redirect-btn:hover { transform: scale(1.12); box-shadow: 0 5px 18px rgba(255,80,50,0.55); background: #e05500; }
   .pill-redirect-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
+  /* ── DROPDOWNS ── */
   .dropdown-overlay { position: fixed; inset: 0; z-index: 400; }
   .dropdown-panel {
-    position: absolute; top: calc(100% + 12px); background: #fff; border-radius: 24px;
-    box-shadow: 0 12px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08); z-index: 600;
-    animation: dropIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both; overflow: hidden;
+    position: absolute; top: calc(100% + 12px);
+    background: #fff; border-radius: 24px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 600;
+    animation: dropIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+    overflow: hidden;
   }
   @keyframes dropIn {
     from { opacity: 0; transform: translateY(-12px) scale(0.97); }
@@ -134,7 +243,8 @@ const css = `
   .type-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
   .type-card {
     display: flex; flex-direction: column; align-items: center; gap: 5px;
-    padding: 12px 6px; border-radius: 14px; border: 1.5px solid #e8e8e8; cursor: pointer; transition: all 0.18s; background: #fff;
+    padding: 12px 6px; border-radius: 14px; border: 1.5px solid #e8e8e8;
+    cursor: pointer; transition: all 0.18s; background: #fff;
   }
   .type-card:hover { border-color: #ffb380; background: #fff8f4; }
   .type-card.active { border-color: #ff6600; background: #fff3eb; box-shadow: 0 0 0 2px rgba(255,102,0,0.12); }
@@ -144,8 +254,9 @@ const css = `
 
   .where-dropdown { width: 370px; padding: 16px; }
   .where-search-input {
-    width: 100%; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 14px;
-    font-size: 0.86rem; font-family: 'DM Sans',sans-serif; outline: none; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; padding: 10px 14px; border: 1.5px solid #e0e0e0;
+    border-radius: 14px; font-size: 0.86rem; font-family: 'DM Sans',sans-serif;
+    outline: none; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .where-search-input:focus { border-color: #ff6600; box-shadow: 0 0 0 3px rgba(255,102,0,0.1); background: #fff; }
   .dest-list { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
@@ -238,12 +349,14 @@ const css = `
   .budget-check svg { width: 9px; height: 9px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .budget-range-label { font-size: 0.74rem; font-weight: 600; color: #111; margin-bottom: 9px; }
   .budget-slider {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 4px; outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px; border-radius: 4px; outline: none; cursor: pointer;
     background: linear-gradient(to right, #ff6600 0%, #ff6600 var(--val,50%), #e4e4e4 var(--val,50%), #e4e4e4 100%);
   }
   .budget-slider::-webkit-slider-thumb {
     -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
-    background: #fff; border: 2.5px solid #ff6600; box-shadow: 0 2px 8px rgba(255,102,0,0.3); cursor: grab; transition: transform 0.15s;
+    background: #fff; border: 2.5px solid #ff6600;
+    box-shadow: 0 2px 8px rgba(255,102,0,0.3); cursor: grab; transition: transform 0.15s;
   }
   .budget-slider::-webkit-slider-thumb:active { transform: scale(1.2); cursor: grabbing; }
   .budget-range-values { display: flex; justify-content: space-between; margin-top: 7px; font-size: 0.7rem; color: #888; }
@@ -253,89 +366,140 @@ const css = `
   .btn-apply { background: linear-gradient(135deg,#ff6600,#ff3366); color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans',sans-serif; box-shadow: 0 4px 14px rgba(255,80,50,0.4); transition: transform 0.15s, box-shadow 0.2s; }
   .btn-apply:hover { transform: scale(1.04); box-shadow: 0 6px 20px rgba(255,80,50,0.5); }
 
+  /* SIDE CIRCLES */
   .side-circle-left  { position: fixed; left: -22px; top: 50%; transform: translateY(-50%); width: 44px; height: 120px; background: #003399; border-radius: 0 60px 60px 0; z-index: 10; }
   .side-circle-right { position: fixed; right: -22px; top: 40%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #ff6600; z-index: 10; }
   .side-circle-left2 { position: fixed; left: -22px; top: 75%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: #003399; z-index: 10; }
 
-  /* ── CATEGORY BAR ── */
-  .tbo-cat-bar {
-    display: flex; align-items: center; justify-content: center;
-    gap: clamp(6px, 2vw, 28px); padding: 0 clamp(24px, 4%, 80px);
-    background: #ffffff; border-bottom: 1.5px solid #f0f0f0;
-    position: sticky; top: 96px; z-index: 490;
-    overflow-x: auto; scrollbar-width: none;
-  }
-  .tbo-cat-bar::-webkit-scrollbar { display: none; }
+/* ── HERO — shifted slightly downward while keeping navbar flow ── */
+.tbo-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
 
-  .cat-item {
-    display: flex; flex-direction: column; align-items: center; gap: 5px;
-    padding: 10px 14px 8px; cursor: pointer; position: relative; flex-shrink: 0;
-    border-bottom: 2.5px solid transparent; transition: border-color 0.2s, color 0.2s;
-  }
-  .cat-item:hover .cat-label { color: #ff6600; }
-  .cat-item:hover .cat-icon-wrap { background: #fff3eb; }
-  .cat-item.active { border-bottom-color: #ff6600; }
-  .cat-item.active .cat-label { color: #ff6600; font-weight: 700; }
-  .cat-item.active .cat-icon-wrap { background: #fff3eb; }
+  /* 👇 section ko niche shift karega */
+  margin: clamp(28px, 5vw, 72px) auto 0;
 
-  .cat-icon-wrap {
-    width: 44px; height: 44px; border-radius: 14px; background: #f7f7f7;
-    display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.15s;
-  }
-  .cat-item:hover .cat-icon-wrap { transform: translateY(-2px); }
-  .cat-icon-wrap svg { width: 22px; height: 22px; }
+  padding: 0 clamp(24px, 4%, 80px) clamp(48px, 6vw, 96px);
+  gap: clamp(24px, 3vw, 56px);
 
-  .cat-label {
-    font-size: 0.68rem; font-weight: 600; color: #555; white-space: nowrap;
-    letter-spacing: 0.2px; transition: color 0.2s; font-family: 'DM Sans', sans-serif;
-  }
+  max-width: 1600px;
+  width: 100%;
+}
 
+/* ── TEXT AREA ── */
+.hero-title {
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
+  font-weight: 700;
+  color: #918484ff;
+  line-height: 1.2;
+  font-family: 'Montserrat',  sans-serif;
+  transform: translate(-0px, -40px); /* pehle reset */
+  transform: translate(40px, -60px); /* 👈 right shift */
+}
+
+.hero-title .red-dot {
+  color: #ff3300;
+}
+
+.hero-body {
+  font-size: clamp(0.9rem, 1.2vw, 1.6rem);
+  color: #716e6eff;
+  text-align: justify;      /* ⭐ justify text */
+  text-justify: inter-word; /* better spacing */
+  line-height: 1.75;
+  margin-top: 20px;
+  transform: translate(-0px, -40px); /* pehle reset */
+  transform: translate(40px, -60px); /* 👈 right shift */
+}
+
+.register-label {
+  font-size: 1.2rem;
+  color: #837e7eff;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 14px;
+  transform: translate(-0px, -40px); /* pehle reset */
+  transform: translate(40px, -60px); /* 👈 right shift */
+}
+
+/* ── BUTTONS ── */
+.hero-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  transform: translate(-0px, -40px); /* pehle reset */
+  transform: translate(40px, -60px); /* 👈 right shift */
+}
+
+.btn-become,
+.btn-agent {
+  border: none;
+  padding: 11px 24px;
+  border-radius: 20px;
+  font-size: clamp(0.78rem, 1.1vw, 0.9rem);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.25s ease;
+}
+
+/* Primary button */
+.btn-become {
+  background: #003399;
+  color: #fff;
+}
+.btn-become:hover {
+  background: #002277;
+  transform: translateY(-2px);
+}
+
+/* Secondary button */
+.btn-agent {
+  background: #ff6600;
+  color: #fff;
+}
+.btn-agent:hover {
+  background: #e05500;
+  transform: translateY(-2px);
+}
+
+.hero-video-wrap {
+  border-radius: 50px;
+
+  width: 75%;          /* 👈 width kam */
+  max-width: 700px;    /* 👈 overall size control */
+
+  margin: -135px auto 0;
+  overflow: hidden;
+  aspect-ratio: 16/10;
+
+  background: #f4f1f1ff;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
+  height: 90%;
+}
+
+.hero-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 992px) {
   .tbo-hero {
-    display: grid; grid-template-columns: 1fr 1fr; align-items: center;
-    margin: clamp(28px, 5vw, 72px) auto 0;
-    padding: 0 clamp(24px, 4%, 80px) clamp(48px, 6vw, 96px);
-    gap: clamp(24px, 3vw, 56px); max-width: 1600px; width: 100%;
+    grid-template-columns: 1fr;
+    text-align: center;
   }
 
-  .hero-title {
-    font-size: clamp(1.6rem, 3.2vw, 2.8rem); font-weight: 700; color: #918484ff;
-    line-height: 1.2; font-family: 'Montserrat', sans-serif; transform: translate(40px, -60px);
+  .hero-btns {
+    justify-content: center;
   }
-  .hero-title .red-dot { color: #ff3300; }
+}
 
-  .hero-body {
-    font-size: clamp(0.9rem, 1.2vw, 1.6rem); color: #716e6eff; text-align: justify;
-    text-justify: inter-word; line-height: 1.75; margin-top: 20px; transform: translate(40px, -60px);
-  }
-
-  .register-label {
-    font-size: 1.2rem; color: #837e7eff; font-weight: 600;
-    margin-top: 24px; margin-bottom: 14px; transform: translate(40px, -60px);
-  }
-
-  .hero-btns { display: flex; gap: 10px; flex-wrap: wrap; transform: translate(40px, -60px); }
-
-  .btn-become, .btn-agent {
-    border: none; padding: 11px 24px; border-radius: 20px; font-size: clamp(0.78rem, 1.1vw, 0.9rem);
-    font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; transition: all 0.25s ease;
-  }
-  .btn-become { background: #003399; color: #fff; }
-  .btn-become:hover { background: #002277; transform: translateY(-2px); }
-  .btn-agent { background: #ff6600; color: #fff; }
-  .btn-agent:hover { background: #e05500; transform: translateY(-2px); }
-
-  .hero-video-wrap {
-    border-radius: 50px; width: 75%; max-width: 700px; margin: -135px auto 0;
-    overflow: hidden; aspect-ratio: 16/10; background: #f4f1f1ff;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22); height: 90%;
-  }
-  .hero-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  @media (max-width: 992px) {
-    .tbo-hero { grid-template-columns: 1fr; text-align: center; }
-    .hero-btns { justify-content: center; }
-  }
-
+  /* NUMBERS — wider, bigger stats */
   .tbo-numbers { text-align: center; padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #ffffff; }
   .tbo-numbers h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 40px; font-family: 'Playfair Display',serif; }
   .stats-row { display: flex; justify-content: center; gap: clamp(40px,8vw,140px); flex-wrap: wrap; }
@@ -343,6 +507,7 @@ const css = `
   .stat-num { font-size: clamp(2rem,4.5vw,3.2rem); font-weight: 700; color: #0059b3; line-height: 1; font-family: 'Playfair Display',serif; }
   .stat-label { font-size: clamp(0.78rem,1.1vw,0.92rem); color: #666; margin-top: 8px; font-weight: 500; }
 
+  /* BRANDS MARQUEE */
   .tbo-our-brands { padding: clamp(36px,5vw,64px) 0; text-align: center; background: #fff; }
   .tbo-our-brands h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
   .brands-marquee-wrap { position: relative; width: 100%; overflow: hidden; }
@@ -355,6 +520,7 @@ const css = `
   .brand-logo-img { height: clamp(34px,4vw,56px); width: auto; max-width: 160px; object-fit: contain; filter: grayscale(30%); opacity: 0.8; transition: filter 0.3s, opacity 0.3s, transform 0.3s; }
   .brand-logo-img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.1); }
 
+  /* VALUE — wider content area, bigger blob image */
   .tbo-value { padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #ffffff; }
   .tbo-value h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 24px; font-family: 'Playfair Display',serif; }
   .value-tabs { display: flex; justify-content: center; gap: clamp(18px,4vw,60px); border-bottom: 2px solid #ddd; flex-wrap: wrap; }
@@ -373,6 +539,7 @@ const css = `
   .vp-title { font-weight: 700; font-size: clamp(0.88rem,1.2vw,1.02rem); color: #1a1a1a; }
   .vp-desc  { font-size: clamp(0.78rem,1vw,0.88rem); color: #666; line-height: 1.68; margin-top: 5px; }
 
+  /* PARTNER BRANDS */
   .tbo-partner-brands { padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); text-align: center; }
   .tbo-partner-brands h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
   .partner-row { display: flex; justify-content: center; align-items: center; gap: clamp(28px,5vw,80px); flex-wrap: wrap; }
@@ -381,6 +548,7 @@ const css = `
   .expedia-top { font-size: clamp(1rem,1.6vw,1.3rem); font-weight: 700; color: #1c1c1c; display: flex; align-items: center; gap: 6px; }
   .expedia-sub { font-size: 0.6rem; color: #666; letter-spacing: 0.6px; margin-left: 20px; }
 
+  /* GROWTH STORIES */
   .tbo-growth { padding: clamp(40px,5vw,80px) 0; text-align: center; }
   .tbo-growth h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 28px; font-family: 'Playfair Display',serif; }
   .slider-wrapper { display: flex; align-items: center; justify-content: center; }
@@ -408,6 +576,7 @@ const css = `
   .gdot, .adot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; cursor: pointer; border: none; padding: 0; transition: all 0.2s; }
   .gdot.active, .adot.active { background: #ff6600; transform: scale(1.3); }
 
+  /* AWARDS */
   .tbo-awards { padding: clamp(40px,5vw,80px) 0; text-align: center; background: #ffffff; }
   .tbo-awards h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
   .awards-slider-wrapper { display: flex; align-items: center; justify-content: center; }
@@ -418,6 +587,7 @@ const css = `
   .award-item:hover .award-img { transform: scale(1.12); }
   .award-label { font-size: clamp(0.58rem,0.9vw,0.72rem); color: #666; text-align: center; line-height: 1.45; }
 
+  /* FOOTER */
   .tbo-footer { background: #003380; color: #ccc; padding: 22px clamp(24px,4%,80px) 16px; }
   .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
   .footer-links { display: flex; gap: 0; flex-wrap: wrap; align-items: center; }
@@ -429,6 +599,7 @@ const css = `
   .footer-si:hover { background: rgba(255,255,255,0.28); }
   .footer-copy { font-size: 0.66rem; color: #99a; text-align: center; margin-top: 10px; }
 
+  /* RESPONSIVE */
   @media (max-width: 1000px) {
     .side-circle-left,.side-circle-left2,.side-circle-right { display: none; }
     .tbo-hero { grid-template-columns: 1fr; padding: 0 4% clamp(40px,5vw,64px); }
@@ -441,7 +612,6 @@ const css = `
     .when-dropdown { width: min(96vw,600px); }
     .where-dropdown { width: min(96vw,370px); }
     .who-dropdown,.budget-dropdown,.type-dropdown { width: min(96vw,310px); }
-    .tbo-cat-bar { justify-content: flex-start; top: 0; }
   }
   @media (max-width: 640px) {
     .stats-row { gap: 22px; }
@@ -452,8 +622,6 @@ const css = `
     .flex-stay-options { flex-direction: column; }
     .when-tabs { flex-wrap: wrap; }
     .type-grid { grid-template-columns: repeat(3,1fr); }
-    .cat-item { padding: 8px 10px 6px; }
-    .cat-icon-wrap { width: 38px; height: 38px; }
   }
 `;
 
@@ -492,85 +660,6 @@ const BUDGET_OPTIONS = [
 const MONTHS_LIST  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_EMOJIS = ["❄️","🌸","🌧️","🌷","☀️","🏖️","🌞","🌻","🍂","🎃","🍁","🎄"];
 const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
-
-/* ─── CATEGORY DATA ─── */
-const CATEGORIES = [
-  {
-    id: "Flights", label: "Flights",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#ff6600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.5H2l4-8 4 4 6-6 3 3-5 4 8 3z"/>
-      <line x1="2" y1="20" x2="22" y2="20"/>
-    </svg>,
-  },
-  {
-    id: "Hotels", label: "Hotels",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#003399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 21V7a2 2 0 012-2h14a2 2 0 012 2v14"/>
-      <path d="M3 21h18"/>
-      <rect x="9" y="14" width="6" height="7"/>
-      <rect x="5" y="10" width="3" height="3"/>
-      <rect x="16" y="10" width="3" height="3"/>
-      <rect x="5" y="15" width="3" height="3"/>
-      <rect x="16" y="15" width="3" height="3"/>
-    </svg>,
-  },
-  {
-    id: "Cabs", label: "Cabs",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#ff6600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 17H3v-5l2-5h14l2 5v5h-2"/>
-      <circle cx="7.5" cy="17.5" r="1.5"/>
-      <circle cx="16.5" cy="17.5" r="1.5"/>
-      <path d="M5 12h14"/>
-      <path d="M9 7l-1 5M15 7l1 5"/>
-    </svg>,
-  },
-  {
-    id: "Car Rentals", label: "Car Rentals",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#003399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="10" width="22" height="8" rx="2"/>
-      <path d="M5 10V7a2 2 0 012-2h10a2 2 0 012 2v3"/>
-      <circle cx="7" cy="18" r="2"/>
-      <circle cx="17" cy="18" r="2"/>
-      <path d="M9 18H15"/>
-      <path d="M1 14h2M21 14h2"/>
-    </svg>,
-  },
-  {
-    id: "Cruises", label: "Cruises",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#ff6600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 17l2-7h14l2 7H3z"/>
-      <path d="M12 3v7"/>
-      <path d="M8 10V7l4-4 4 4v3"/>
-      <path d="M2 20c2 2 4 2 6 0s4-2 6 0 4 2 6 0"/>
-    </svg>,
-  },
-  {
-    id: "Tours", label: "Tours",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#003399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="10" r="3"/>
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-    </svg>,
-  },
-  {
-    id: "Trains", label: "Trains",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#ff6600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="3" width="16" height="14" rx="4"/>
-      <path d="M4 11h16"/>
-      <path d="M12 3v8"/>
-      <circle cx="8" cy="19" r="2"/>
-      <circle cx="16" cy="19" r="2"/>
-      <path d="M6 21l2-2M18 21l-2-2"/>
-    </svg>,
-  },
-  {
-    id: "Insurance", label: "Insurance",
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#003399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l7 4v6c0 5-3.5 9-7 10C8.5 21 5 17 5 12V6l7-4z"/>
-      <polyline points="9 12 11 14 15 10"/>
-    </svg>,
-  },
-];
-
 function getDaysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
 function getFirstDayOfMonth(y,m){ return new Date(y,m,1).getDay(); }
 function formatDate(d){ if(!d)return ""; return `${MONTHS_LIST[d.getMonth()]} ${d.getDate()}`; }
@@ -743,8 +832,6 @@ export default function TBOHomepage() {
   const [awardIdx,setAwardIdx]       = useState(0);
   const [awardPaused,setAwardPaused] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
-  // ── NEW ──
-  const [activeCategory, setActiveCategory] = useState("Flights");
 
   const searchRef = useRef(null);
   const videoRefs = useState(()=>stories.map(()=>({current:null})))[0];
@@ -758,6 +845,7 @@ export default function TBOHomepage() {
     window.addEventListener("scroll", onScroll, {passive:true});
     return()=>window.removeEventListener("scroll", onScroll);
   },[]);
+
   useEffect(()=>{
     function handle(e){ if(searchRef.current&&!searchRef.current.contains(e.target)){ setOpenPanel(null); if(searchExpanded)setSearchExpanded(false); } }
     document.addEventListener("mousedown",handle);
@@ -815,273 +903,260 @@ export default function TBOHomepage() {
       <div className="tbo-wrap">
         <div className="side-circle-left"/><div className="side-circle-left2"/><div className="side-circle-right"/>
 
+        {/* ── HERO SECTION: nav + hero share one seamless background ── */}
         <div className="tbo-hero-section">
+        {/* ── NAVBAR ── */}
+        <nav className={`tbo-nav${navScrolled?" scrolled":""}`}>
+          {/* Real image logo aligned to hero title column */}
+          <div className="tbo-logo-wrap">
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
+          </div>
 
-          {/* ── NAVBAR ── */}
-          <nav className={`tbo-nav${navScrolled?" scrolled":""}`}>
-            <div className="tbo-logo-wrap">
-              <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
-            </div>
-
-            <div className="search-bar-container" ref={searchRef}>
-              {openPanel && !searchExpanded && <div className="dropdown-overlay" onClick={()=>setOpenPanel(null)}/>}
-              {searchExpanded ? (
-                <div className="expanded-search-bar">
-                  <input className="expanded-search-input" placeholder="Search destinations, hotels, activities..."
-                    value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus aria-label="Search"/>
-                  <div className={isListening?"voice-active":""}>
-                    <button className="exp-icon-btn" onClick={handleVoiceClick} title={isListening?"Stop":"Voice search"} aria-label="Voice search">
-                      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="2" width="6" height="12" rx="3"/>
-                        <path d="M5 10a7 7 0 0014 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="9" y1="23" x2="15" y2="23"/>
-                      </svg>
-                    </button>
-                  </div>
-                  <button className="exp-icon-btn" onClick={()=>fileInputRef.current?.click()} title="Search by image" aria-label="Image search">
+          {/* CHANGE 2: Search bar shifted right via margin-left:auto */}
+          <div className="search-bar-container" ref={searchRef}>
+            {openPanel && !searchExpanded && <div className="dropdown-overlay" onClick={()=>setOpenPanel(null)}/>}
+            {searchExpanded ? (
+              <div className="expanded-search-bar">
+                <input className="expanded-search-input" placeholder="Search destinations, hotels, activities..."
+                  value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} autoFocus aria-label="Search"/>
+                <div className={isListening?"voice-active":""}>
+                  <button className="exp-icon-btn" onClick={handleVoiceClick} title={isListening?"Stop":"Voice search"} aria-label="Voice search">
                     <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21,15 16,10 5,21"/>
+                      <rect x="9" y="2" width="6" height="12" rx="3"/>
+                      <path d="M5 10a7 7 0 0014 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="9" y1="23" x2="15" y2="23"/>
                     </svg>
                   </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImageUpload}/>
-                  <button className="exp-close-btn" onClick={()=>{setSearchExpanded(false);setSearchQuery("");setIsListening(false);}} aria-label="Close search">✕</button>
                 </div>
-              ) : (
-                <div className={`search-pill ${openPanel?"active":""}`}>
-                  <div className={`pill-section ${openPanel==="type"?"open":""}`} style={{maxWidth:120}} onClick={()=>setOpenPanel(openPanel==="type"?null:"type")} role="button" aria-label="Travel type">
-                    <span className="pill-label">Type</span>
-                    <span className={`pill-value ${!typeValue()?"placeholder":""}`}>{typeValue()||"Any type"}</span>
-                  </div>
-                  <div className={`pill-section ${openPanel==="where"?"open":""}`} style={{maxWidth:155}} onClick={()=>setOpenPanel(openPanel==="where"?null:"where")} role="button" aria-label="Where">
-                    <span className="pill-label">Where</span>
-                    <span className={`pill-value ${!destination?"placeholder":""}`}>{destination||"Destination"}</span>
-                  </div>
-                  <div className={`pill-section ${openPanel==="when"?"open":""}`} style={{maxWidth:145}} onClick={()=>setOpenPanel(openPanel==="when"?null:"when")} role="button" aria-label="When">
-                    <span className="pill-label">When</span>
-                    <span className={`pill-value ${!whenValue()?"placeholder":""}`}>{whenValue()||"Add dates"}</span>
-                  </div>
-                  <div className={`pill-section ${openPanel==="who"?"open":""}`} style={{maxWidth:135}} onClick={()=>setOpenPanel(openPanel==="who"?null:"who")} role="button" aria-label="Who">
-                    <span className="pill-label">Who</span>
-                    <span className={`pill-value ${!whoValue()?"placeholder":""}`}>{whoValue()||"Guests"}</span>
-                  </div>
-                  <div className={`pill-section ${openPanel==="budget"?"open":""}`} style={{maxWidth:120}} onClick={()=>setOpenPanel(openPanel==="budget"?null:"budget")} role="button" aria-label="Budget">
-                    <span className="pill-label">Budget</span>
-                    <span className={`pill-value ${!budgetValue()?"placeholder":""}`}>{budgetValue()||"Any"}</span>
-                  </div>
-                  <button className="pill-redirect-btn" onClick={handleRedirectClick} aria-label="Go to search results" title="Search with filters">
-                    <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
-                  </button>
-                  <button className="pill-search-icon-btn" onClick={()=>{setOpenPanel(null);setSearchExpanded(true);}} aria-label="Text search" title="Search by typing">
-                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  </button>
+                <button className="exp-icon-btn" onClick={()=>fileInputRef.current?.click()} title="Search by image" aria-label="Image search">
+                  <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImageUpload}/>
+                <button className="exp-close-btn" onClick={()=>{setSearchExpanded(false);setSearchQuery("");setIsListening(false);}} aria-label="Close search">✕</button>
+              </div>
+            ) : (
+              <div className={`search-pill ${openPanel?"active":""}`}>
+                <div className={`pill-section ${openPanel==="type"?"open":""}`} style={{maxWidth:120}} onClick={()=>setOpenPanel(openPanel==="type"?null:"type")} role="button" aria-label="Travel type">
+                  <span className="pill-label">Type</span>
+                  <span className={`pill-value ${!typeValue()?"placeholder":""}`}>{typeValue()||"Any type"}</span>
+                </div>
+                <div className={`pill-section ${openPanel==="where"?"open":""}`} style={{maxWidth:155}} onClick={()=>setOpenPanel(openPanel==="where"?null:"where")} role="button" aria-label="Where">
+                  <span className="pill-label">Where</span>
+                  <span className={`pill-value ${!destination?"placeholder":""}`}>{destination||"Destination"}</span>
+                </div>
+                <div className={`pill-section ${openPanel==="when"?"open":""}`} style={{maxWidth:145}} onClick={()=>setOpenPanel(openPanel==="when"?null:"when")} role="button" aria-label="When">
+                  <span className="pill-label">When</span>
+                  <span className={`pill-value ${!whenValue()?"placeholder":""}`}>{whenValue()||"Add dates"}</span>
+                </div>
+                <div className={`pill-section ${openPanel==="who"?"open":""}`} style={{maxWidth:135}} onClick={()=>setOpenPanel(openPanel==="who"?null:"who")} role="button" aria-label="Who">
+                  <span className="pill-label">Who</span>
+                  <span className={`pill-value ${!whoValue()?"placeholder":""}`}>{whoValue()||"Guests"}</span>
+                </div>
+                <div className={`pill-section ${openPanel==="budget"?"open":""}`} style={{maxWidth:120}} onClick={()=>setOpenPanel(openPanel==="budget"?null:"budget")} role="button" aria-label="Budget">
+                  <span className="pill-label">Budget</span>
+                  <span className={`pill-value ${!budgetValue()?"placeholder":""}`}>{budgetValue()||"Any"}</span>
+                </div>
+                <button className="pill-redirect-btn" onClick={handleRedirectClick} aria-label="Go to search results" title="Search with filters">
+                  <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+                </button>
+                <button className="pill-search-icon-btn" onClick={()=>{setOpenPanel(null);setSearchExpanded(true);}} aria-label="Text search" title="Search by typing">
+                  <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
 
-                  {openPanel==="type"&&(
-                    <div className="dropdown-panel type-dropdown" style={{left:0}}>
-                      <div className="type-dropdown-title">Travel Style</div>
-                      <div className="type-grid">
-                        {TRAVEL_TYPES.map(t=>(
-                          <div key={t.id} className={`type-card ${selectedTypes.includes(t.id)?"active":""}`} onClick={()=>toggleType(t.id)}>
-                            <div className="type-card-icon">{t.icon}</div>
-                            <div className="type-card-label">{t.label}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="dropdown-footer" style={{marginTop:10}}>
-                        <button className="btn-clear" onClick={()=>setSelectedTypes([])}>Clear</button>
-                        <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
-                      </div>
+                {openPanel==="type"&&(
+                  <div className="dropdown-panel type-dropdown" style={{left:0}}>
+                    <div className="type-dropdown-title">Travel Style</div>
+                    <div className="type-grid">
+                      {TRAVEL_TYPES.map(t=>(
+                        <div key={t.id} className={`type-card ${selectedTypes.includes(t.id)?"active":""}`} onClick={()=>toggleType(t.id)}>
+                          <div className="type-card-icon">{t.icon}</div>
+                          <div className="type-card-label">{t.label}</div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {openPanel==="where"&&(
-                    <div className="dropdown-panel where-dropdown" style={{left:"15%"}}>
-                      <input className="where-search-input" placeholder="Search destinations" value={destQuery} onChange={e=>setDestQuery(e.target.value)} autoFocus aria-label="Destination"/>
-                      <div className="dest-list">
-                        {!destQuery&&recents.length>0&&(
-                          <><div className="dest-section-label">Recent searches</div>
-                          {recents.map(d=>(
-                            <div key={d.city} className="dest-item" onClick={()=>{setDestination(d.city);setOpenPanel(null);setDestQuery("");}}>
-                              <div className="dest-thumb">{d.emoji}</div>
-                              <div><div className="dest-city">{d.city}</div><div className="dest-country">{d.country}</div></div>
-                            </div>
-                          ))}</>
-                        )}
-                        <div className="dest-section-label">{destQuery?"Results":"Suggested"}</div>
-                        {(destQuery?filtered:others).map(d=>(
+                    <div className="dropdown-footer" style={{marginTop:10}}>
+                      <button className="btn-clear" onClick={()=>setSelectedTypes([])}>Clear</button>
+                      <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
+                    </div>
+                  </div>
+                )}
+                {openPanel==="where"&&(
+                  <div className="dropdown-panel where-dropdown" style={{left:"15%"}}>
+                    <input className="where-search-input" placeholder="Search destinations" value={destQuery} onChange={e=>setDestQuery(e.target.value)} autoFocus aria-label="Destination"/>
+                    <div className="dest-list">
+                      {!destQuery&&recents.length>0&&(
+                        <><div className="dest-section-label">Recent searches</div>
+                        {recents.map(d=>(
                           <div key={d.city} className="dest-item" onClick={()=>{setDestination(d.city);setOpenPanel(null);setDestQuery("");}}>
                             <div className="dest-thumb">{d.emoji}</div>
                             <div><div className="dest-city">{d.city}</div><div className="dest-country">{d.country}</div></div>
                           </div>
-                        ))}
-                        {filtered.length===0&&<div style={{padding:"12px",color:"#aaa",fontSize:"0.8rem"}}>No results</div>}
-                      </div>
+                        ))}</>
+                      )}
+                      <div className="dest-section-label">{destQuery?"Results":"Suggested"}</div>
+                      {(destQuery?filtered:others).map(d=>(
+                        <div key={d.city} className="dest-item" onClick={()=>{setDestination(d.city);setOpenPanel(null);setDestQuery("");}}>
+                          <div className="dest-thumb">{d.emoji}</div>
+                          <div><div className="dest-city">{d.city}</div><div className="dest-country">{d.country}</div></div>
+                        </div>
+                      ))}
+                      {filtered.length===0&&<div style={{padding:"12px",color:"#aaa",fontSize:"0.8rem"}}>No results</div>}
                     </div>
-                  )}
-                  {openPanel==="when"&&(
-                    <div className="dropdown-panel when-dropdown" style={{left:"50%",transform:"translateX(-50%)"}}>
-                      <div className="when-tabs">
-                        {["Dates","Months","Flexible"].map(t=>(
-                          <button key={t} className={`when-tab ${whenTab===t?"active":""}`} onClick={()=>setWhenTab(t)}>{t}</button>
-                        ))}
-                      </div>
-                      <div className="when-body">
-                        {whenTab==="Dates"&&(<>
-                          <div className="cal-container">
-                            <Calendar year={calMonth.y} month={calMonth.m} startDate={startDate} endDate={endDate} hoverDate={hoverDate}
-                              onSelect={handleDateSelect} onHover={!endDate?setHoverDate:null}
-                              showPrev onPrev={()=>calMonth.m===0?setCalMonth({y:calMonth.y-1,m:11}):setCalMonth({y:calMonth.y,m:calMonth.m-1})}/>
-                            <Calendar year={nextM.y} month={nextM.m} startDate={startDate} endDate={endDate} hoverDate={hoverDate}
-                              onSelect={handleDateSelect} onHover={!endDate?setHoverDate:null}
-                              showNext onNext={()=>calMonth.m===11?setCalMonth({y:calMonth.y+1,m:0}):setCalMonth({y:calMonth.y,m:calMonth.m+1})}/>
-                          </div>
-                          <div className="flex-options">
-                            {["Exact dates","±1 day","±2 days","±3 days","±7 days","±14 days"].map(f=>(
-                              <button key={f} className={`flex-chip ${flexDays===f?"active":""}`} onClick={()=>setFlexDays(f)}>{f}</button>
-                            ))}
-                          </div>
-                        </>)}
-                        {whenTab==="Months"&&(
-                          <div className="months-tab-body">
-                            <CircleSelector duration={monthsDuration} onChange={setMonthsDuration}/>
-                            <div className="months-range-display">
-                              <div className="months-range-text">{formatDate(new Date())} – {formatDate(addMonths(new Date(),monthsDuration))}</div>
-                              <div className="months-range-sub">{monthsDuration} month{monthsDuration!==1?"s":""} trip</div>
-                              <div className="months-hint">Drag the circle handle to adjust</div>
-                            </div>
-                          </div>
-                        )}
-                        {whenTab==="Flexible"&&(<>
-                          <div className="flex-stay-label">How long would you like to stay?</div>
-                          <div className="flex-stay-options">
-                            {[{name:"Weekend",icon:"🌙",desc:"2–3 nights"},{name:"Week",icon:"☀️",desc:"5–7 nights"},{name:"Month",icon:"📅",desc:"28–31 nights"}].map(s=>(
-                              <button key={s.name} className={`flex-stay-btn ${stayType===s.name?"active":""}`} onClick={()=>setStayType(s.name)}>
-                                <span className="stay-icon">{s.icon}</span><span className="stay-name">{s.name}</span><span className="stay-desc">{s.desc}</span>
-                              </button>
-                            ))}
-                          </div>
-                          <div className="when-go-label">When do you want to go?</div>
-                          <div className="month-cards-scroll">
-                            {futureMonths.map((m,i)=>{ const key=`${m.year}-${m.month}`; return(
-                              <div key={key} className={`month-card ${selectedMonths.includes(key)?"active":""}`} onClick={()=>toggleMonth(key)}>
-                                <div className="mc-emoji">{m.emoji}</div>
-                                <div className="mc-month">{MONTHS_LIST[m.month]}</div>
-                                <div className="mc-year">{m.year}</div>
-                              </div>
-                            );})}
-                          </div>
-                        </>)}
-                      </div>
-                      <div className="dropdown-footer">
-                        <button className="btn-clear" onClick={()=>{setStartDate(null);setEndDate(null);setHoverDate(null);setSelectedMonths([]);setStayType(null);}}>Clear</button>
-                        <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
-                      </div>
-                    </div>
-                  )}
-                  {openPanel==="who"&&(
-                    <div className="dropdown-panel who-dropdown" style={{right:"17%",left:"auto"}}>
-                      <div style={{paddingBottom:4}}>
-                        {[{key:"adults",label:"Adults",sub:"Ages 13+"},{key:"children",label:"Children",sub:"Ages 2–12"},{key:"infants",label:"Infants",sub:"Under 2"},{key:"pets",label:"Pets",sub:"Assistance animals"}].map(g=>(
-                          <div className="guest-row" key={g.key}>
-                            <div><div className="guest-type">{g.label}</div><div className="guest-age">{g.sub}</div></div>
-                            <div className="guest-counter">
-                              <button className="guest-btn" disabled={guests[g.key]===0||(g.key==="adults"&&guests[g.key]<=1)} onClick={()=>setGuests(p=>({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>−</button>
-                              <span className="guest-count">{guests[g.key]}</span>
-                              <button className="guest-btn" disabled={guests[g.key]>=16} onClick={()=>setGuests(p=>({...p,[g.key]:p[g.key]+1}))}>+</button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="dropdown-footer">
-                        <button className="btn-clear" onClick={()=>setGuests({adults:1,children:0,infants:0,pets:0})}>Clear</button>
-                        <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
-                      </div>
-                    </div>
-                  )}
-                  {openPanel==="budget"&&(
-                    <div className="dropdown-panel budget-dropdown" style={{right:"8%",left:"auto"}}>
-                      <div className="budget-title">Select Budget</div>
-                      <div className="budget-options">
-                        {BUDGET_OPTIONS.map(b=>(
-                          <div key={b.id} className={`budget-option ${selectedBudget===b.id?"active":""}`} onClick={()=>setSelectedBudget(selectedBudget===b.id?null:b.id)}>
-                            <span className="budget-option-icon">{b.icon}</span>
-                            <div className="budget-option-info">
-                              <div className="budget-option-label">{b.label}</div>
-                              <div className="budget-option-range">{b.range}</div>
-                            </div>
-                            {selectedBudget===b.id&&<div className="budget-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="budget-range-label">Or set custom max budget</div>
-                      <input type="range" className="budget-slider" min="0" max="100" value={budgetSlider}
-                        style={{"--val":budgetSlider+"%"}}
-                        onChange={e=>{setBudgetSlider(+e.target.value);e.target.style.setProperty("--val",e.target.value+"%");}}/>
-                      <div className="budget-range-values">
-                        <span>₹0</span>
-                        <span style={{color:"#ff6600",fontWeight:600}}>₹{Math.round(budgetSlider*5000).toLocaleString()}</span>
-                        <span>₹5L+</span>
-                      </div>
-                      <div className="dropdown-footer" style={{marginTop:12}}>
-                        <button className="btn-clear" onClick={()=>{setSelectedBudget(null);setBudgetSlider(50);}}>Clear</button>
-                        <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="tbo-nav-right">
-              {isLoggedIn ? (
-                <>
-                  <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>✓ {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` · ${persona}` : ""}</span>
-                  <div style={{display:"flex",gap:6}}>
-                    <button className="btn-book" onClick={handleBookNow}>Book Now</button>
-                    <button className="btn-book" style={{background:"#e0e0e0",color:"#555"}} onClick={logout}>Logout</button>
                   </div>
-                </>
-              ) : (
-                <>
-                  <span className="already-reg">Already Registered?{" "}
-                    <button onClick={() => setShowLogin(true)} style={{color:"#ff6600",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"inherit",textDecoration:"underline",padding:0}}>Sign in</button>
-                  </span>
-                  <button className="btn-book" onClick={() => setShowRegister(true)}>Book Now</button>
-                </>
-              )}
-            </div>
-          </nav>
-
-          {/* ── CATEGORY BAR ── */}
-          <div className="tbo-cat-bar">
-            {CATEGORIES.map((cat) => (
-              <div
-                key={cat.id}
-                className={`cat-item ${activeCategory === cat.id ? "active" : ""}`}
-                onClick={() => setActiveCategory(cat.id)}
-              >
-                <div className="cat-icon-wrap">{cat.icon}</div>
-                <span className="cat-label">{cat.label}</span>
+                )}
+                {openPanel==="when"&&(
+                  <div className="dropdown-panel when-dropdown" style={{left:"50%",transform:"translateX(-50%)"}}>
+                    <div className="when-tabs">
+                      {["Dates","Months","Flexible"].map(t=>(
+                        <button key={t} className={`when-tab ${whenTab===t?"active":""}`} onClick={()=>setWhenTab(t)}>{t}</button>
+                      ))}
+                    </div>
+                    <div className="when-body">
+                      {whenTab==="Dates"&&(<>
+                        <div className="cal-container">
+                          <Calendar year={calMonth.y} month={calMonth.m} startDate={startDate} endDate={endDate} hoverDate={hoverDate}
+                            onSelect={handleDateSelect} onHover={!endDate?setHoverDate:null}
+                            showPrev onPrev={()=>calMonth.m===0?setCalMonth({y:calMonth.y-1,m:11}):setCalMonth({y:calMonth.y,m:calMonth.m-1})}/>
+                          <Calendar year={nextM.y} month={nextM.m} startDate={startDate} endDate={endDate} hoverDate={hoverDate}
+                            onSelect={handleDateSelect} onHover={!endDate?setHoverDate:null}
+                            showNext onNext={()=>calMonth.m===11?setCalMonth({y:calMonth.y+1,m:0}):setCalMonth({y:calMonth.y,m:calMonth.m+1})}/>
+                        </div>
+                        <div className="flex-options">
+                          {["Exact dates","±1 day","±2 days","±3 days","±7 days","±14 days"].map(f=>(
+                            <button key={f} className={`flex-chip ${flexDays===f?"active":""}`} onClick={()=>setFlexDays(f)}>{f}</button>
+                          ))}
+                        </div>
+                      </>)}
+                      {whenTab==="Months"&&(
+                        <div className="months-tab-body">
+                          <CircleSelector duration={monthsDuration} onChange={setMonthsDuration}/>
+                          <div className="months-range-display">
+                            <div className="months-range-text">{formatDate(new Date())} – {formatDate(addMonths(new Date(),monthsDuration))}</div>
+                            <div className="months-range-sub">{monthsDuration} month{monthsDuration!==1?"s":""} trip</div>
+                            <div className="months-hint">Drag the circle handle to adjust</div>
+                          </div>
+                        </div>
+                      )}
+                      {whenTab==="Flexible"&&(<>
+                        <div className="flex-stay-label">How long would you like to stay?</div>
+                        <div className="flex-stay-options">
+                          {[{name:"Weekend",icon:"🌙",desc:"2–3 nights"},{name:"Week",icon:"☀️",desc:"5–7 nights"},{name:"Month",icon:"📅",desc:"28–31 nights"}].map(s=>(
+                            <button key={s.name} className={`flex-stay-btn ${stayType===s.name?"active":""}`} onClick={()=>setStayType(s.name)}>
+                              <span className="stay-icon">{s.icon}</span><span className="stay-name">{s.name}</span><span className="stay-desc">{s.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="when-go-label">When do you want to go?</div>
+                        <div className="month-cards-scroll">
+                          {futureMonths.map((m,i)=>{ const key=`${m.year}-${m.month}`; return(
+                            <div key={key} className={`month-card ${selectedMonths.includes(key)?"active":""}`} onClick={()=>toggleMonth(key)}>
+                              <div className="mc-emoji">{m.emoji}</div>
+                              <div className="mc-month">{MONTHS_LIST[m.month]}</div>
+                              <div className="mc-year">{m.year}</div>
+                            </div>
+                          );})}
+                        </div>
+                      </>)}
+                    </div>
+                    <div className="dropdown-footer">
+                      <button className="btn-clear" onClick={()=>{setStartDate(null);setEndDate(null);setHoverDate(null);setSelectedMonths([]);setStayType(null);}}>Clear</button>
+                      <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
+                    </div>
+                  </div>
+                )}
+                {openPanel==="who"&&(
+                  <div className="dropdown-panel who-dropdown" style={{right:"17%",left:"auto"}}>
+                    <div style={{paddingBottom:4}}>
+                      {[{key:"adults",label:"Adults",sub:"Ages 13+"},{key:"children",label:"Children",sub:"Ages 2–12"},{key:"infants",label:"Infants",sub:"Under 2"},{key:"pets",label:"Pets",sub:"Assistance animals"}].map(g=>(
+                        <div className="guest-row" key={g.key}>
+                          <div><div className="guest-type">{g.label}</div><div className="guest-age">{g.sub}</div></div>
+                          <div className="guest-counter">
+                            <button className="guest-btn" disabled={guests[g.key]===0||(g.key==="adults"&&guests[g.key]<=1)} onClick={()=>setGuests(p=>({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>−</button>
+                            <span className="guest-count">{guests[g.key]}</span>
+                            <button className="guest-btn" disabled={guests[g.key]>=16} onClick={()=>setGuests(p=>({...p,[g.key]:p[g.key]+1}))}>+</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="dropdown-footer">
+                      <button className="btn-clear" onClick={()=>setGuests({adults:1,children:0,infants:0,pets:0})}>Clear</button>
+                      <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
+                    </div>
+                  </div>
+                )}
+                {openPanel==="budget"&&(
+                  <div className="dropdown-panel budget-dropdown" style={{right:"8%",left:"auto"}}>
+                    <div className="budget-title">Select Budget</div>
+                    <div className="budget-options">
+                      {BUDGET_OPTIONS.map(b=>(
+                        <div key={b.id} className={`budget-option ${selectedBudget===b.id?"active":""}`} onClick={()=>setSelectedBudget(selectedBudget===b.id?null:b.id)}>
+                          <span className="budget-option-icon">{b.icon}</span>
+                          <div className="budget-option-info">
+                            <div className="budget-option-label">{b.label}</div>
+                            <div className="budget-option-range">{b.range}</div>
+                          </div>
+                          {selectedBudget===b.id&&<div className="budget-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="budget-range-label">Or set custom max budget</div>
+                    <input type="range" className="budget-slider" min="0" max="100" value={budgetSlider}
+                      style={{"--val":budgetSlider+"%"}}
+                      onChange={e=>{setBudgetSlider(+e.target.value);e.target.style.setProperty("--val",e.target.value+"%");}}/>
+                    <div className="budget-range-values">
+                      <span>₹0</span>
+                      <span style={{color:"#ff6600",fontWeight:600}}>₹{Math.round(budgetSlider*5000).toLocaleString()}</span>
+                      <span>₹5L+</span>
+                    </div>
+                    <div className="dropdown-footer" style={{marginTop:12}}>
+                      <button className="btn-clear" onClick={()=>{setSelectedBudget(null);setBudgetSlider(50);}}>Clear</button>
+                      <button className="btn-apply" onClick={()=>setOpenPanel(null)}>Apply</button>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+            )}
           </div>
 
-          {/* ── HERO ── */}
-          <div className="tbo-hero">
-            <div>
-              <h1 className="hero-title">Simplifying Travel<span className="red-dot">.</span><br/>Enabling Growth</h1>
-              <p className="hero-body">We are one of the leading global travel distribution platforms, simplifying the travel business for both suppliers and buyers. Our suppliers include hotels, airlines, cruises, car rentals, transfers, and rail services. Our buyers consist of retail and API buyers such as travel agencies, independent travel advisors, and enterprise buyers including tour operators, travel management companies, online travel companies, super-apps, and loyalty apps.</p>
-              <p className="hero-body" style={{marginTop:14}}>Our platform enables seamless transactions, connecting over 159,000 buyers with over 1 million suppliers across 100+ countries.</p>
-              <p className="register-label">Register with us:</p>
-              <div className="hero-btns">
-                <button className="btn-become">Become TBO Partner</button>
-                <button className="btn-agent">Agent Partner</button>
-              </div>
-            </div>
-            <div className="hero-video-wrap">
-              <video src="https://www.tbo.com/img/videos/The-World-of-TBO-Group.mp4?var=300420244" autoPlay muted loop playsInline/>
+          <div className="tbo-nav-right">
+            {isLoggedIn ? (
+              <>
+                <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>✓ {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` · ${persona}` : ""}</span>
+                <div style={{display:"flex",gap:6}}>
+                  <button className="btn-book" onClick={handleBookNow}>Book Now</button>
+                  <button className="btn-book" style={{background:"#e0e0e0",color:"#555"}} onClick={logout}>Logout</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="already-reg">Already Registered?{" "}
+                  <button onClick={() => setShowLogin(true)} style={{color:"#ff6600",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"inherit",textDecoration:"underline",padding:0}}>Sign in</button>
+                </span>
+                <button className="btn-book" onClick={() => setShowRegister(true)}>Book Now</button>
+              </>
+            )}
+          </div>
+        </nav>
+
+        {/* ── HERO ── */}
+        <div className="tbo-hero">
+          <div>
+            <h1 className="hero-title">Simplifying Travel<span className="red-dot">.</span><br/>Enabling Growth</h1>
+            <p className="hero-body">We are one of the leading global travel distribution platforms, simplifying the travel business for both suppliers and buyers. Our suppliers include hotels, airlines, cruises, car rentals, transfers, and rail services. Our buyers consist of retail and API buyers such as travel agencies, independent travel advisors, and enterprise buyers including tour operators, travel management companies, online travel companies, super-apps, and loyalty apps.</p>
+            <p className="hero-body" style={{marginTop:14}}>Our platform enables seamless transactions, connecting over 159,000 buyers with over 1 million suppliers across 100+ countries.</p>
+            <p className="register-label">Register with us:</p>
+            <div className="hero-btns">
+              <button className="btn-become">Become TBO Partner</button>
+              <button className="btn-agent">Agent Partner</button>
             </div>
           </div>
-
+          <div className="hero-video-wrap">
+            <video src="https://www.tbo.com/img/videos/The-World-of-TBO-Group.mp4?var=300420244" autoPlay muted loop playsInline/>
+          </div>
+        </div>
         </div>{/* end tbo-hero-section */}
 
         {/* ── NUMBERS ── */}
