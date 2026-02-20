@@ -16,6 +16,9 @@ const css = `
     /* very subtle warm gradient so it reads as one surface */
     background: linear-gradient(160deg, #ffffff 0%, #fff8f4 55%, #fff3e8 100%);
   }
+    .tbo-hero-section {
+  background: #ffffff;
+}
 
   /* ── NAVBAR — seamlessly blended into hero, no divider ── */
   .tbo-nav {
@@ -39,8 +42,8 @@ const css = `
   .tbo-logo-img { height: 100px; width: auto; object-fit: contain; display: block; }
 
   .tbo-nav-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
-  .already-reg { font-size: 0.66rem; color: #888; white-space: nowrap; }
-  .btn-book { background: #ff6600; color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s, transform 0.15s; }
+  .already-reg { font-size: 0.88rem; color: #888; white-space: nowrap; }
+  .btn-book { background: #ff6600; color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 1.0rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'DM Sans',sans-serif; transition: background 0.2s, transform 0.15s; }
   .btn-book:hover { background: #e05500; transform: scale(1.03); }
 
   /* ── CHANGE 2: Search shifted right — no flex:1, use margin-left auto ── */
@@ -497,7 +500,7 @@ const css = `
 }
 
   /* NUMBERS — wider, bigger stats */
-  .tbo-numbers { text-align: center; padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #f8f9fb; }
+  .tbo-numbers { text-align: center; padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #ffffff; }
   .tbo-numbers h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 40px; font-family: 'Playfair Display',serif; }
   .stats-row { display: flex; justify-content: center; gap: clamp(40px,8vw,140px); flex-wrap: wrap; }
   .stat-item { display: flex; flex-direction: column; align-items: center; }
@@ -518,7 +521,7 @@ const css = `
   .brand-logo-img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.1); }
 
   /* VALUE — wider content area, bigger blob image */
-  .tbo-value { padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #f8f9fb; }
+  .tbo-value { padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #ffffff; }
   .tbo-value h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 24px; font-family: 'Playfair Display',serif; }
   .value-tabs { display: flex; justify-content: center; gap: clamp(18px,4vw,60px); border-bottom: 2px solid #ddd; flex-wrap: wrap; }
   .value-tab { background: none; border: none; cursor: pointer; font-size: clamp(0.84rem,1.2vw,1rem); font-weight: 600; color: #777; padding: 9px 5px; position: relative; transition: color 0.2s; white-space: nowrap; font-family: 'DM Sans',sans-serif; }
@@ -574,7 +577,7 @@ const css = `
   .gdot.active, .adot.active { background: #ff6600; transform: scale(1.3); }
 
   /* AWARDS */
-  .tbo-awards { padding: clamp(40px,5vw,80px) 0; text-align: center; background: #f8f9fb; }
+  .tbo-awards { padding: clamp(40px,5vw,80px) 0; text-align: center; background: #ffffff; }
   .tbo-awards h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 32px; font-family: 'Playfair Display',serif; }
   .awards-slider-wrapper { display: flex; align-items: center; justify-content: center; }
   .awards-viewport { overflow: hidden; }
