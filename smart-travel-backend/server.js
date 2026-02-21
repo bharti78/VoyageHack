@@ -12,6 +12,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }))
 app.use("/api/auth", require("./routes/authRoutes"))
 app.use("/api/search", require("./routes/searchRoutes"))
 app.use("/api/user", require("./routes/userRoutes"))
+app.use("/api/hotels", require("./routes/hotelRoutes"))
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

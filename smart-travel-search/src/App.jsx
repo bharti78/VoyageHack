@@ -8,6 +8,7 @@ import Results from "./pages/Results"
 import Register from "./pages/Register"
 import Profile from "./pages/Profile"
 import Home from "./pages/Home"
+import HotelsPage from "./pages/Hotelspage"
 import RegisterModal from "./components/RegisterModal"
 import PersonaModal from "./components/PersonaModal"
 import LoginModal from "./components/LoginModal"
@@ -26,6 +27,7 @@ function AppInner() {
           <Route path="/persona" element={<Persona />} />
           <Route path="/search" element={<Search />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/hotels" element={<HotelsPage />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>
