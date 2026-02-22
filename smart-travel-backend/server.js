@@ -13,6 +13,7 @@ app.use("/api/auth", require("./routes/authRoutes"))
 app.use("/api/search", require("./routes/searchRoutes"))
 app.use("/api/user", require("./routes/userRoutes"))
 app.use("/api/hotels", require("./routes/hotelRoutes"))
+app.use("/api/flights", require("./routes/flightRoutes"))
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

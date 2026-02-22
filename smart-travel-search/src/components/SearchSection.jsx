@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const css = `
@@ -344,6 +345,19 @@ const css = `
   .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; font-size: 0.74rem; font-weight: 500; transition: all 0.15s; position: relative; }
   .cal-day:hover:not(.disabled):not(.selected) { background: #f5f5f5; }
   .cal-day.disabled { color: #ddd; cursor: default; }
+  .cal-day.offer { color: #b71c1c; font-weight: 700; }
+  .cal-day.offer::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #e53935;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.85);
+  }
+  .cal-day.offer.best::before { background: #c62828; }
   .cal-day.in-range { background: #fff0eb; border-radius: 0; color: #cc4400; }
   .cal-day.range-start { background: #ff6600 !important; color: #fff !important; border-radius: 50% 0 0 50%; }
   .cal-day.range-end { background: #ff6600 !important; color: #fff !important; border-radius: 0 50% 50% 0; }
@@ -688,19 +702,48 @@ const css = `
 
 /* ─── DATA ─── */
 const destinations = [
-  { city: "Dubai", country: "UAE", emoji: "🏙️", recent: true },
-  { city: "Paris", country: "France", emoji: "🗼", recent: true },
-  { city: "Bali", country: "Indonesia", emoji: "🌴" },
-  { city: "New York", country: "USA", emoji: "🗽" },
-  { city: "Tokyo", country: "Japan", emoji: "⛩️" },
-  { city: "London", country: "UK", emoji: "🎡" },
-  { city: "Bangkok", country: "Thailand", emoji: "🏯" },
-  { city: "Singapore", country: "Singapore", emoji: "🦁" },
-  { city: "Sydney", country: "Australia", emoji: "🦘" },
-  { city: "Maldives", country: "Maldives", emoji: "🏝️" },
-  { city: "Istanbul", country: "Turkey", emoji: "🕌" },
-  { city: "Rome", country: "Italy", emoji: "🏛️" },
+  { city: "Dubai", country: "UAE", emoji: "CITY", recent: true, tags: ["city", "luxury", "shopping"] },
+  { city: "Paris", country: "France", emoji: "CITY", recent: true, tags: ["city", "heritage", "romance"] },
+  { city: "Bali", country: "Indonesia", emoji: "BEACH", tags: ["beach", "wellness", "adventure"] },
+  { city: "New York", country: "USA", emoji: "CITY", tags: ["city", "shopping"] },
+  { city: "Tokyo", country: "Japan", emoji: "CITY", tags: ["city", "heritage"] },
+  { city: "London", country: "UK", emoji: "CITY", tags: ["city", "heritage"] },
+  { city: "Bangkok", country: "Thailand", emoji: "CITY", tags: ["city", "wellness"] },
+  { city: "Singapore", country: "Singapore", emoji: "CITY", tags: ["city", "family"] },
+  { city: "Sydney", country: "Australia", emoji: "COAST", tags: ["city", "beach"] },
+  { city: "Maldives", country: "Maldives", emoji: "BEACH", tags: ["beach", "luxury"] },
+  { city: "Istanbul", country: "Turkey", emoji: "HIST", tags: ["heritage", "city"] },
+  { city: "Rome", country: "Italy", emoji: "HIST", tags: ["heritage", "city"] },
+  { city: "Goa", country: "India", emoji: "BEACH", tags: ["beach", "nightlife", "adventure"] },
+  { city: "Kochi", country: "India", emoji: "BEACH", tags: ["beach", "wellness"] },
+  { city: "Andaman", country: "India", emoji: "ISLE", tags: ["beach", "adventure"] },
+  { city: "Manali", country: "India", emoji: "HILL", tags: ["mountains", "adventure"] },
+  { city: "Rishikesh", country: "India", emoji: "HILL", tags: ["mountains", "adventure", "wellness"] },
+  { city: "Jaipur", country: "India", emoji: "HIST", tags: ["heritage", "city"] },
+  { city: "Varanasi", country: "India", emoji: "FAITH", tags: ["religious", "heritage"] },
 ];
+const THEME_ALIASES = {
+  beach: ["beach", "sea", "island", "coast"],
+  mountains: ["mountain", "hill", "trek", "snow"],
+  city: ["city", "urban", "shopping"],
+  heritage: ["heritage", "history", "fort", "culture"],
+  religious: ["religious", "temple", "pilgrim", "spiritual"],
+  adventure: ["adventure", "hiking", "rafting", "safari"],
+  wellness: ["wellness", "relax", "yoga", "spa"],
+};
+const IMAGE_THEME_HINTS = {
+  beach: ["beach", "sea", "island", "coast", "ocean", "sunset", "sand"],
+  mountains: ["mountain", "hill", "snow", "trek", "forest"],
+  city: ["city", "urban", "street", "skyline"],
+  heritage: ["fort", "palace", "heritage", "temple"],
+};
+const FLIGHT_ROUTES = {
+  goa: { from: { code: "DEL", city: "New Delhi" }, to: { code: "GOI", city: "Goa" } },
+  mumbai: { from: { code: "DEL", city: "New Delhi" }, to: { code: "BOM", city: "Mumbai" } },
+  delhi: { from: { code: "BOM", city: "Mumbai" }, to: { code: "DEL", city: "New Delhi" } },
+  bangalore: { from: { code: "DEL", city: "New Delhi" }, to: { code: "BLR", city: "Bangalore" } },
+  kochi: { from: { code: "DEL", city: "New Delhi" }, to: { code: "COK", city: "Kochi" } },
+};
 const TRAVEL_TYPES = [
   { id: "mountains", label: "Mountains", icon: "⛰️" },
   { id: "beach", label: "Beach", icon: "🏖️" },
@@ -733,6 +776,21 @@ function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDayOfMonth(y, m) { return new Date(y, m, 1).getDay(); }
 function formatDate(d) { if (!d) return ""; return `${MONTHS_LIST[d.getMonth()]} ${d.getDate()}`; }
 function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }
+function normalizeText(text) {
+  return String(text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+function getOfferScore(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = dateObj.getMonth() + 1;
+  const d = dateObj.getDate();
+  return ((y * 13 + m * 7 + d * 17) % 100);
+}
+function getOfferType(dateObj) {
+  const score = getOfferScore(dateObj);
+  if (score < 7) return "best";
+  if (score < 18) return "offer";
+  return null;
+}
 
 function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHover, showPrev, showNext, onPrev, onNext }) {
   const days = getDaysInMonth(year, month), firstDay = getFirstDayOfMonth(year, month);
@@ -745,6 +803,7 @@ function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHove
     const dt = new Date(year, month, d); dt.setHours(0, 0, 0, 0);
     if (dt < today) return "cal-day disabled";
     let cls = "cal-day";
+    const offerType = getOfferType(dt);
     if (startDate && endDate) {
       const s = new Date(startDate); s.setHours(0,0,0,0);
       const e = new Date(endDate); e.setHours(0,0,0,0);
@@ -761,6 +820,7 @@ function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHove
       }
     }
     if (dt.toDateString() === today.toDateString()) cls += " today";
+    if (offerType) cls += offerType === "best" ? " offer best" : " offer";
     return cls;
   }
   return (
@@ -897,12 +957,14 @@ function useSliderSizes() {
 
 export default function TBOHomepage() {
   const { isLoggedIn, user, persona, requireAuth, setShowRegister, setShowLogin, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Search expanded
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Search
   const [openPanel, setOpenPanel] = useState(null);
@@ -954,7 +1016,11 @@ export default function TBOHomepage() {
     function handle(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setOpenPanel(null);
-        if (searchExpanded) { setSearchExpanded(false); setSearchQuery(""); setIsListening(false); }
+        if (searchExpanded) {
+          setSearchExpanded(false);
+          setSearchQuery("");
+          stopVoiceSearch();
+        }
       }
       if (productsRef.current && !productsRef.current.contains(e.target)) setProductsOpen(false);
       if (solutionsRef.current && !solutionsRef.current.contains(e.target)) setSolutionsOpen(false);
@@ -962,6 +1028,12 @@ export default function TBOHomepage() {
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, [searchExpanded]);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
 
   useEffect(() => {
     if (isPaused || playingIdx !== null) return;
@@ -983,10 +1055,142 @@ export default function TBOHomepage() {
     setPlayingIdx(i);
   };
 
-  const filtered = destQuery
-    ? destinations.filter(d => d.city.toLowerCase().includes(destQuery.toLowerCase()) || d.country.toLowerCase().includes(destQuery.toLowerCase()))
+  const normalizedDestQuery = normalizeText(destQuery);
+  const matchedTheme = Object.entries(THEME_ALIASES).find(([, keys]) =>
+    keys.some((key) => normalizedDestQuery.includes(key))
+  )?.[0];
+  const filtered = normalizedDestQuery
+    ? destinations.filter((d) => {
+        const text = normalizeText(`${d.city} ${d.country}`);
+        if (text.includes(normalizedDestQuery)) return true;
+        if (matchedTheme && Array.isArray(d.tags) && d.tags.includes(matchedTheme)) return true;
+        return false;
+      })
     : destinations;
   const recents = filtered.filter(d => d.recent), others = filtered.filter(d => !d.recent);
+
+  function inferTheme(text) {
+    const normalized = normalizeText(text);
+    for (const [theme, keys] of Object.entries(THEME_ALIASES)) {
+      if (keys.some((key) => normalized.includes(key))) return theme;
+    }
+    return null;
+  }
+
+  function inferDestination(text, fallbackTheme = null) {
+    const normalized = normalizeText(text);
+    const exact = destinations.find((d) => normalized.includes(normalizeText(d.city)));
+    if (exact) return exact.city;
+    if (fallbackTheme) {
+      const themed = destinations.find((d) => Array.isArray(d.tags) && d.tags.includes(fallbackTheme));
+      if (themed) return themed.city;
+    }
+    return "";
+  }
+
+  function inferGuestsFromText(text) {
+    const normalized = normalizeText(text);
+    const totalMatch = normalized.match(/(\d+)\s*(guest|people|person|traveller|traveler)/);
+    const adultMatch = normalized.match(/(\d+)\s*adult/);
+    const childMatch = normalized.match(/(\d+)\s*child/);
+    const infantMatch = normalized.match(/(\d+)\s*infant/);
+    const adults = adultMatch ? Number(adultMatch[1]) : (totalMatch ? Number(totalMatch[1]) : guests.adults);
+    const children = childMatch ? Number(childMatch[1]) : guests.children;
+    const infants = infantMatch ? Number(infantMatch[1]) : guests.infants;
+    return {
+      adults: Math.max(1, Math.min(16, Number.isFinite(adults) ? adults : 1)),
+      children: Math.max(0, Math.min(16, Number.isFinite(children) ? children : 0)),
+      infants: Math.max(0, Math.min(16, Number.isFinite(infants) ? infants : 0)),
+      pets: guests.pets,
+    };
+  }
+
+  function applyBudgetFromText(text) {
+    const normalized = normalizeText(text);
+    const lakhMatch = normalized.match(/(\d+(\.\d+)?)\s*lakh/);
+    const kMatch = normalized.match(/(\d+)\s*k/);
+    const plainMatch = normalized.match(/(?:under|below|max|budget)\s*(\d{4,7})/);
+    let value = null;
+    if (lakhMatch) value = Number(lakhMatch[1]) * 100000;
+    else if (kMatch) value = Number(kMatch[1]) * 1000;
+    else if (plainMatch) value = Number(plainMatch[1]);
+    if (!value) return;
+
+    const slider = Math.max(0, Math.min(100, Math.round(value / 5000)));
+    setBudgetSlider(slider);
+    if (value <= 30000) setSelectedBudget("budget");
+    else if (value <= 80000) setSelectedBudget("standard");
+    else if (value <= 150000) setSelectedBudget("premium");
+    else setSelectedBudget("luxury");
+  }
+
+  function applyNaturalLanguageQuery(text) {
+    const normalized = normalizeText(text);
+    const theme = inferTheme(normalized);
+    const inferredDestination = inferDestination(normalized, theme);
+    if (inferredDestination) setDestination(inferredDestination);
+    if (theme && TRAVEL_TYPES.some((t) => t.id === theme)) {
+      setSelectedTypes((prev) => (prev.includes(theme) ? prev : [...prev, theme]));
+    }
+    const nextGuests = inferGuestsFromText(normalized);
+    setGuests(nextGuests);
+    applyBudgetFromText(normalized);
+  }
+
+  function startVoiceSearch() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+    setIsListening(true);
+    recognition.start();
+    recognition.onresult = (event) => {
+      const spoken = event?.results?.[0]?.[0]?.transcript || "";
+      setSearchQuery(spoken);
+      applyNaturalLanguageQuery(spoken);
+      setIsListening(false);
+      handleRedirectClick(spoken);
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+  }
+
+  function stopVoiceSearch() {
+    if (recognitionRef.current) recognitionRef.current.stop();
+    setIsListening(false);
+  }
+
+  function handleImageSearchFile(file) {
+    if (!file) return;
+    const name = normalizeText(file.name);
+    let matched = null;
+    for (const [theme, keys] of Object.entries(IMAGE_THEME_HINTS)) {
+      if (keys.some((k) => name.includes(k))) {
+        matched = theme;
+        break;
+      }
+    }
+    if (!matched) matched = "beach";
+    setSelectedTypes((prev) => (prev.includes(matched) ? prev : [...prev, matched]));
+    const suggested = inferDestination(name, matched);
+    if (suggested) setDestination(suggested);
+    setSearchQuery(file.name.replace(/\.[^/.]+$/, ""));
+    handleRedirectClick(file.name);
+  }
 
   function handleDateSelect(date) {
     if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(null); setHoverDate(null); }
@@ -1024,13 +1228,90 @@ export default function TBOHomepage() {
     return { year: d.getFullYear(), month: d.getMonth(), emoji: MONTH_EMOJIS[d.getMonth()] };
   });
 
-  function handleRedirectClick() {
+  function handleRedirectClick(spokenInput = "") {
     if (!requireAuth()) return;
-    alert("Searching with filters...");
+
+    const normalizedSpoken = normalizeText(spokenInput || searchQuery);
+    const spokenTheme = inferTheme(normalizedSpoken);
+    const spokenDestination = inferDestination(normalizedSpoken, spokenTheme);
+    const effectiveDestination = spokenDestination || destination || (selectedTypes.includes("beach") ? "Goa" : "");
+    const nextGuests = spokenInput ? inferGuestsFromText(normalizedSpoken) : guests;
+
+    if (spokenInput) {
+      applyNaturalLanguageQuery(spokenInput);
+    } else if (searchQuery) {
+      applyNaturalLanguageQuery(searchQuery);
+    }
+
+    const payload = {
+      source: spokenInput ? "voice" : "manual",
+      query: spokenInput || searchQuery || "",
+      destination: effectiveDestination,
+      whenTab,
+      startDate: startDate ? startDate.toISOString() : null,
+      endDate: endDate ? endDate.toISOString() : null,
+      selectedTypes,
+      guests: nextGuests,
+      budget: {
+        selectedBudget,
+        maxValue: Math.round(budgetSlider * 5000),
+      },
+    };
+    localStorage.setItem("voyagehack.smartQuery", JSON.stringify(payload));
+    localStorage.setItem("homepageSearch", JSON.stringify({
+      destination: effectiveDestination || "Anywhere",
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      adults: nextGuests.adults,
+      children: nextGuests.children,
+      infants: nextGuests.infants,
+      budgetMax: payload.budget.maxValue,
+      selectedTypes,
+    }));
+
+    if (effectiveDestination) {
+      setDestination(effectiveDestination);
+    }
+
+    const destinationKey = normalizeText(effectiveDestination).split(" ")[0];
+    const flightRoute = FLIGHT_ROUTES[destinationKey];
+    if (flightRoute) {
+      localStorage.setItem("voyagehack.flight.prefill", JSON.stringify({
+        from: flightRoute.from,
+        to: flightRoute.to,
+        depDate: startDate ? startDate.toISOString() : null,
+        retDate: endDate ? endDate.toISOString() : null,
+        tripType: endDate ? "roundtrip" : "oneway",
+        cabin: "Economy",
+        pax: {
+          adults: nextGuests.adults,
+          children: nextGuests.children,
+          infants: nextGuests.infants,
+        },
+      }));
+    }
+
+    const queryForService = normalizeText(`${spokenInput || ""} ${searchQuery || ""}`);
+    const service =
+      (queryForService.includes("flight") || queryForService.includes("air")) ? "flights" :
+      (queryForService.includes("hotel") || queryForService.includes("stay")) ? "hotels" :
+      (queryForService.includes("cab")) ? "cabs" :
+      (queryForService.includes("car rental") || queryForService.includes("self drive")) ? "carrental" :
+      null;
+    const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
+    if (service && routeMap[service]) {
+      navigate(routeMap[service]);
+      return;
+    }
+    if (flightRoute) {
+      navigate("/flights");
+      return;
+    }
+    navigate("/results");
   }
   function handleBookNow() {
     if (!requireAuth()) return;
-    alert("Proceeding to booking...");
+    handleRedirectClick();
   }
 
   const svWidth = visibleCards * cardW + (visibleCards - 1) * GAP;
@@ -1053,29 +1334,36 @@ export default function TBOHomepage() {
             <button className="nav-link active">Home</button>
 
             {/* Products dropdown */}
-            <div className="products-nav-wrap" ref={productsRef} style={{position:"relative"}}>
+            <div className="products-nav-wrap" ref={productsRef} style={{position:"relative"}}
+              onMouseEnter={() => setProductsOpen(true)}
+              onMouseLeave={() => setProductsOpen(false)}
+            >
               <button
                 className={`nav-link${productsOpen ? " active" : ""}`}
-                onMouseEnter={() => setProductsOpen(true)}
-                onMouseLeave={() => setProductsOpen(false)}
                 onClick={() => setProductsOpen(o => !o)}
               >
                 Products <span className="chevron" />
               </button>
               {productsOpen && (
-                <div className="products-dropdown"
-                  onMouseEnter={() => setProductsOpen(true)}
-                  onMouseLeave={() => setProductsOpen(false)}>
-                  {PRODUCTS.map(p => (
-                    <div key={p.id} className="product-item" onClick={() => setProductsOpen(false)} role="button">
-                      <div className={`product-item-icon ${p.colorClass}`}>{p.icon}</div>
-                      <div className="product-item-text">
-                        <div className="product-item-name">{p.name}</div>
-                        <div className="product-item-desc">{p.desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  {/* invisible bridge to prevent gap closing dropdown */}
+                  <div style={{position:"absolute",top:"100%",left:0,right:0,height:14,zIndex:599}} />
+                  <div className="products-dropdown" style={{top:"calc(100% + 14px)"}}>
+                    {PRODUCTS.map(p => {
+                      const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
+                      return (
+                        <div key={p.id} className="product-item" role="button"
+                          onClick={() => { setProductsOpen(false); navigate(routeMap[p.id]); }}>
+                          <div className={`product-item-icon ${p.colorClass}`}>{p.icon}</div>
+                          <div className="product-item-text">
+                            <div className="product-item-name">{p.name}</div>
+                            <div className="product-item-desc">{p.desc}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
 
@@ -1145,11 +1433,12 @@ export default function TBOHomepage() {
                   placeholder="Search destinations, hotels, activities..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleRedirectClick(); }}
                   autoFocus
                   aria-label="Search"
                 />
                 <div className={isListening ? "voice-active" : ""}>
-                  <button className="exp-icon-btn" onClick={() => setIsListening(l => !l)} title={isListening ? "Stop" : "Voice search"}>
+                  <button className="exp-icon-btn" onClick={() => (isListening ? stopVoiceSearch() : startVoiceSearch())} title={isListening ? "Stop" : "Voice search"}>
                     <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="9" y="2" width="6" height="12" rx="3"/>
                       <path d="M5 10a7 7 0 0014 0"/>
@@ -1165,8 +1454,8 @@ export default function TBOHomepage() {
                     <polyline points="21,15 16,10 5,21"/>
                   </svg>
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={e => { const f = e.target.files[0]; if(f) console.log("Image search:", f.name); }}/>
-                <button className="exp-close-btn" onClick={() => { setSearchExpanded(false); setSearchQuery(""); setIsListening(false); }} aria-label="Close search">✕</button>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={e => { const f = e.target.files[0]; handleImageSearchFile(f); }}/>
+                <button className="exp-close-btn" onClick={() => { setSearchExpanded(false); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">✕</button>
               </div>
             ) : (
               /* ── PILL SEARCH BAR ── */
@@ -1541,3 +1830,4 @@ export default function TBOHomepage() {
     </>
   );
 }
+
