@@ -299,6 +299,8 @@ const css = `
 
 /* ── sub-nav ── */
 .hp-nav{background:linear-gradient(90deg,#0b3d6e,#0f5298);display:flex;align-items:center;padding:0 28px;height:60px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2);flex-shrink:0}
+.hp-nav-menu{display:flex;align-items:center;gap:4px;width:100%}
+.hp-nav-toggle{display:none}
 .hp-ni{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 16px;border-radius:10px;cursor:pointer;color:rgba(255,255,255,.6);font-size:.66rem;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:all .2s;border:1px solid transparent;min-width:68px}
 .hp-ni:hover{background:rgba(255,255,255,.1);color:#fff}
 .hp-ni.act{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.25)}
@@ -322,6 +324,7 @@ const css = `
 .hp-sbox{background:#fff;border-radius:18px;box-shadow:0 4px 28px rgba(15,82,152,.09),0 1px 4px rgba(0,0,0,.05);border:1px solid rgba(15,82,152,.08)}
 .hp-srow1{display:flex;align-items:flex-end;padding:18px 18px 14px;gap:10px;border-bottom:1px solid #f0f4f8;flex-wrap:wrap}
 .hp-srow2{display:flex;align-items:flex-end;padding:12px 18px 16px;gap:10px;flex-wrap:wrap}
+.hp-filters-toggle{display:none}
 
 /* field */
 .hp-f{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
@@ -541,6 +544,17 @@ const css = `
   .hp-stats{grid-template-columns:1fr 1fr}
   .hp-ck-grid{grid-template-columns:1fr}
   .hp-fgrid{grid-template-columns:1fr}
+  .hp-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
+  .hp-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
+  .hp-nav-toggle svg{width:18px;height:18px}
+  .hp-nav-menu{display:none;position:absolute;top:calc(100% + 6px);left:12px;right:12px;z-index:520;flex-direction:column;align-items:stretch;gap:6px;padding:8px;background:linear-gradient(135deg,#0b3d6e,#0f5298);border:1px solid rgba(255,255,255,.18);border-radius:12px;box-shadow:0 12px 24px rgba(2,6,23,.35)}
+  .hp-nav-menu.open{display:flex}
+  .hp-ni{flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 12px;min-width:0;font-size:.74rem}
+  .hp-ni svg{width:17px;height:17px}
+  .hp-back-btn{margin-left:0;justify-content:center}
+  .hp-srow2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;padding:12px 14px 14px;gap:10px}
+  .hp-ff{min-width:0}
+  .hp-ffin{min-height:42px}
 }
 @media(max-width:640px){
   .hp-banner{display:none}
@@ -548,6 +562,17 @@ const css = `
   .hp-hcard-inner{grid-template-columns:1fr}
   .hp-himg{width:100%;height:130px;border-radius:0}
   .hp-stats{grid-template-columns:1fr}
+  .hp-sbox{border-radius:14px}
+  .hp-srow1{padding:12px}
+  .hp-filters-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:calc(100% - 24px);margin:0 12px 10px;background:linear-gradient(135deg,#eef6ff,#e4f0ff);border:1.5px solid #bfdbfe;border-radius:11px;padding:10px 12px;color:#0f5298;font-size:.82rem;font-weight:700;font-family:inherit;cursor:pointer}
+  .hp-filters-toggle svg{width:16px;height:16px;flex-shrink:0}
+  .hp-srow2{display:none;grid-template-columns:1fr;gap:12px;padding:0 12px 12px}
+  .hp-srow2-wrap.open .hp-srow2{display:grid}
+  .hp-lbl{font-size:.64rem;letter-spacing:.7px;color:#64748b}
+  .hp-ffin{padding:10px 12px;min-height:46px;border-radius:10px}
+  .hp-ffval,.hp-ffin input{font-size:.88rem;color:#1e293b}
+  .hp-ffic svg,.hp-chev svg{width:16px;height:16px}
+  .hp-ff .hp-drop{left:0;right:0;min-width:0;width:100%}
 }
 `;
 
@@ -662,6 +687,8 @@ export default function HotelsPage({onBack}){
   const [hotels,setHotels]     = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
   const [showMap,setShowMap]   = useState(true);
+  const [mobileNavOpen,setMobileNavOpen] = useState(false);
+  const [mobileFiltersOpen,setMobileFiltersOpen] = useState(false);
   const [detailHotel,setDetailHotel] = useState(null);
   const [detailImageIdx,setDetailImageIdx] = useState(0);
   const [detailLoading,setDetailLoading] = useState(false);
@@ -1050,18 +1077,31 @@ export default function HotelsPage({onBack}){
 
         {/* ── SUB-NAV ── */}
         <nav className="hp-nav">
-          {[
-            {lbl:"Hotels",act:true,ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>},
-            {lbl:"Queues",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>},
-            {lbl:"Accounts",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>},
-            {lbl:"Reports",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-            {lbl:"Admin",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 4.93"/><path d="M19.07 19.07A10 10 0 0 0 4.93 19.07"/></svg>},
-          ].map(item=>(
-            <div key={item.lbl} className={`hp-ni${item.act?" act":""}`}>
-              {item.ic}<span>{item.lbl}</span>
-            </div>
-          ))}
-          {onBack && <button className="hp-back-btn" onClick={onBack}>← Back to TBO</button>}
+          <button
+            type="button"
+            className="hp-nav-toggle"
+            onClick={()=>setMobileNavOpen(v=>!v)}
+            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              {mobileNavOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
+            </svg>
+            <span>Menu</span>
+          </button>
+          <div className={`hp-nav-menu${mobileNavOpen ? " open" : ""}`}>
+            {[
+              {lbl:"Hotels",act:true,ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>},
+              {lbl:"Queues",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>},
+              {lbl:"Accounts",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>},
+              {lbl:"Reports",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+              {lbl:"Admin",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 4.93"/><path d="M19.07 19.07A10 10 0 0 0 4.93 19.07"/></svg>},
+            ].map(item=>(
+              <div key={item.lbl} className={`hp-ni${item.act?" act":""}`}>
+                {item.ic}<span>{item.lbl}</span>
+              </div>
+            ))}
+            {onBack && <button className="hp-back-btn" onClick={onBack}>← Back to TBO</button>}
+          </div>
         </nav>
 
         {/* ── CONTENT ── */}
@@ -1235,7 +1275,25 @@ export default function HotelsPage({onBack}){
               </div>
 
               {/* row 2 – filters */}
-              <div className="hp-srow2">
+              <div className={`hp-srow2-wrap${mobileFiltersOpen ? " open" : ""}`}>
+                <button
+                  type="button"
+                  className="hp-filters-toggle"
+                  onClick={()=>{
+                    setMobileFiltersOpen(v=>!v);
+                    if (mobileFiltersOpen) setDrop(null);
+                  }}
+                  aria-label={mobileFiltersOpen ? "Hide filters" : "Show filters"}
+                >
+                  <span style={{display:"flex",alignItems:"center",gap:8}}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                      <polygon points="22 3 2 3 10 12 10 19 14 21 14 12 22 3"/>
+                    </svg>
+                    Filters
+                  </span>
+                  <span>{mobileFiltersOpen ? "Hide" : "Show"}</span>
+                </button>
+                <div className="hp-srow2">
 
                 {/* destination country */}
                 <div className="hp-ff" style={{position:"relative"}}>
@@ -1313,6 +1371,7 @@ export default function HotelsPage({onBack}){
                   </div>
                 </div>
 
+                </div>
               </div>
             </div>
           )}
