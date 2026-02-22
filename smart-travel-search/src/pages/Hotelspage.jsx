@@ -31,15 +31,23 @@ function toArray(v) {
 }
 
 function roomTotal(room, hotel) {
-  return Number(
-    room?.Price?.OfferedPrice ??
-    room?.Price?.PublishedPrice ??
-    room?.TotalFare ??
-    hotel?.Price?.OfferedPrice ??
-    hotel?.Price?.PublishedPrice ??
-    hotel?.TotalFare ??
-    0
-  );
+  const candidates = [
+    room?.Price?.OfferedPrice,
+    room?.Price?.PublishedPrice,
+    room?.Price?.OfferedPriceRoundedOff,
+    room?.Price?.PublishedPriceRoundedOff,
+    room?.TotalFare,
+    hotel?.Price?.OfferedPrice,
+    hotel?.Price?.PublishedPrice,
+    hotel?.Price?.OfferedPriceRoundedOff,
+    hotel?.Price?.PublishedPriceRoundedOff,
+    hotel?.TotalFare,
+  ];
+  for (const value of candidates) {
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 0;
 }
 
 function getPrebookRooms(prebookRes) {
@@ -122,10 +130,83 @@ function normalizeImageUrl(url) {
   }
 }
 
+const INR_RATES = {
+  INR: 1,
+  USD: 83.0,
+  EUR: 90.0,
+  GBP: 106.0,
+  AED: 22.6,
+  SGD: 61.0,
+  THB: 2.3,
+};
+
+function toINR(amount, currency) {
+  const value = Number(amount || 0);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const code = String(currency || "INR").toUpperCase();
+  const rate = INR_RATES[code] || 1;
+  return value * rate;
+}
+
+function roomCurrency(room, hotel) {
+  return (
+    room?.Price?.CurrencyCode ||
+    room?.CurrencyCode ||
+    hotel?.Price?.CurrencyCode ||
+    hotel?.Currency ||
+    "INR"
+  );
+}
+
+function hotelDisplayPrice(hotel) {
+  const rooms = Array.isArray(hotel?.Rooms)
+    ? hotel.Rooms
+    : (hotel?.Rooms ? [hotel.Rooms] : []);
+  const roomPrices = rooms
+    .map((r) => ({ amount: roomTotal(r, hotel), currency: roomCurrency(r, hotel) }))
+    .filter((p) => p.amount > 0);
+
+  if (roomPrices.length > 0) {
+    const cheapest = roomPrices.reduce((min, cur) => (cur.amount < min.amount ? cur : min), roomPrices[0]);
+    return {
+      amount: cheapest.amount,
+      currency: cheapest.currency,
+      amountINR: toINR(cheapest.amount, cheapest.currency),
+    };
+  }
+
+  const fallbackAmount = roomTotal(null, hotel);
+  const fallbackCurrency = roomCurrency(null, hotel);
+  return {
+    amount: fallbackAmount,
+    currency: fallbackCurrency,
+    amountINR: toINR(fallbackAmount, fallbackCurrency),
+  };
+}
+
 function hotelImageUrls(hotel) {
   const parseAnyImages = (value) => {
     if (!value) return [];
-    if (Array.isArray(value)) return value.map(normalizeImageUrl).filter(Boolean);
+    if (Array.isArray(value)) {
+      return value
+        .flatMap((item) => {
+          if (!item) return [];
+          if (typeof item === "string") return [item];
+          if (typeof item === "object") {
+            return [
+              item.ImageUrl,
+              item.ImageURL,
+              item.imageURL,
+              item.Url,
+              item.URL,
+              item.url,
+            ].filter(Boolean);
+          }
+          return [];
+        })
+        .map(normalizeImageUrl)
+        .filter(Boolean);
+    }
     if (typeof value !== "string") return [];
     const trimmed = value.trim();
     if (!trimmed) return [];
@@ -149,6 +230,15 @@ function hotelImageUrls(hotel) {
   ]
     .map(normalizeImageUrl)
     .filter(Boolean);
+  const roomDetails = Array.isArray(hotel?.RoomDetails) ? hotel.RoomDetails : [];
+  for (const room of roomDetails) {
+    urls.push(
+      ...parseAnyImages(room?.imageURL),
+      ...parseAnyImages(room?.ImageURL),
+      ...parseAnyImages(room?.ImageUrls),
+      ...parseAnyImages(room?.Images)
+    );
+  }
   return [...new Set(urls)];
 }
 
@@ -574,6 +664,7 @@ export default function HotelsPage({onBack}){
   const [showMap,setShowMap]   = useState(true);
   const [detailHotel,setDetailHotel] = useState(null);
   const [detailImageIdx,setDetailImageIdx] = useState(0);
+  const [detailLoading,setDetailLoading] = useState(false);
 
   /* ── prebook / booking ── */
   const [selHotel,setSelHotel]   = useState(null);
@@ -733,6 +824,33 @@ export default function HotelsPage({onBack}){
     }catch(e){
       setApiErr(`Search failed: ${e.message}`);
     }finally{ setLoading(false); }
+  }
+
+  async function openHotelDetails(hotel){
+    setDetailImageIdx(0);
+    setDetailHotel(hotel);
+    const hotelCode = String(hotel?.HotelCode || "").trim();
+    if(!hotelCode) return;
+
+    setDetailLoading(true);
+    try{
+      const data = await apiPost("hoteldetails",{
+        Hotelcodes: hotelCode,
+        Language: "EN",
+        IsRoomDetailRequired: true,
+      });
+      const detail = Array.isArray(data?.HotelDetails) ? data.HotelDetails[0] : null;
+      if(!detail) return;
+
+      const merged = { ...hotel, ...detail };
+      const mergedImages = [...new Set([...hotelImageUrls(hotel), ...hotelImageUrls(detail)])];
+      if (mergedImages.length > 0) merged.Images = mergedImages;
+      setDetailHotel(merged);
+    }catch{
+      // Keep base search data modal open if detailed fetch fails.
+    }finally{
+      setDetailLoading(false);
+    }
   }
 
   /* ══════════════════════
@@ -1279,8 +1397,8 @@ export default function HotelsPage({onBack}){
               )}
 
               {sorted.map((h,idx)=>{
-                const price = roomTotal(h?.Rooms?.[0], h);
-                const cur   = h.Price?.CurrencyCode || h.Currency || "INR";
+                const pricing = hotelDisplayPrice(h);
+                const priceInr = pricing.amountINR;
                 const img   = firstHotelImage(h);
                 const ref   = h.IsRefundable ?? true;
                 const stRaw = h.HotelRating  || h.StarRating || 0;
@@ -1294,14 +1412,14 @@ export default function HotelsPage({onBack}){
                   <div key={h.HotelCode||idx} className="hp-hcard">
                     <div className="hp-hcard-inner">
                       {/* image */}
-                      <div className="hp-himg" style={{cursor:"pointer"}} onClick={()=>{ setDetailHotel(h); setDetailImageIdx(0); }}>
+                      <div className="hp-himg" style={{cursor:"pointer"}} onClick={()=>openHotelDetails(h)}>
                         {img
                           ? <HotelImage hotel={h} alt={h.HotelName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           : <span>🏨</span>}
                       </div>
                       {/* body */}
                       <div className="hp-hbody">
-                        <div className="hp-hname" style={{cursor:"pointer"}} onClick={()=>{ setDetailHotel(h); setDetailImageIdx(0); }}>{h.HotelName||"Hotel"}</div>
+                        <div className="hp-hname" style={{cursor:"pointer"}} onClick={()=>openHotelDetails(h)}>{h.HotelName||"Hotel"}</div>
                         {stRaw>0 && <div className="hp-hstars">{stars(stRaw)}</div>}
                         <div className="hp-haddr">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1340,13 +1458,18 @@ export default function HotelsPage({onBack}){
                       <div className="hp-hprice">
                         <div>
                           <div className="hp-plbl">Starting from</div>
-                          <div className="hp-pval">{price>0?Math.round(price).toLocaleString():"—"}</div>
-                          <div className="hp-pcur">{cur}</div>
-                          {nt>0&&price>0&&<div className="hp-pper">≈ {Math.round(price/nt).toLocaleString()} / night</div>}
+                          <div className="hp-pval">{priceInr>0?Math.round(priceInr).toLocaleString("en-IN"):"—"}</div>
+                          <div className="hp-pcur">INR</div>
+                          {pricing.amount > 0 && String(pricing.currency).toUpperCase() !== "INR" && (
+                            <div style={{fontSize:".62rem",color:"#64748b"}}>
+                              {pricing.currency} {Math.round(pricing.amount).toLocaleString("en-IN")}
+                            </div>
+                          )}
+                          {nt>0&&priceInr>0&&<div className="hp-pper">≈ {Math.round(priceInr/nt).toLocaleString("en-IN")} / night</div>}
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
                           <span className={`hp-rbadge ${ref?"ref":"nref"}`}>{ref?"✓ Refundable":"Non-Refundable"}</span>
-                          <button className="hp-detail-btn" style={{background:"#eef6ff",border:"1px solid #bfdbfe",color:"#0f5298",borderRadius:8,padding:"7px 10px",fontSize:".72rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}} onClick={()=>{ setDetailHotel(h); setDetailImageIdx(0); }}>View Details</button>
+                          <button className="hp-detail-btn" style={{background:"#eef6ff",border:"1px solid #bfdbfe",color:"#0f5298",borderRadius:8,padding:"7px 10px",fontSize:".72rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}} onClick={()=>openHotelDetails(h)}>View Details</button>
                           <button className="hp-selrm-btn" onClick={()=>doPrebook(h)}>Select Room →</button>
                         </div>
                       </div>
@@ -1369,6 +1492,9 @@ export default function HotelsPage({onBack}){
                 </div>
                 <div className="hp-mbody" style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:14}}>
                   <div>
+                    {detailLoading && (
+                      <div style={{marginBottom:8,fontSize:".74rem",color:"#64748b"}}>Loading more hotel photos...</div>
+                    )}
                     <div style={{height:290,borderRadius:12,overflow:"hidden",border:"1px solid #dbeafe",background:"#f8fafc",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <HotelImage
                         hotel={{...detailHotel, Images: hotelImageUrls(detailHotel).slice(detailImageIdx)}}
@@ -1388,6 +1514,25 @@ export default function HotelsPage({onBack}){
                             <img src={proxyImageUrl(u)} alt={`Hotel ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
                           </button>
                         ))}
+                      </div>
+                    )}
+                    {hotelImageUrls(detailHotel).length > 4 && (
+                      <div style={{marginTop:12}}>
+                        <div style={{fontSize:".74rem",fontWeight:700,color:"#475569",marginBottom:8}}>
+                          More Photos ({hotelImageUrls(detailHotel).length})
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8}}>
+                          {hotelImageUrls(detailHotel).map((u, i) => (
+                            <button
+                              key={`grid-${u}-${i}`}
+                              type="button"
+                              onClick={()=>setDetailImageIdx(i)}
+                              style={{border:i===detailImageIdx?"2px solid #0f5298":"1px solid #cbd5e1",borderRadius:8,padding:0,overflow:"hidden",height:80,background:"#fff",cursor:"pointer"}}
+                            >
+                              <img src={proxyImageUrl(u)} alt={`Hotel image ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {detailHotel.Description && (

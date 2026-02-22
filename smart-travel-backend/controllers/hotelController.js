@@ -15,6 +15,9 @@ const SUCCESS_CODES = new Set([200, "200", "01", 201, "201"]);
 const ALLOWED_IMAGE_HOSTS = new Set([
   "api.tbotechnology.in",
   "tbotechnology.in",
+  "www.tbotechnology.in",
+  "www.tboholidays.com",
+  "tboholidays.com",
   "static-sources.s3-eu-west-1.amazonaws.com",
 ]);
 
@@ -130,6 +133,10 @@ function parseHotelRating(value) {
 
 function sanitizeImageUrl(value) {
   if (!value) return "";
+  if (typeof value === "object") {
+    const candidate = value.ImageUrl || value.ImageURL || value.imageURL || value.Url || value.URL || value.url;
+    return sanitizeImageUrl(candidate);
+  }
   const raw = String(value).replace(/[\r\n\t]/g, "").trim();
   if (!raw) return "";
   if (raw.startsWith("//")) return `https:${raw}`;
