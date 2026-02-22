@@ -524,7 +524,7 @@ export default function FlightsPage() {
 
   function fmtDate(d) {
     if (!d) return "";
-    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   }
 
   function paxLabel() {

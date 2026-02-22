@@ -702,25 +702,25 @@ const css = `
 
 /* ─── DATA ─── */
 const destinations = [
-  { city: "Dubai", country: "UAE", emoji: "CITY", recent: true, tags: ["city", "luxury", "shopping"] },
-  { city: "Paris", country: "France", emoji: "CITY", recent: true, tags: ["city", "heritage", "romance"] },
-  { city: "Bali", country: "Indonesia", emoji: "BEACH", tags: ["beach", "wellness", "adventure"] },
-  { city: "New York", country: "USA", emoji: "CITY", tags: ["city", "shopping"] },
-  { city: "Tokyo", country: "Japan", emoji: "CITY", tags: ["city", "heritage"] },
-  { city: "London", country: "UK", emoji: "CITY", tags: ["city", "heritage"] },
-  { city: "Bangkok", country: "Thailand", emoji: "CITY", tags: ["city", "wellness"] },
-  { city: "Singapore", country: "Singapore", emoji: "CITY", tags: ["city", "family"] },
-  { city: "Sydney", country: "Australia", emoji: "COAST", tags: ["city", "beach"] },
-  { city: "Maldives", country: "Maldives", emoji: "BEACH", tags: ["beach", "luxury"] },
-  { city: "Istanbul", country: "Turkey", emoji: "HIST", tags: ["heritage", "city"] },
-  { city: "Rome", country: "Italy", emoji: "HIST", tags: ["heritage", "city"] },
-  { city: "Goa", country: "India", emoji: "BEACH", tags: ["beach", "nightlife", "adventure"] },
-  { city: "Kochi", country: "India", emoji: "BEACH", tags: ["beach", "wellness"] },
-  { city: "Andaman", country: "India", emoji: "ISLE", tags: ["beach", "adventure"] },
-  { city: "Manali", country: "India", emoji: "HILL", tags: ["mountains", "adventure"] },
-  { city: "Rishikesh", country: "India", emoji: "HILL", tags: ["mountains", "adventure", "wellness"] },
-  { city: "Jaipur", country: "India", emoji: "HIST", tags: ["heritage", "city"] },
-  { city: "Varanasi", country: "India", emoji: "FAITH", tags: ["religious", "heritage"] },
+  { city: "Dubai", country: "UAE", emoji: "\uD83C\uDFD9\uFE0F", recent: true, tags: ["city", "luxury", "shopping"] },
+  { city: "Paris", country: "France", emoji: "\uD83D\uDDFC", recent: true, tags: ["city", "heritage", "romance"] },
+  { city: "Bali", country: "Indonesia", emoji: "\uD83C\uDF34", tags: ["beach", "wellness", "adventure"] },
+  { city: "New York", country: "USA", emoji: "\uD83D\uDDFD", tags: ["city", "shopping"] },
+  { city: "Tokyo", country: "Japan", emoji: "\u26E9\uFE0F", tags: ["city", "heritage"] },
+  { city: "London", country: "UK", emoji: "\uD83C\uDFA1", tags: ["city", "heritage"] },
+  { city: "Bangkok", country: "Thailand", emoji: "\uD83C\uDFEF", tags: ["city", "wellness"] },
+  { city: "Singapore", country: "Singapore", emoji: "\uD83E\uDD81", tags: ["city", "family"] },
+  { city: "Sydney", country: "Australia", emoji: "\uD83E\uDD98", tags: ["city", "beach"] },
+  { city: "Maldives", country: "Maldives", emoji: "\uD83C\uDFDD\uFE0F", tags: ["beach", "luxury"] },
+  { city: "Istanbul", country: "Turkey", emoji: "\uD83D\uDD4C", tags: ["heritage", "city"] },
+  { city: "Rome", country: "Italy", emoji: "\uD83C\uDFDB\uFE0F", tags: ["heritage", "city"] },
+  { city: "Goa", country: "India", emoji: "\uD83C\uDFD6\uFE0F", tags: ["beach", "nightlife", "adventure"] },
+  { city: "Kochi", country: "India", emoji: "\uD83C\uDF34", tags: ["beach", "wellness"] },
+  { city: "Andaman", country: "India", emoji: "\uD83E\uDEB8", tags: ["beach", "adventure"] },
+  { city: "Manali", country: "India", emoji: "\u26F0\uFE0F", tags: ["mountains", "adventure"] },
+  { city: "Rishikesh", country: "India", emoji: "\uD83D\uDEF6\uFE0F", tags: ["mountains", "adventure", "wellness"] },
+  { city: "Jaipur", country: "India", emoji: "\uD83C\uDFF0", tags: ["heritage", "city"] },
+  { city: "Varanasi", country: "India", emoji: "\uD83D\uDD49\uFE0F", tags: ["religious", "heritage"] },
 ];
 const THEME_ALIASES = {
   beach: ["beach", "sea", "island", "coast"],
@@ -1067,7 +1067,10 @@ export default function TBOHomepage() {
         return false;
       })
     : destinations;
-  const recents = filtered.filter(d => d.recent), others = filtered.filter(d => !d.recent);
+  const typeFiltered = selectedTypes.length
+    ? filtered.filter((d) => Array.isArray(d.tags) && selectedTypes.some((t) => d.tags.includes(t)))
+    : filtered;
+  const recents = typeFiltered.filter(d => d.recent), others = typeFiltered.filter(d => !d.recent);
 
   function inferTheme(text) {
     const normalized = normalizeText(text);
@@ -1545,7 +1548,7 @@ export default function TBOHomepage() {
                           <div><div className="dest-city">{d.city}</div><div className="dest-country">{d.country}</div></div>
                         </div>
                       ))}
-                      {filtered.length === 0 && <div style={{padding:"12px",color:"#aaa",fontSize:"0.8rem"}}>No results</div>}
+                      {typeFiltered.length === 0 && <div style={{padding:"12px",color:"#aaa",fontSize:"0.8rem"}}>No results</div>}
                     </div>
                   </div>
                 )}
