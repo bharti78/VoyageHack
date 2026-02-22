@@ -10,6 +10,7 @@ if (!TBO_USER || !TBO_PASS || !TBO_BASE) {
 }
 
 const AUTH = "Basic " + Buffer.from(`${TBO_USER}:${TBO_PASS}`).toString("base64");
+const MAX_SEARCH_HOTEL_CODES = 100;
 
 async function tboFetch(endpoint, payload) {
   console.log(`TBO API Request: ${endpoint}`, payload);
@@ -36,6 +37,41 @@ async function tboFetch(endpoint, payload) {
 }
 
 const cityCache = {};
+const cityHotelCodeCache = {};
+
+function normalizeHotelCodes(rawCodes) {
+  if (!rawCodes) return "";
+  const uniqueCodes = [...new Set(
+    String(rawCodes)
+      .split(",")
+      .map(code => code.trim())
+      .filter(Boolean)
+  )];
+  return uniqueCodes.slice(0, MAX_SEARCH_HOTEL_CODES).join(",");
+}
+
+async function getHotelCodesForCity(cityCode) {
+  const key = String(cityCode || "").trim();
+  if (!key) return "";
+
+  if (cityHotelCodeCache[key]) {
+    return cityHotelCodeCache[key];
+  }
+
+  const data = await tboFetch("TBOHotelCodeList", {
+    CityCode: key,
+    IsDetailedResponse: true,
+  });
+
+  const codes = (data.Hotels || [])
+    .map(h => String(h.HotelCode || "").trim())
+    .filter(Boolean)
+    .slice(0, MAX_SEARCH_HOTEL_CODES);
+
+  const hotelCodes = codes.join(",");
+  cityHotelCodeCache[key] = hotelCodes;
+  return hotelCodes;
+}
 
 exports.searchCities = async (req, res) => {
   try {
@@ -72,15 +108,26 @@ exports.searchCities = async (req, res) => {
 exports.hotelSearch = async (req, res) => {
   try {
     console.log('Hotel search request:', req.body);
-    
-    // Check if HotelCodes is provided
-    if (!req.body.HotelCodes || req.body.HotelCodes === "") {
-      return res.status(400).json({ 
-        error: "Hotel search requires specific hotel codes. Please select specific hotels to search. The TBO API does not support city-based searches without hotel codes." 
+
+    const payload = { ...req.body };
+    payload.HotelCodes = normalizeHotelCodes(payload.HotelCodes);
+
+    // If HotelCodes are missing, derive them from city using TBOHotelCodeList.
+    if (!payload.HotelCodes && payload.CityId) {
+      payload.HotelCodes = await getHotelCodesForCity(payload.CityId);
+    }
+
+    if (!payload.HotelCodes) {
+      return res.status(400).json({
+        error: "Unable to search hotels. No HotelCodes were provided and no hotel codes were found for the selected city.",
       });
     }
-    
-    const data = await tboFetch("Search", req.body);
+
+    // Keep Search payload aligned with API spec.
+    delete payload.CityId;
+    delete payload.CountryCode;
+
+    const data = await tboFetch("Search", payload);
     console.log('Hotel search successful:', data);
     res.json(data);
   } catch (err) {
@@ -91,7 +138,17 @@ exports.hotelSearch = async (req, res) => {
 
 exports.preBook = async (req, res) => {
   try {
-    const data = await tboFetch("PreBook", req.body);
+    const bookingCode = String(req.body?.BookingCode || "").trim();
+    if (!bookingCode) {
+      return res.status(400).json({ error: "PreBook requires a valid BookingCode." });
+    }
+
+    const payload = {
+      BookingCode: bookingCode,
+      PaymentMode: req.body?.PaymentMode || "Limit",
+    };
+
+    const data = await tboFetch("PreBook", payload);
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });

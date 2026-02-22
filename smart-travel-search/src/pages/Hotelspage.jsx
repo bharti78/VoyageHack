@@ -22,6 +22,31 @@ async function apiPost(endpoint, payload) {
   return json;
 }
 
+function toArray(v) {
+  if (Array.isArray(v)) return v;
+  if (v === undefined || v === null || v === "") return [];
+  return [v];
+}
+
+function roomTotal(room, hotel) {
+  return Number(
+    room?.Price?.OfferedPrice ??
+    room?.Price?.PublishedPrice ??
+    room?.TotalFare ??
+    hotel?.Price?.OfferedPrice ??
+    hotel?.Price?.PublishedPrice ??
+    hotel?.TotalFare ??
+    0
+  );
+}
+
+function getPrebookRooms(prebookRes) {
+  if (Array.isArray(prebookRes?.HotelResult)) {
+    return prebookRes.HotelResult[0]?.Rooms || [];
+  }
+  return prebookRes?.HotelResult?.Rooms || [];
+}
+
 /* ═══════════════════════════════════════════════
    CSS
    ═══════════════════════════════════════════════ */
@@ -511,13 +536,20 @@ export default function HotelsPage({onBack}){
      ══════════════════════ */
   async function doPrebook(hotel){
     setSelHotel(hotel); setPrebookRes(null); setSelRateIdx(0);
-    setApiErr(""); setLoading(true); setPage("prebook");
+    setApiErr("");
+
+    const firstRoom = Array.isArray(hotel?.Rooms) ? hotel.Rooms[0] : null;
+    const bcode = firstRoom?.BookingCode || firstRoom?.bookingCode || hotel?.BookingCode || "";
+    if (!bcode) {
+      setApiErr("Unable to open room details: booking code is missing in search response for this hotel.");
+      return;
+    }
+
+    setLoading(true); setPage("prebook");
     try{
-      const bcode = hotel.Rooms?.[0]?.BookingCode || hotel.BookingCode || "";
       const data  = await apiPost("prebook",{
-        SearchId   : searchId,
-        HotelCode  : hotel.HotelCode,
         BookingCode: bcode,
+        PaymentMode: "Limit",
       });
       setPrebookRes(data);
     }catch(e){
@@ -535,7 +567,7 @@ export default function HotelsPage({onBack}){
     setApiErr(""); setLoading(true);
 
     /* pick chosen rate's booking code */
-    const rates    = prebookRes?.HotelResult?.Rooms || selHotel?.Rooms || [];
+    const rates    = getPrebookRooms(prebookRes).length ? getPrebookRooms(prebookRes) : (selHotel?.Rooms || []);
     const rate     = rates[selRateIdx] || rates[0] || selHotel || {};
     const bcode    = prebookRes?.BookingCode || rate.BookingCode || selHotel?.BookingCode || "";
 
@@ -617,7 +649,7 @@ export default function HotelsPage({onBack}){
      SORT results
      ══════════════════════ */
   const sorted = [...hotels].sort((a,b)=>{
-    const pa = a.Price?.OfferedPrice||0, pb = b.Price?.OfferedPrice||0;
+    const pa = roomTotal(a?.Rooms?.[0], a), pb = roomTotal(b?.Rooms?.[0], b);
     if(sortBy==="price_asc")  return pa-pb;
     if(sortBy==="price_desc") return pb-pa;
     if(sortBy==="stars")      return (b.HotelRating||0)-(a.HotelRating||0);
@@ -628,9 +660,10 @@ export default function HotelsPage({onBack}){
   /* ══════════════════════
      PREBOOK rate list
      ══════════════════════ */
-  const rateList = prebookRes?.HotelResult?.Rooms || selHotel?.Rooms || [];
+  const prebookRooms = getPrebookRooms(prebookRes);
+  const rateList = prebookRooms.length ? prebookRooms : (selHotel?.Rooms || []);
   const pickedRate = rateList[selRateIdx] || rateList[0] || selHotel || {};
-  const totalPrice = pickedRate?.Price?.OfferedPrice || selHotel?.Price?.OfferedPrice || 0;
+  const totalPrice = roomTotal(pickedRate, selHotel);
 
   /* ═══════════════════════════════════════════════
      RENDER
@@ -979,8 +1012,8 @@ export default function HotelsPage({onBack}){
               </div>
 
               {sorted.map((h,idx)=>{
-                const price = h.Price?.OfferedPrice || h.Price?.PublishedPrice || 0;
-                const cur   = h.Price?.CurrencyCode || "INR";
+                const price = roomTotal(h?.Rooms?.[0], h);
+                const cur   = h.Price?.CurrencyCode || h.Currency || "INR";
                 const img   = h.HotelPicture || h.ImagePath || null;
                 const ref   = h.IsRefundable ?? true;
                 const stRaw = h.HotelRating  || h.StarRating || 0;
@@ -1065,13 +1098,19 @@ export default function HotelsPage({onBack}){
                             {r.IsRefundable&&<span className="hp-rtag b">Refundable</span>}
                             {r.IsRefundable===false&&<span className="hp-rtag o">Non-Refundable</span>}
                             {r.MealType&&<span className="hp-rtag g">{r.MealType}</span>}
-                            {r.Inclusion?.map((inc,i)=><span key={i} className="hp-rtag g">{inc}</span>)}
+                            {toArray(r.Inclusion).map((inc,i)=><span key={i} className="hp-rtag g">{inc}</span>)}
                           </div>
-                          {r.CancellationPolicies?.length>0&&<div className="hp-rcancel">Cancel policy: {r.CancellationPolicies[0]}</div>}
+                          {(r.CancellationPolicies?.length>0 || r.CancelPolicies?.length>0) && (
+                            <div className="hp-rcancel">
+                              Cancel policy: {typeof (r.CancellationPolicies?.[0] || r.CancelPolicies?.[0]) === "string"
+                                ? (r.CancellationPolicies?.[0] || r.CancelPolicies?.[0])
+                                : JSON.stringify(r.CancellationPolicies?.[0] || r.CancelPolicies?.[0])}
+                            </div>
+                          )}
                         </div>
                         <div style={{textAlign:"right",flexShrink:0}}>
-                          <div className="hp-rcur">{r.Price?.CurrencyCode||"INR"}</div>
-                          <div className="hp-rprice">{Math.round(r.Price?.OfferedPrice||r.Price?.PublishedPrice||selHotel?.Price?.OfferedPrice||0).toLocaleString()}</div>
+                          <div className="hp-rcur">{r.Price?.CurrencyCode||prebookRes?.HotelResult?.[0]?.Currency||selHotel?.Currency||"INR"}</div>
+                          <div className="hp-rprice">{Math.round(roomTotal(r, selHotel)).toLocaleString()}</div>
                           <div style={{fontSize:".6rem",color:"#94a3b8"}}>total</div>
                         </div>
                       </div>
