@@ -34,6 +34,8 @@ const css = `
 
 /* sub-nav */
 .fp-nav{background:linear-gradient(90deg,#1a0050,#3d0099);display:flex;align-items:center;padding:0 28px;height:56px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2);flex-shrink:0}
+.fp-nav-menu{display:flex;align-items:center;gap:4px;width:100%}
+.fp-nav-toggle{display:none}
 .fp-ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 14px;border-radius:10px;cursor:pointer;color:rgba(255,255,255,.6);font-size:.64rem;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:all .2s;border:1px solid transparent;min-width:64px}
 .fp-ni:hover{background:rgba(255,255,255,.1);color:#fff}
 .fp-ni.act{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.25)}
@@ -198,7 +200,14 @@ const css = `
 
 /* responsive */
 @media(max-width:768px){
-  .fp-hdr,.fp-nav{padding:0 14px}
+  .fp-hdr{padding:0 14px}
+  .fp-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
+  .fp-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
+  .fp-nav-toggle svg{width:18px;height:18px}
+  .fp-nav-menu{display:none;position:absolute;top:calc(100% + 6px);left:12px;right:12px;z-index:520;flex-direction:column;align-items:stretch;gap:6px;padding:8px;background:linear-gradient(135deg,#1a0050,#3d0099);border:1px solid rgba(255,255,255,.18);border-radius:12px;box-shadow:0 12px 24px rgba(2,6,23,.35)}
+  .fp-nav-menu.open{display:flex}
+  .fp-ni{flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 12px;border-radius:8px;font-size:.74rem}
+  .fp-ni svg{width:16px;height:16px}
   .fp-content{padding:14px 12px 30px}
   .fp-srow1,.fp-srow2{padding:12px}
   .fp-card-main{gap:10px}
@@ -473,6 +482,7 @@ export default function FlightsPage() {
   const [flights, setFlights] = useState([]);
   const [searched, setSearched] = useState(false);
   const [calendarFares, setCalendarFares] = useState([]);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const panelRef = useRef(null);
 
@@ -654,13 +664,26 @@ export default function FlightsPage() {
 
         {/* Sub-nav */}
         <nav className="fp-nav">
-          {navItems.map(n => (
-            <div key={n.id} className={`fp-ni${n.id === "flights" ? " act" : ""}`}
-              onClick={() => navigate(`/${n.id}`)}>
-              <span>{n.icon}</span>
-              {n.label}
-            </div>
-          ))}
+          <button
+            type="button"
+            className="fp-nav-toggle"
+            onClick={() => setMobileNavOpen((v) => !v)}
+            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+              {mobileNavOpen ? <path d="M6 6l12 12M18 6l-12 12" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
+            </svg>
+            {mobileNavOpen ? "Close Menu" : "Menu"}
+          </button>
+          <div className={`fp-nav-menu${mobileNavOpen ? " open" : ""}`}>
+            {navItems.map(n => (
+              <div key={n.id} className={`fp-ni${n.id === "flights" ? " act" : ""}`}
+                onClick={() => { setMobileNavOpen(false); navigate(`/${n.id}`); }}>
+                <span>{n.icon}</span>
+                {n.label}
+              </div>
+            ))}
+          </div>
         </nav>
 
         {/* Content */}

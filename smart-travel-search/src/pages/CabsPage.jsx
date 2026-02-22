@@ -101,6 +101,8 @@ const css = `
 .cp-back-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;transition:background .2s}
 .cp-back-btn:hover{background:rgba(255,255,255,.22)}
 .cp-nav{background:linear-gradient(90deg,#064e3b,#047857);display:flex;align-items:center;padding:0 28px;height:56px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.cp-nav-menu{display:flex;align-items:center;gap:4px;width:100%}
+.cp-nav-toggle{display:none}
 .cp-ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 14px;border-radius:10px;cursor:pointer;color:rgba(255,255,255,.6);font-size:.64rem;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:all .2s;border:1px solid transparent;min-width:64px}
 .cp-ni:hover{background:rgba(255,255,255,.1);color:#fff}
 .cp-ni.act{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.25)}
@@ -188,7 +190,13 @@ const css = `
 .cp-modal-confirm:hover{transform:translateY(-1px)}
 
 @media(max-width:768px){
-  .cp-hdr,.cp-nav{padding:0 14px}
+  .cp-hdr{padding:0 14px}
+  .cp-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
+  .cp-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
+  .cp-nav-toggle svg{width:18px;height:18px}
+  .cp-nav-menu{display:none;position:absolute;top:calc(100% + 6px);left:12px;right:12px;z-index:520;flex-direction:column;align-items:stretch;gap:6px;padding:8px;background:linear-gradient(135deg,#064e3b,#047857);border:1px solid rgba(255,255,255,.18);border-radius:12px;box-shadow:0 12px 24px rgba(2,6,23,.35)}
+  .cp-nav-menu.open{display:flex}
+  .cp-ni{flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 12px;border-radius:8px;font-size:.74rem}
   .cp-content{padding:14px 12px 30px}
   .cp-srow{padding:12px}
   .cp-card-main{gap:10px}
@@ -228,6 +236,7 @@ export default function CabsPage() {
   const [error, setError] = useState(null);
   const [bookingCab, setBookingCab] = useState(null);
   const [booked, setBooked] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -311,14 +320,27 @@ export default function CabsPage() {
         </header>
 
         <nav className="cp-nav">
-          {navItems.map(n => (
-            <div key={n.id} className={`cp-ni${n.id === "cabs" ? " act" : ""}`} onClick={() => navigate(`/${n.id}`)}>
-              <span style={{fontSize:"1.1rem"}}>
-                {n.id === "flights" ? "✈️" : n.id === "hotels" ? "🏨" : n.id === "cabs" ? "🚕" : "🚗"}
-              </span>
-              {n.label}
-            </div>
-          ))}
+          <button
+            type="button"
+            className="cp-nav-toggle"
+            onClick={() => setMobileNavOpen((v) => !v)}
+            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+              {mobileNavOpen ? <path d="M6 6l12 12M18 6l-12 12" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
+            </svg>
+            {mobileNavOpen ? "Close Menu" : "Menu"}
+          </button>
+          <div className={`cp-nav-menu${mobileNavOpen ? " open" : ""}`}>
+            {navItems.map(n => (
+              <div key={n.id} className={`cp-ni${n.id === "cabs" ? " act" : ""}`} onClick={() => { setMobileNavOpen(false); navigate(`/${n.id}`); }}>
+                <span style={{fontSize:"1.1rem"}}>
+                  {n.id === "flights" ? "✈️" : n.id === "hotels" ? "🏨" : n.id === "cabs" ? "🚕" : "🚗"}
+                </span>
+                {n.label}
+              </div>
+            ))}
+          </div>
         </nav>
 
         <div className="cp-content">
@@ -480,3 +502,4 @@ export default function CabsPage() {
     </>
   );
 }
+
