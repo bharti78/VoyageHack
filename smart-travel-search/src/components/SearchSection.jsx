@@ -1272,6 +1272,19 @@ export default function TBOHomepage() {
       selectedTypes,
     }));
 
+    localStorage.setItem("voyagehack.hotel.prefill", JSON.stringify({
+      destination: effectiveDestination || "",
+      budget: payload.budget.maxValue || "",
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      adults: nextGuests.adults,
+      children: nextGuests.children,
+    }));
+    localStorage.setItem("voyagehack.cab.prefill", JSON.stringify({
+      city: effectiveDestination || "",
+      budget: payload.budget.maxValue || "",
+    }));
+
     if (effectiveDestination) {
       setDestination(effectiveDestination);
     }
@@ -1300,6 +1313,7 @@ export default function TBOHomepage() {
       (queryForService.includes("hotel") || queryForService.includes("stay")) ? "hotels" :
       (queryForService.includes("cab")) ? "cabs" :
       (queryForService.includes("car rental") || queryForService.includes("self drive")) ? "carrental" :
+      (queryForService.includes("trip") || queryForService.includes("plan")) ? "hotels" :
       null;
     const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
     if (service && routeMap[service]) {

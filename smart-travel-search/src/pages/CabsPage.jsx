@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const SMART_SEARCH_API = "http://localhost:5000/api/search";
+
 /* ── Mock cab data ── */
 const CITIES = ["New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Goa"];
 const CAB_TYPES = [
@@ -35,8 +37,10 @@ function generateCabs(pickup, drop, date, time, cabType) {
         distKm,
         eta,
         isSurge,
-        driverName: ["Ramesh K.", "Suresh M.", "Priya S.", "Anil T.", "Kavya R."][Math.floor(Math.random() * 5)],
-        driverRating: (4.1 + Math.random() * 0.8).toFixed(1),
+        driverName: ["Ramesh K.", "Suresh M.", "Priya S.", "Anil T.", "Kavya R.", "Neha P.", "Pooja N."][Math.floor(Math.random() * 7)],
+        driverGender: Math.random() > 0.55 ? "male" : "female",
+        driverRating: (4.1 + Math.random() * 0.9).toFixed(1),
+        yearsExperience: 1 + Math.floor(Math.random() * 14),
         carModel: cat.id === "bike" ? "Honda Activa" : cat.id === "auto" ? "Bajaj RE" : cat.id === "suv" ? "Toyota Innova" : cat.id === "xl" ? "Force Urbania" : "Maruti Dzire",
         plateNo: `DL ${10 + Math.floor(Math.random() * 90)} AB ${1000 + Math.floor(Math.random() * 9000)}`,
         acAvailable: cat.id !== "bike" && cat.id !== "auto",
@@ -49,6 +53,39 @@ function generateCabs(pickup, drop, date, time, cabType) {
       };
     });
   });
+}
+
+function isNightHour(timeValue) {
+  const hour = Number(String(timeValue || "00:00").split(":")[0]);
+  return Number.isFinite(hour) && (hour >= 20 || hour < 5);
+}
+
+function applyCabSafetyRules(cabs, { persona, travelerGender, time }) {
+  if (!Array.isArray(cabs)) return { list: [], mode: "none" };
+  const femaleSolo = persona === "solo" && String(travelerGender || "").toLowerCase() === "female";
+  if (!femaleSolo) return { list: cabs, mode: "normal" };
+
+  const femaleDrivers = cabs.filter((c) => String(c.driverGender).toLowerCase() === "female");
+  if (femaleDrivers.length > 0) return { list: femaleDrivers, mode: "female_only" };
+
+  if (isNightHour(time)) {
+    const trusted = cabs.filter((c) => Number(c.driverRating) >= 4 && Number(c.yearsExperience) >= 5);
+    return { list: trusted, mode: "night_trusted_fallback" };
+  }
+
+  return { list: cabs, mode: "fallback_no_female" };
+}
+
+async function fetchDriverSuggestions({ city, budget, persona, userGender, travelTime }) {
+  const res = await fetch(SMART_SEARCH_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ city, budget, persona, userGender, travelTime }),
+  });
+  if (!res.ok) return [];
+  const data = await res.json().catch(() => ({}));
+  const drivers = Array.isArray(data?.drivers) ? data.drivers : [];
+  return drivers;
 }
 
 /* ── CSS ── */
@@ -157,6 +194,12 @@ const css = `
   .cp-card-main{gap:10px}
   .cp-fare-block{margin-left:0;width:100%}
 }
+@media(max-width:480px){
+  .cp-card{padding:14px 12px}
+  .cp-card-footer{flex-direction:column;align-items:stretch}
+  .cp-book-btn{width:100%}
+  .cp-modal{padding:18px 14px}
+}
 `;
 
 const navItems = [
@@ -168,18 +211,40 @@ const navItems = [
 
 export default function CabsPage() {
   const navigate = useNavigate();
+  const persona = localStorage.getItem("persona") || "";
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
   const [date, setDate] = useState(() => { const d = new Date(); return d.toISOString().split("T")[0]; });
   const [time, setTime] = useState("10:00");
   const [cabType, setCabType] = useState("");
+  const [travelerGender, setTravelerGender] = useState((storedUser.gender || "").toLowerCase() === "female" ? "female" : "male");
 
   const [loading, setLoading] = useState(false);
   const [cabs, setCabs] = useState([]);
+  const [displayedCabs, setDisplayedCabs] = useState([]);
+  const [safetyMode, setSafetyMode] = useState("normal");
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
   const [bookingCab, setBookingCab] = useState(null);
   const [booked, setBooked] = useState(false);
+
+  useEffect(() => {
+    try {
+      const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+      if (smart.destination && !pickup) {
+        setPickup(smart.destination);
+        setDrop(`${smart.destination} City Center`);
+      }
+      const cabPrefill = JSON.parse(localStorage.getItem("voyagehack.cab.prefill") || "{}");
+      if (cabPrefill.city && !pickup) {
+        setPickup(cabPrefill.city);
+        setDrop(`${cabPrefill.city} City Center`);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, [pickup]);
 
   function handleSearch() {
     if (!pickup || !drop) { setError("Please enter pickup and drop locations."); return; }
@@ -187,9 +252,36 @@ export default function CabsPage() {
     setLoading(true);
     setSearched(true);
     setCabs([]);
-    setTimeout(() => {
-      const results = generateCabs(pickup, drop, date, time, cabType || null);
+    setTimeout(async () => {
+      const generated = generateCabs(pickup, drop, date, time, cabType || null);
+      let results = generated;
+      try {
+        const drivers = await fetchDriverSuggestions({
+          city: pickup,
+          budget: 999999,
+          persona,
+          userGender: travelerGender,
+          travelTime: time,
+        });
+        if (drivers.length > 0) {
+          results = generated.map((cab, idx) => {
+            const d = drivers[idx % drivers.length];
+            return {
+              ...cab,
+              driverName: d.name || cab.driverName,
+              driverGender: d.gender || cab.driverGender,
+              driverRating: Number(d.rating || cab.driverRating).toFixed(1),
+              yearsExperience: Number(d.experienceYears || cab.yearsExperience || 0),
+            };
+          });
+        }
+      } catch {
+        // keep generated fallback
+      }
       setCabs(results);
+      const safety = applyCabSafetyRules(results, { persona, travelerGender, time });
+      setDisplayedCabs(safety.list);
+      setSafetyMode(safety.mode);
       setLoading(false);
     }, 1200);
   }
@@ -271,6 +363,16 @@ export default function CabsPage() {
                   <input type="time" className="cp-finput" value={time} onChange={e => setTime(e.target.value)} />
                 </div>
               </div>
+              <div className="cp-f tm">
+                <div className="cp-lbl">TRAVELLER</div>
+                <div className="cp-fin" style={{padding:"6px 10px"}}>
+                  <select className="cp-finput" value={travelerGender} onChange={e => setTravelerGender(e.target.value)} style={{cursor:"pointer"}}>
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
               <button className="cp-sbtn" onClick={handleSearch} disabled={loading}>
                 {loading ? <><div className="cp-spin" />Searching...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Find Cabs</>}
               </button>
@@ -289,18 +391,27 @@ export default function CabsPage() {
             )}
           </div>
 
+          {!loading && searched && (
+            <div style={{background:"#ecfeff",border:"1.5px solid #99f6e4",borderRadius:10,padding:"10px 12px",marginBottom:12,fontSize:".74rem",color:"#134e4a"}}>
+              {safetyMode === "female_only" && "Safety mode applied: only female drivers shown for solo female traveller."}
+              {safetyMode === "night_trusted_fallback" && "Female drivers unavailable at night. Showing only 4-5 star, experienced drivers (5+ years)."}
+              {safetyMode === "fallback_no_female" && "Female drivers unavailable. Showing available verified drivers."}
+              {safetyMode === "normal" && "Showing available verified drivers."}
+            </div>
+          )}
+
           {loading && <div className="cp-loading"><div className="cp-spin" />Finding available cabs near {pickup}...</div>}
 
           {!loading && searched && (
             <div>
               <div className="cp-results-hdr">
                 <div>
-                  <div className="cp-results-title">{cabs.filter(c => !cabType || c.type.id === cabType).length} cabs available</div>
+                  <div className="cp-results-title">{displayedCabs.filter(c => !cabType || c.type.id === cabType).length} cabs available</div>
                   <div className="cp-results-sub">{pickup} → {drop} · {date} at {time}</div>
                 </div>
               </div>
 
-              {cabs.filter(c => !cabType || c.type.id === cabType).sort((a,b) => a.fare - b.fare).map(cab => (
+              {displayedCabs.filter(c => !cabType || c.type.id === cabType).sort((a,b) => a.fare - b.fare).map(cab => (
                 <div key={cab.id} className="cp-card">
                   <div className="cp-card-main">
                     <div className="cp-cab-icon">{cab.type.icon}</div>
@@ -310,7 +421,7 @@ export default function CabsPage() {
                         <span className="cp-cab-provider" style={{color:cab.provider.color}}>{cab.provider.logo} {cab.provider.name}</span>
                       </div>
                       <div className="cp-cab-desc">{cab.type.desc} · ⭐ {cab.type.rating}</div>
-                      <div className="cp-cab-driver">🧑 {cab.driverName} · ⭐ {cab.driverRating} · {cab.carModel} · {cab.plateNo}</div>
+                      <div className="cp-cab-driver">🧑 {cab.driverName} ({cab.driverGender}) · ⭐ {cab.driverRating} · {cab.yearsExperience} yrs exp · {cab.carModel} · {cab.plateNo}</div>
                     </div>
                     <div className="cp-eta">
                       <div className="cp-eta-min">{cab.eta}m</div>
@@ -350,7 +461,7 @@ export default function CabsPage() {
                 ["Pickup", pickup],
                 ["Drop", drop],
                 ["Date & Time", `${date} at ${time}`],
-                ["Driver", `${bookingCab.driverName} · ⭐ ${bookingCab.driverRating}`],
+                ["Driver", `${bookingCab.driverName} (${bookingCab.driverGender}) · ⭐ ${bookingCab.driverRating}`],
                 ["Car", `${bookingCab.carModel} · ${bookingCab.plateNo}`],
                 ["Distance", `~${bookingCab.distKm} km`],
                 ["ETA", `${bookingCab.eta} minutes`],

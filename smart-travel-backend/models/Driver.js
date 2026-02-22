@@ -5,7 +5,11 @@ const driverSchema = new mongoose.Schema({
   gender: String,
   verified: Boolean,
   rating: Number,
-  vehicle_type: String
+  vehicle_type: String,
+  experienceYears: {
+    type: Number,
+    default: 0,
+  }
 })
 
 module.exports = mongoose.model("Driver", driverSchema)

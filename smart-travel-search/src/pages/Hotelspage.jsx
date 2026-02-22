@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 /* ═══════════════════════════════════════════════
    BACKEND PROXY  ─  all TBO calls go through here
@@ -71,6 +72,18 @@ function textPreview(value, max = 120) {
   return `${plain.slice(0, max - 1)}...`;
 }
 
+function facilityHighlights(facilities) {
+  const list = normalizeFacilities(facilities).map((f) => f.toLowerCase());
+  const hasSenior = list.some((f) => /wheelchair|lift|elevator|accessible|senior|medical/.test(f));
+  const hasDining = list.some((f) => /restaurant|dining|breakfast|meal|buffet|cafe/.test(f));
+  const hasWellness = list.some((f) => /spa|gym|fitness|pool|wellness/.test(f));
+  return [
+    hasSenior ? "Senior Friendly" : null,
+    hasDining ? "Dining Options" : null,
+    hasWellness ? "Wellness" : null,
+  ].filter(Boolean);
+}
+
 function loadPersistedHotelForm() {
   try {
     const raw = localStorage.getItem(HOTEL_FORM_STORAGE_KEY);
@@ -85,6 +98,16 @@ function parseStoredDate(value) {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function parseHotelMapPoint(hotel) {
+  const raw = hotel?.Map || hotel?.map || "";
+  if (!raw || typeof raw !== "string" || !raw.includes("|")) return null;
+  const [latRaw, lngRaw] = raw.split("|");
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 }
 
 /* ═══════════════════════════════════════════════
@@ -480,6 +503,7 @@ export default function HotelsPage({onBack}){
   const [searchId,setSearchId] = useState("");
   const [hotels,setHotels]     = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
+  const [showMap,setShowMap]   = useState(true);
 
   /* ── prebook / booking ── */
   const [selHotel,setSelHotel]   = useState(null);
@@ -515,6 +539,45 @@ export default function HotelsPage({onBack}){
     })();
     return ()=>{ cancelled=true; };
   },[destCountry]);
+
+  useEffect(() => {
+    try {
+      const prefill = JSON.parse(localStorage.getItem("voyagehack.hotel.prefill") || "{}");
+      if (prefill.destination && !cityQuery) {
+        setCityQuery(prefill.destination);
+      }
+      if (prefill.budget && !budget) {
+        setBudget(String(prefill.budget));
+      }
+      if (prefill.startDate && !checkIn) {
+        const d = new Date(prefill.startDate);
+        if (!Number.isNaN(d.getTime())) setCI(d);
+      }
+      if (prefill.endDate && !checkOut) {
+        const d = new Date(prefill.endDate);
+        if (!Number.isNaN(d.getTime())) setCO(d);
+      }
+      if (prefill.adults || prefill.children) {
+        setRC((prev) => ({
+          ...prev,
+          adults: Math.max(1, Number(prefill.adults || prev.adults || 1)),
+          children: Math.max(0, Number(prefill.children || prev.children || 0)),
+        }));
+      }
+    } catch {
+      // ignore malformed storage payloads
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cityId && cityQuery && allCities.length > 0) {
+      const exact = allCities.find((c) => String(c.CityName || "").toLowerCase() === cityQuery.toLowerCase());
+      if (exact) {
+        setCityId(exact.CityId);
+        setCityName(exact.CityName);
+      }
+    }
+  }, [allCities, cityId, cityQuery]);
 
   /* persist hotel form inputs so refresh does not wipe user-entered details */
   useEffect(() => {
@@ -746,6 +809,9 @@ export default function HotelsPage({onBack}){
     if(sortBy==="name")       return (a.HotelName||"").localeCompare(b.HotelName||"");
     return 0;
   });
+  const mappedHotels = sorted
+    .map((hotel) => ({ hotel, point: parseHotelMapPoint(hotel) }))
+    .filter((x) => x.point);
 
   /* ══════════════════════
      PREBOOK rate list
@@ -1101,6 +1167,47 @@ export default function HotelsPage({onBack}){
                 )}
               </div>
 
+              {mappedHotels.length > 0 && (
+                <div className="hp-sbox" style={{padding:"10px 12px",marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:8}}>
+                    <div style={{fontSize:".78rem",fontWeight:700,color:"#334155"}}>Hotel Map View</div>
+                    <button
+                      type="button"
+                      className="hp-btn-out"
+                      style={{padding:"6px 10px",fontSize:".7rem"}}
+                      onClick={() => setShowMap(v => !v)}
+                    >
+                      {showMap ? "Hide Map" : "Show Map"}
+                    </button>
+                  </div>
+                  {showMap && (
+                    <div style={{height:320,borderRadius:12,overflow:"hidden",border:"1px solid #dbeafe"}}>
+                      <MapContainer
+                        center={[mappedHotels[0].point.lat, mappedHotels[0].point.lng]}
+                        zoom={12}
+                        style={{height:"100%",width:"100%"}}
+                        scrollWheelZoom={false}
+                      >
+                        <TileLayer
+                          attribution='&copy; OpenStreetMap contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        {mappedHotels.map(({ hotel, point }) => (
+                          <Marker key={String(hotel.HotelCode || hotel.HotelName)} position={[point.lat, point.lng]}>
+                            <Popup>
+                              <div style={{maxWidth:220}}>
+                                <div style={{fontWeight:700}}>{hotel.HotelName || "Hotel"}</div>
+                                <div style={{fontSize:12,color:"#475569"}}>{hotel.HotelAddress || hotel.Address || "Address not available"}</div>
+                              </div>
+                            </Popup>
+                          </Marker>
+                        ))}
+                      </MapContainer>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {sorted.map((h,idx)=>{
                 const price = roomTotal(h?.Rooms?.[0], h);
                 const cur   = h.Price?.CurrencyCode || h.Currency || "INR";
@@ -1108,6 +1215,7 @@ export default function HotelsPage({onBack}){
                 const ref   = h.IsRefundable ?? true;
                 const stRaw = h.HotelRating  || h.StarRating || 0;
                 const facilities = normalizeFacilities(h.HotelFacilities).slice(0,4);
+                const highlights = facilityHighlights(h.HotelFacilities);
                 const attractionPreview = Array.isArray(h.Attractions)
                   ? textPreview(h.Attractions[0], 95)
                   : textPreview(h.Attractions, 95);
@@ -1142,6 +1250,11 @@ export default function HotelsPage({onBack}){
                         {facilities.length>0 && (
                           <div className="hp-htags">
                             {facilities.map((f,i)=><span key={i} className="hp-htag">{f}</span>)}
+                          </div>
+                        )}
+                        {highlights.length>0 && (
+                          <div className="hp-htags">
+                            {highlights.map((f,i)=><span key={i} className="hp-htag" style={{background:"#ecfeff",borderColor:"#a5f3fc",color:"#0f766e"}}>{f}</span>)}
                           </div>
                         )}
                         {(h.PhoneNumber || h.FaxNumber || h.HotelWebsiteURL) && (

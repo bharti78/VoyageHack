@@ -1,9 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const { authenticate, searchFlights, fareQuote, fareRule, ssrAvailability, bookFlight } = require("../controllers/flightController");
+const {
+  authenticate,
+  searchFlights,
+  fareQuote,
+  fareRule,
+  ssrAvailability,
+  bookFlight,
+  calendarFares,
+} = require("../controllers/flightController");
 
 router.post("/authenticate", authenticate);
 router.post("/search", searchFlights);
+router.post("/calendar-fares", calendarFares);
 router.post("/farequote", fareQuote);
 router.post("/farerule", fareRule);
 router.post("/ssr", ssrAvailability);

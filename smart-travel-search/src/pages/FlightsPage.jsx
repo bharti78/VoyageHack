@@ -468,9 +468,11 @@ export default function FlightsPage() {
   const [sortBy, setSortBy] = useState("price");
 
   const [loading, setLoading] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   const [error, setError] = useState(null);
   const [flights, setFlights] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [calendarFares, setCalendarFares] = useState([]);
 
   const panelRef = useRef(null);
 
@@ -583,6 +585,34 @@ export default function FlightsPage() {
       setFlights([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadCalendarFares() {
+    if (!from.code || !to.code || !depDate) {
+      setError("Select origin, destination and departure date before checking calendar fare.");
+      return;
+    }
+    setError(null);
+    setCalendarLoading(true);
+    try {
+      const data = await apiPost("calendar-fares", {
+        Origin: from.code,
+        Destination: to.code,
+        StartDate: fmtDate(depDate),
+        Days: 14,
+        FlightCabinClass: cabin === "Economy" ? "1" : cabin === "Business" ? "3" : cabin === "First" ? "4" : "2",
+        AdultCount: String(pax.adults),
+        ChildCount: String(pax.children),
+        InfantCount: String(pax.infants || 0),
+        JourneyType: "1",
+      });
+      setCalendarFares(Array.isArray(data.fares) ? data.fares : []);
+    } catch (e) {
+      setError(e.message || "Failed to fetch calendar fares.");
+      setCalendarFares([]);
+    } finally {
+      setCalendarLoading(false);
     }
   }
 
@@ -777,8 +807,44 @@ export default function FlightsPage() {
               <button className="fp-sbtn" onClick={handleSearch} disabled={loading}>
                 {loading ? <><div className="fp-spin" />Searching...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search Flights</>}
               </button>
+              <button className="fp-sbtn" onClick={loadCalendarFares} disabled={calendarLoading} style={{background:"linear-gradient(135deg,#0f766e,#0d9488)"}}>
+                {calendarLoading ? <><div className="fp-spin" />Loading...</> : "Calendar Fare"}
+              </button>
             </div>
           </div>
+
+          {calendarFares.length > 0 && (
+            <div className="fp-sbox" style={{padding:"14px 16px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                <div style={{fontSize:".9rem",fontWeight:700,color:"#1e293b"}}>
+                  14-Day Calendar Fare: {from.code} → {to.code}
+                </div>
+                <div style={{fontSize:".68rem",color:"#64748b"}}>
+                  Green = cheaper, Yellow = medium, Red = expensive
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
+                {calendarFares.map((f) => {
+                  const bg = f.level === "low" ? "#dcfce7" : f.level === "mid" ? "#fef9c3" : f.level === "high" ? "#fee2e2" : "#f8fafc";
+                  const bd = f.level === "low" ? "#86efac" : f.level === "mid" ? "#fde047" : f.level === "high" ? "#fca5a5" : "#e2e8f0";
+                  return (
+                    <button
+                      key={f.date}
+                      type="button"
+                      onClick={() => { const d = new Date(f.date); if (!Number.isNaN(d.getTime())) setDepDate(d); }}
+                      style={{textAlign:"left",background:bg,border:`1.5px solid ${bd}`,borderRadius:10,padding:"9px 10px",cursor:"pointer",fontFamily:"inherit"}}
+                    >
+                      <div style={{fontSize:".68rem",color:"#475569",fontWeight:600}}>{f.date}</div>
+                      <div style={{fontSize:".88rem",fontWeight:800,color:"#1e293b",marginTop:2}}>
+                        {Number.isFinite(f.minFare) ? `₹${Math.round(f.minFare).toLocaleString("en-IN")}` : "N/A"}
+                      </div>
+                      {f.isLowest && <div style={{fontSize:".6rem",fontWeight:700,color:"#166534",marginTop:3}}>Lowest Fare</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Results */}
           {loading && (
