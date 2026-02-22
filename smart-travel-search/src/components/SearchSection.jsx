@@ -320,13 +320,39 @@ const css = `
     outline: none; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .where-search-input:focus { border-color: #ff6600; box-shadow: 0 0 0 3px rgba(255,102,0,0.1); background: #fff; }
+  .where-type-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .where-type-chip {
+    border: 1.5px solid #e6e6e6;
+    background: #fff;
+    color: #555;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans',sans-serif;
+  }
+  .where-type-chip:hover { border-color: #ffb380; color: #cc4f00; background: #fff8f4; }
+  .where-type-chip.active { border-color: #ff6600; background: #fff3eb; color: #cc4f00; }
   .dest-list { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
   .dest-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; cursor: pointer; transition: background 0.15s; }
   .dest-item:hover { background: #fff5f0; }
   .dest-thumb { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; background: linear-gradient(135deg,#f0f0f0,#e0e0e0); display: flex; align-items: center; justify-content: center; font-size: 1.35rem; }
   .dest-city { font-size: 0.82rem; font-weight: 600; color: #111; }
   .dest-country { font-size: 0.7rem; color: #888; margin-top: 1px; }
+  .dest-submeta { font-size: 0.68rem; color: #999; margin-top: 1px; }
   .dest-section-label { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; padding: 7px 10px 3px; }
+  .dest-highlight { background: #ffe8d6; color: #994000; border-radius: 4px; padding: 0 2px; }
+  .dest-empty {
+    margin: 6px 4px;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    color: #8f8f8f;
+    background: #fafafa;
+    border: 1px dashed #e7e7e7;
+  }
 
   .when-dropdown { width: 600px; }
   .when-tabs { display: flex; border-bottom: 1px solid #f0f0f0; padding: 14px 14px 0; gap: 4px; }
@@ -342,9 +368,27 @@ const css = `
   .cal-nav-btn:hover { background: #f5f5f5; }
   .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
   .cal-dow { font-size: 0.6rem; font-weight: 700; text-align: center; color: #aaa; padding: 3px; text-transform: uppercase; }
-  .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; font-size: 0.74rem; font-weight: 500; transition: all 0.15s; position: relative; }
+  .cal-day { min-height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; font-size: 0.72rem; font-weight: 600; transition: all 0.15s; position: relative; padding: 3px 2px; gap: 1px; text-align: center; }
   .cal-day:hover:not(.disabled):not(.selected) { background: #f5f5f5; }
   .cal-day.disabled { color: #ddd; cursor: default; }
+  .cal-day-num { line-height: 1; }
+  .cal-day-fare { font-size: 0.56rem; font-weight: 700; line-height: 1; }
+  .cal-day-fare.cheap { color: #1b5e20; }
+  .cal-day-fare.mid { color: #a16207; }
+  .cal-day-fare.high { color: #b91c1c; }
+  .cal-lowest-tag {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.45rem;
+    background: #16a34a;
+    color: #fff;
+    border-radius: 6px;
+    padding: 0 3px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
   .cal-day.offer { color: #b71c1c; font-weight: 700; }
   .cal-day.offer::before {
     content: '';
@@ -364,6 +408,27 @@ const css = `
   .cal-day.selected { background: #ff6600 !important; color: #fff !important; border-radius: 50% !important; }
   .cal-day.today::after { content:''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #ff6600; border-radius: 50%; }
   .cal-day.today.selected::after { background: rgba(255,255,255,0.7); }
+  .fare-info-box {
+    margin-top: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+  }
+  .fare-info-title { font-size: 0.68rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.45px; margin-bottom: 6px; }
+  .fare-info-line { font-size: 0.74rem; color: #334155; line-height: 1.5; }
+  .fare-alert-row { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .fare-alert-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    border-radius: 20px;
+    padding: 6px 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .fare-alert-btn.active { background: #16a34a; border-color: #16a34a; color: #fff; }
   .flex-options { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
   .flex-chip { padding: 5px 11px; border-radius: 20px; border: 1.5px solid #e4e4e4; background: #fff; cursor: pointer; font-size: 0.7rem; font-weight: 500; font-family: 'DM Sans',sans-serif; transition: all 0.15s; color: #555; }
   .flex-chip.active { border-color: #111; background: #111; color: #fff; }
@@ -682,21 +747,153 @@ const css = `
   .footer-copy { font-size: 0.66rem; color: #99a; text-align: center; margin-top: 10px; }
 
   /* RESPONSIVE */
-  @media (max-width: 992px) {
-    .tbo-hero { grid-template-columns: 1fr; text-align: center; }
+  @media (max-width: 1100px) {
+    .tbo-logo-wrap { padding-left: 0; }
+    .tbo-logo-img { height: 76px; }
+    .tbo-nav { min-height: 72px; }
+    .tbo-nav-links { display: none; }
+    .tbo-nav-right { margin-left: auto; }
+    .expanded-search-bar { width: min(100%, 760px); }
+    .tbo-hero { grid-template-columns: 1fr; text-align: center; gap: 24px; }
     .hero-btns { justify-content: center; }
-    .hero-media-wrap { justify-self: center; max-width: 100%; }
+    .hero-media-wrap { justify-self: center; max-width: 100%; margin-top: 0; }
     .value-content-area { grid-template-columns: 1fr; justify-items: center; }
     .value-blob-img { width: 220px; height: 220px; }
-    .tbo-nav-links { display: none; }
+  }
+  @media (max-width: 768px) {
+    .tbo-search-section { padding: 10px 12px 14px; }
+    .expanded-search-bar {
+      width: 100%;
+      height: 54px;
+      border-radius: 16px;
+      padding-left: 12px;
+      padding-right: 8px;
+    }
+    .expanded-search-input { font-size: 0.94rem; }
+    .exp-icon-btn { width: 38px; height: 38px; }
+
+    .search-pill {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      height: auto;
+      border-radius: 18px;
+      padding: 10px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+      border-color: #ececec;
+    }
+    .pill-section {
+      min-height: 58px;
+      border: 1px solid #ededed;
+      border-radius: 14px;
+      padding: 8px 12px;
+      max-width: none !important;
+      background: #fff;
+    }
+    .pill-section::after { display: none; }
+    .pill-section.open { border-radius: 14px; box-shadow: 0 0 0 2px #ff6600; }
+    .pill-label { font-size: 0.62rem; }
+    .pill-value { font-size: 0.8rem; padding-top: 0; }
+
+    .pill-buttons {
+      grid-column: 1 / -1;
+      margin-left: 0;
+      padding: 4px 0 0;
+      gap: 8px;
+      display: grid;
+      grid-template-columns: 54px 1fr;
+    }
+    .pill-icon-btn {
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
+    }
+    .pill-search-btn {
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 0.9rem;
+    }
+
+    .tbo-hero-section { min-height: auto; }
+    .tbo-hero {
+      padding: 18px 14px 34px;
+      gap: 18px;
+      text-align: left;
+    }
+    .hero-title {
+      font-size: clamp(1.45rem, 7vw, 2rem);
+      line-height: 1.22;
+      letter-spacing: -0.2px;
+    }
+    .hero-body {
+      margin-top: 12px;
+      font-size: 0.86rem;
+      line-height: 1.62;
+      text-align: left;
+    }
+    .register-label { margin-top: 16px; margin-bottom: 10px; font-size: 0.9rem; }
+    .hero-btns { justify-content: flex-start; width: 100%; gap: 8px; }
+    .btn-become, .btn-agent {
+      flex: 1;
+      min-width: 0;
+      padding: 11px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    .hero-media-wrap {
+      aspect-ratio: 16 / 10;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+    }
+    .hero-media-label {
+      left: 10px;
+      bottom: 10px;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
   }
   @media (max-width: 640px) {
+    .tbo-nav {
+      min-height: 64px;
+      padding: 6px 10px;
+      gap: 8px;
+    }
+    .tbo-logo-img { height: 58px; }
+    .tbo-nav-right { align-items: flex-end; gap: 2px; }
+    .already-reg { font-size: 0.7rem; }
+    .btn-book {
+      font-size: 0.78rem;
+      padding: 8px 12px;
+      border-radius: 11px;
+    }
+
     .stats-row { gap: 22px; }
     .footer-inner { flex-direction: column; align-items: flex-start; }
     .value-tabs { gap: 10px; }
-    .dropdown-panel { left: 8px !important; right: 8px; transform: none !important; }
+    .dropdown-panel {
+      left: 8px !important;
+      right: 8px;
+      transform: none !important;
+      top: calc(100% + 8px);
+      max-height: min(70vh, 560px);
+      overflow-y: auto;
+      border-radius: 16px;
+    }
     .when-dropdown, .where-dropdown, .who-dropdown, .budget-dropdown, .type-dropdown { width: 100%; }
+    .cal-container { flex-direction: column; gap: 12px; }
     .flex-stay-options { flex-direction: column; }
+  }
+  @media (max-width: 420px) {
+    .search-pill { grid-template-columns: 1fr; }
+    .pill-buttons { grid-template-columns: 1fr; }
+    .pill-icon-btn { display: none; }
+    .pill-search-btn { height: 42px; font-size: 0.85rem; }
+    .hero-btns { flex-direction: column; }
+    .btn-become, .btn-agent { width: 100%; }
   }
 `;
 
@@ -755,6 +952,35 @@ const TRAVEL_TYPES = [
   { id: "heritage", label: "Heritage", icon: "🏛️" },
   { id: "wellness", label: "Wellness", icon: "🧘" },
 ];
+const WHERE_ENTITY_TYPES = [
+  { id: "all", label: "All" },
+  { id: "city", label: "Cities" },
+  { id: "airport", label: "Airports" },
+  { id: "hotel", label: "Hotels" },
+];
+const WHERE_ENTITIES = [
+  ...destinations.map((d) => ({
+    type: "city",
+    key: `city:${normalizeText(d.city)}`,
+    name: d.city,
+    city: d.city,
+    country: d.country,
+    code: "",
+    emoji: d.emoji || "🌍",
+    recent: !!d.recent,
+    popularity: d.recent ? 95 : 70,
+    tags: Array.isArray(d.tags) ? d.tags : [],
+  })),
+  { type: "airport", key: "airport:del", name: "Indira Gandhi International Airport", city: "Delhi", country: "India", code: "DEL", emoji: "✈️", popularity: 99, tags: ["city", "heritage"] },
+  { type: "airport", key: "airport:bom", name: "Chhatrapati Shivaji Maharaj International Airport", city: "Mumbai", country: "India", code: "BOM", emoji: "✈️", popularity: 98, tags: ["city", "beach"] },
+  { type: "airport", key: "airport:blr", name: "Kempegowda International Airport", city: "Bengaluru", country: "India", code: "BLR", emoji: "✈️", popularity: 95, tags: ["city"] },
+  { type: "airport", key: "airport:goi", name: "Dabolim Airport", city: "Goa", country: "India", code: "GOI", emoji: "✈️", popularity: 94, tags: ["beach", "adventure"] },
+  { type: "airport", key: "airport:cok", name: "Cochin International Airport", city: "Kochi", country: "India", code: "COK", emoji: "✈️", popularity: 90, tags: ["beach", "wellness"] },
+  { type: "hotel", key: "hotel:goa-beach", name: "Sea Breeze Goa Resort", city: "Goa", country: "India", code: "HTL-GOI-001", emoji: "🏨", popularity: 90, priceRange: "₹6,500 - ₹11,500 / night", tags: ["beach", "luxury"] },
+  { type: "hotel", key: "hotel:manali-mountain", name: "Snow Crest Manali Retreat", city: "Manali", country: "India", code: "HTL-MNL-014", emoji: "🏨", popularity: 84, priceRange: "₹5,400 - ₹9,900 / night", tags: ["mountains", "adventure"] },
+  { type: "hotel", key: "hotel:jaipur-heritage", name: "Royal Courtyard Jaipur", city: "Jaipur", country: "India", code: "HTL-JAI-022", emoji: "🏨", popularity: 81, priceRange: "₹4,800 - ₹8,700 / night", tags: ["heritage", "city"] },
+  { type: "hotel", key: "hotel:bali-villa", name: "Bali Sunset Villa", city: "Bali", country: "Indonesia", code: "HTL-BAL-008", emoji: "🏨", popularity: 79, priceRange: "₹9,700 - ₹15,000 / night", tags: ["beach", "wellness"] },
+];
 const BUDGET_OPTIONS = [
   { id: "budget", label: "Budget", range: "Up to ₹30,000", icon: "🪙" },
   { id: "standard", label: "Standard", range: "₹30,000 – ₹80,000", icon: "💳" },
@@ -771,6 +997,18 @@ const SOLUTIONS = ["Travel Buyers", "Travel Suppliers", "Travelpreneurs", "API S
 const MONTHS_LIST = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_EMOJIS = ["❄️","🌸","🌧️","🌷","☀️","🏖️","🌞","🌻","🍂","🎃","🍁","🎄"];
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const LOCALE_COUNTRY_MAP = {
+  IN: "India",
+  US: "USA",
+  GB: "UK",
+  AE: "UAE",
+  SG: "Singapore",
+  TH: "Thailand",
+  ID: "Indonesia",
+  JP: "Japan",
+  FR: "France",
+  AU: "Australia",
+};
 
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDayOfMonth(y, m) { return new Date(y, m, 1).getDay(); }
@@ -778,6 +1016,65 @@ function formatDate(d) { if (!d) return ""; return `${MONTHS_LIST[d.getMonth()]}
 function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }
 function normalizeText(text) {
   return String(text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+function dateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function parseFlexDays(label) {
+  const normalized = normalizeText(label);
+  if (normalized.includes("14")) return 14;
+  if (normalized.includes("7")) return 7;
+  if (normalized.includes("3")) return 3;
+  if (normalized.includes("2")) return 2;
+  if (normalized.includes("1")) return 1;
+  return 0;
+}
+function citySeed(city) {
+  const text = normalizeText(city || "default");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) % 100000;
+  return hash || 777;
+}
+function generateFarePoint(d, destination, flexLabel) {
+  const seed = citySeed(destination);
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  const dow = d.getDay();
+  const flex = parseFlexDays(flexLabel);
+  const base = 2800 + ((seed + month * 149 + day * 97) % 7200);
+  const weekendFactor = dow === 0 || dow === 6 ? 1.22 : 1;
+  const flexFactor = flex >= 7 ? 0.92 : (flex >= 3 ? 0.96 : 1);
+  const fare = Math.round(base * weekendFactor * flexFactor);
+  const airlines = ["IndiGo", "Air India", "Vistara", "SpiceJet", "Akasa"];
+  const durations = ["2h 05m", "2h 20m", "2h 35m", "2h 55m", "3h 10m"];
+  const stops = ((seed + day) % 8) < 6 ? 0 : 1;
+  return {
+    fare,
+    airline: airlines[(seed + day) % airlines.length],
+    duration: durations[(seed + day + month) % durations.length],
+    stops,
+  };
+}
+function buildMonthFareMap(year, month, destination, flexLabel) {
+  const days = getDaysInMonth(year, month);
+  const map = {};
+  for (let d = 1; d <= days; d += 1) {
+    const dt = new Date(year, month, d);
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (dt < today) continue;
+    map[dateKey(dt)] = generateFarePoint(dt, destination, flexLabel);
+  }
+  return map;
+}
+function fareClass(fare, minFare, maxFare) {
+  if (!fare || !minFare || !maxFare || minFare === maxFare) return "mid";
+  const ratio = (fare - minFare) / (maxFare - minFare);
+  if (ratio <= 0.33) return "cheap";
+  if (ratio <= 0.66) return "mid";
+  return "high";
 }
 function getOfferScore(dateObj) {
   const y = dateObj.getFullYear();
@@ -792,7 +1089,10 @@ function getOfferType(dateObj) {
   return null;
 }
 
-function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHover, showPrev, showNext, onPrev, onNext }) {
+function Calendar({
+  year, month, startDate, endDate, hoverDate, onSelect, onHover, showPrev, showNext, onPrev, onNext,
+  fareMap, minFare, maxFare, cheapestKey, onFareFocus,
+}) {
   const days = getDaysInMonth(year, month), firstDay = getFirstDayOfMonth(year, month);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const cells = [];
@@ -832,13 +1132,26 @@ function Calendar({ year, month, startDate, endDate, hoverDate, onSelect, onHove
       </div>
       <div className="cal-grid">
         {DOW.map(d => <div key={d} className="cal-dow">{d}</div>)}
-        {cells.map((d, i) => (
-          <div key={i} className={getClasses(d)}
-            onClick={() => d && onSelect(new Date(year, month, d))}
-            onMouseEnter={() => d && onHover && onHover(new Date(year, month, d))}>
-            {d}
-          </div>
-        ))}
+        {cells.map((d, i) => {
+          const dt = d ? new Date(year, month, d) : null;
+          const key = dt ? dateKey(dt) : "";
+          const farePoint = key ? fareMap?.[key] : null;
+          const fare = farePoint?.fare;
+          const fClass = fareClass(fare, minFare, maxFare);
+          const isCheapest = key && key === cheapestKey;
+          return (
+            <div key={i} className={getClasses(d)}
+              onClick={() => d && onSelect(new Date(year, month, d))}
+              onMouseEnter={() => {
+                if (d && onHover) onHover(new Date(year, month, d));
+                if (d && farePoint && onFareFocus) onFareFocus({ key, ...farePoint });
+              }}>
+              <span className="cal-day-num">{d}</span>
+              {fare ? <span className={`cal-day-fare ${fClass}`}>Rs {fare.toLocaleString("en-IN")}</span> : null}
+              {isCheapest ? <span className="cal-lowest-tag">LOWEST</span> : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -969,8 +1282,11 @@ export default function TBOHomepage() {
   // Search
   const [openPanel, setOpenPanel] = useState(null);
   const [selectedTypes, setSelectedTypes] = useState([]);
+  const [whereEntityType, setWhereEntityType] = useState("all");
   const [destQuery, setDestQuery] = useState("");
   const [destination, setDestination] = useState("");
+  const [selectedDestinationObj, setSelectedDestinationObj] = useState(null);
+  const [recentWhereKeys, setRecentWhereKeys] = useState([]);
   const [whenTab, setWhenTab] = useState("Dates");
   const [calMonth, setCalMonth] = useState({ y: new Date().getFullYear(), m: new Date().getMonth() });
   const [startDate, setStartDate] = useState(null);
@@ -983,6 +1299,11 @@ export default function TBOHomepage() {
   const [guests, setGuests] = useState({ adults: 1, children: 0, infants: 0, pets: 0 });
   const [selectedBudget, setSelectedBudget] = useState(null);
   const [budgetSlider, setBudgetSlider] = useState(50);
+  const [fareMap, setFareMap] = useState({});
+  const [fareSummary, setFareSummary] = useState({ minFare: 0, maxFare: 0, cheapestKey: "" });
+  const [fareFocus, setFareFocus] = useState(null);
+  const [fareAlertEnabled, setFareAlertEnabled] = useState(false);
+  const [nearbyCountry, setNearbyCountry] = useState("");
 
   // Nav dropdowns
   const [productsOpen, setProductsOpen] = useState(false);
@@ -1049,6 +1370,36 @@ export default function TBOHomepage() {
 
   useEffect(() => { if (slideIdx > maxSlide) setSlideIdx(maxSlide); }, [maxSlide]);
   useEffect(() => { if (awardIdx > maxAward) setAwardIdx(maxAward); }, [maxAward]);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("voyagehack.fareAlert");
+      if (saved === "1") setFareAlertEnabled(true);
+    } catch {
+      // ignore
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      const locale = (navigator.language || "").split("-")[1]?.toUpperCase() || "";
+      const fromLocale = LOCALE_COUNTRY_MAP[locale];
+      if (fromLocale) setNearbyCountry(fromLocale);
+    } catch {
+      // ignore
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      const savedRecent = JSON.parse(localStorage.getItem("voyagehack.where.recent") || "[]");
+      if (Array.isArray(savedRecent)) setRecentWhereKeys(savedRecent.filter((k) => typeof k === "string"));
+      const savedDestinationObj = JSON.parse(localStorage.getItem("voyagehack.where.selected") || "null");
+      if (savedDestinationObj && typeof savedDestinationObj === "object") {
+        setSelectedDestinationObj(savedDestinationObj);
+        if (savedDestinationObj.city || savedDestinationObj.name) setDestination(savedDestinationObj.city || savedDestinationObj.name);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const handlePlay = (i) => {
     if (playingIdx !== null && playingIdx !== i && videoRefs[playingIdx].current) videoRefs[playingIdx].current.pause();
@@ -1056,21 +1407,116 @@ export default function TBOHomepage() {
   };
 
   const normalizedDestQuery = normalizeText(destQuery);
-  const matchedTheme = Object.entries(THEME_ALIASES).find(([, keys]) =>
-    keys.some((key) => normalizedDestQuery.includes(key))
-  )?.[0];
-  const filtered = normalizedDestQuery
-    ? destinations.filter((d) => {
-        const text = normalizeText(`${d.city} ${d.country}`);
-        if (text.includes(normalizedDestQuery)) return true;
-        if (matchedTheme && Array.isArray(d.tags) && d.tags.includes(matchedTheme)) return true;
-        return false;
-      })
-    : destinations;
-  const typeFiltered = selectedTypes.length
-    ? filtered.filter((d) => Array.isArray(d.tags) && selectedTypes.some((t) => d.tags.includes(t)))
-    : filtered;
-  const recents = typeFiltered.filter(d => d.recent), others = typeFiltered.filter(d => !d.recent);
+  const queryTheme = inferTheme(normalizedDestQuery);
+  const whereTypeFiltered = whereEntityType === "all"
+    ? WHERE_ENTITIES
+    : WHERE_ENTITIES.filter((item) => item.type === whereEntityType);
+  const styleFilteredWhere = selectedTypes.length
+    ? whereTypeFiltered.filter((item) => Array.isArray(item.tags) && selectedTypes.some((t) => item.tags.includes(t)))
+    : whereTypeFiltered;
+  const scoredWhere = styleFilteredWhere
+    .map((item) => {
+      if (!normalizedDestQuery) return { item, score: item.popularity || 0 };
+      const haystack = normalizeText(`${item.name} ${item.city || ""} ${item.country || ""} ${item.code || ""}`);
+      const name = normalizeText(item.name);
+      const code = normalizeText(item.code);
+      const city = normalizeText(item.city);
+      let score = 0;
+      if (name === normalizedDestQuery || code === normalizedDestQuery || city === normalizedDestQuery) score += 120;
+      if (name.startsWith(normalizedDestQuery) || code.startsWith(normalizedDestQuery) || city.startsWith(normalizedDestQuery)) score += 95;
+      if (name.includes(normalizedDestQuery)) score += 70;
+      if (code.includes(normalizedDestQuery)) score += 60;
+      if (city.includes(normalizedDestQuery)) score += 55;
+      if (haystack.includes(normalizedDestQuery)) score += 40;
+      if (queryTheme && Array.isArray(item.tags) && item.tags.includes(queryTheme)) score += 35;
+      if (nearbyCountry && normalizeText(item.country) === normalizeText(nearbyCountry)) score += 18;
+      score += Math.round((item.popularity || 0) * 0.2);
+      return { item, score };
+    })
+    .filter((entry) => !normalizedDestQuery || entry.score > 0)
+    .sort((a, b) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
+  const rankedWhere = scoredWhere.map((entry) => entry.item);
+  const recentWhere = recentWhereKeys
+    .map((key) => styleFilteredWhere.find((item) => item.key === key))
+    .filter(Boolean);
+  const popularWhere = styleFilteredWhere
+    .filter((item) => !recentWhere.some((r) => r.key === item.key))
+    .sort((a, b) => {
+      const aBoost = nearbyCountry && normalizeText(a.country) === normalizeText(nearbyCountry) ? 18 : 0;
+      const bBoost = nearbyCountry && normalizeText(b.country) === normalizeText(nearbyCountry) ? 18 : 0;
+      return ((b.popularity || 0) + bBoost) - ((a.popularity || 0) + aBoost);
+    })
+    .slice(0, 6);
+  const groupedWhere = {
+    city: rankedWhere.filter((item) => item.type === "city"),
+    airport: rankedWhere.filter((item) => item.type === "airport"),
+    hotel: rankedWhere.filter((item) => item.type === "hotel"),
+  };
+
+  function renderHighlighted(text, query) {
+    const source = String(text || "");
+    const rawQuery = String(query || "").trim();
+    if (!rawQuery) return source;
+    const index = source.toLowerCase().indexOf(rawQuery.toLowerCase());
+    if (index < 0) return source;
+    const end = index + rawQuery.length;
+    return (
+      <>
+        {source.slice(0, index)}
+        <span className="dest-highlight">{source.slice(index, end)}</span>
+        {source.slice(end)}
+      </>
+    );
+  }
+
+  function formatWherePrimary(item) {
+    if (item.type === "airport") return `${item.city} (${item.code})`;
+    if (item.type === "hotel") return item.name;
+    return item.name;
+  }
+  function formatWhereSecondary(item) {
+    if (item.type === "airport") return `${item.name}, ${item.country}`;
+    if (item.type === "hotel") return `${item.city}, ${item.country}`;
+    return item.country;
+  }
+  function formatWhereMeta(item) {
+    if (item.type === "airport") return item.code ? `Code: ${item.code}` : "";
+    if (item.type === "hotel") return item.priceRange || "";
+    return item.code ? `Code: ${item.code}` : "";
+  }
+  function destinationFromWhere(item) {
+    if (item.type === "airport") return item.city || item.name;
+    if (item.type === "hotel") return item.city || item.name;
+    return item.name;
+  }
+  function selectWhereEntity(item) {
+    setDestination(destinationFromWhere(item));
+    setSelectedDestinationObj({
+      name: item.name,
+      code: item.code || "",
+      type: item.type,
+      country: item.country || "",
+      city: item.city || item.name,
+      key: item.key,
+    });
+    setOpenPanel(null);
+    setDestQuery("");
+    const nextRecent = [item.key, ...recentWhereKeys.filter((k) => k !== item.key)].slice(0, 8);
+    setRecentWhereKeys(nextRecent);
+    try {
+      localStorage.setItem("voyagehack.where.recent", JSON.stringify(nextRecent));
+      localStorage.setItem("voyagehack.where.selected", JSON.stringify({
+        name: item.name,
+        code: item.code || "",
+        type: item.type,
+        country: item.country || "",
+        city: item.city || item.name,
+        key: item.key,
+      }));
+    } catch {
+      // ignore
+    }
+  }
 
   function inferTheme(text) {
     const normalized = normalizeText(text);
@@ -1082,11 +1528,16 @@ export default function TBOHomepage() {
 
   function inferDestination(text, fallbackTheme = null) {
     const normalized = normalizeText(text);
-    const exact = destinations.find((d) => normalized.includes(normalizeText(d.city)));
-    if (exact) return exact.city;
+    const exact = WHERE_ENTITIES.find((d) => {
+      const name = normalizeText(d.name);
+      const city = normalizeText(d.city);
+      const code = normalizeText(d.code);
+      return (name && normalized.includes(name)) || (city && normalized.includes(city)) || (code && normalized.includes(code));
+    });
+    if (exact) return exact.city || exact.name;
     if (fallbackTheme) {
-      const themed = destinations.find((d) => Array.isArray(d.tags) && d.tags.includes(fallbackTheme));
-      if (themed) return themed.city;
+      const themed = WHERE_ENTITIES.find((d) => d.type === "city" && Array.isArray(d.tags) && d.tags.includes(fallbackTheme));
+      if (themed) return themed.name;
     }
     return "";
   }
@@ -1131,7 +1582,24 @@ export default function TBOHomepage() {
     const normalized = normalizeText(text);
     const theme = inferTheme(normalized);
     const inferredDestination = inferDestination(normalized, theme);
-    if (inferredDestination) setDestination(inferredDestination);
+    if (inferredDestination) {
+      setDestination(inferredDestination);
+      const matchedEntity = WHERE_ENTITIES.find((item) =>
+        normalizeText(item.name) === normalizeText(inferredDestination) ||
+        normalizeText(item.city) === normalizeText(inferredDestination)
+      );
+      if (matchedEntity) {
+        setDestination(destinationFromWhere(matchedEntity));
+        setSelectedDestinationObj({
+          name: matchedEntity.name,
+          code: matchedEntity.code || "",
+          type: matchedEntity.type,
+          country: matchedEntity.country || "",
+          city: matchedEntity.city || matchedEntity.name,
+          key: matchedEntity.key,
+        });
+      }
+    }
     if (theme && TRAVEL_TYPES.some((t) => t.id === theme)) {
       setSelectedTypes((prev) => (prev.includes(theme) ? prev : [...prev, theme]));
     }
@@ -1231,6 +1699,27 @@ export default function TBOHomepage() {
     return { year: d.getFullYear(), month: d.getMonth(), emoji: MONTH_EMOJIS[d.getMonth()] };
   });
 
+  useEffect(() => {
+    if (openPanel !== "when") return;
+    const combined = {
+      ...buildMonthFareMap(calMonth.y, calMonth.m, destination, flexDays),
+      ...buildMonthFareMap(nextM.y, nextM.m, destination, flexDays),
+    };
+    const fares = Object.values(combined).map((p) => p.fare).filter(Boolean);
+    const minFare = fares.length ? Math.min(...fares) : 0;
+    const maxFare = fares.length ? Math.max(...fares) : 0;
+    const cheapestEntry = Object.entries(combined).reduce((min, current) => {
+      if (!min) return current;
+      return current[1].fare < min[1].fare ? current : min;
+    }, null);
+    setFareMap(combined);
+    setFareSummary({
+      minFare,
+      maxFare,
+      cheapestKey: cheapestEntry ? cheapestEntry[0] : "",
+    });
+  }, [openPanel, calMonth.y, calMonth.m, nextM.y, nextM.m, destination, flexDays]);
+
   function handleRedirectClick(spokenInput = "") {
     if (!requireAuth()) return;
 
@@ -1238,6 +1727,20 @@ export default function TBOHomepage() {
     const spokenTheme = inferTheme(normalizedSpoken);
     const spokenDestination = inferDestination(normalizedSpoken, spokenTheme);
     const effectiveDestination = spokenDestination || destination || (selectedTypes.includes("beach") ? "Goa" : "");
+    const matchedWhereEntity = WHERE_ENTITIES.find((item) =>
+      normalizeText(item.name) === normalizeText(effectiveDestination) ||
+      normalizeText(item.city) === normalizeText(effectiveDestination)
+    );
+    const effectiveDestinationObj = matchedWhereEntity
+      ? {
+          name: matchedWhereEntity.name,
+          code: matchedWhereEntity.code || "",
+          type: matchedWhereEntity.type,
+          country: matchedWhereEntity.country || "",
+          city: matchedWhereEntity.city || matchedWhereEntity.name,
+          key: matchedWhereEntity.key,
+        }
+      : (selectedDestinationObj || null);
     const nextGuests = spokenInput ? inferGuestsFromText(normalizedSpoken) : guests;
 
     if (spokenInput) {
@@ -1250,6 +1753,7 @@ export default function TBOHomepage() {
       source: spokenInput ? "voice" : "manual",
       query: spokenInput || searchQuery || "",
       destination: effectiveDestination,
+      destinationObject: effectiveDestinationObj,
       whenTab,
       startDate: startDate ? startDate.toISOString() : null,
       endDate: endDate ? endDate.toISOString() : null,
@@ -1263,6 +1767,7 @@ export default function TBOHomepage() {
     localStorage.setItem("voyagehack.smartQuery", JSON.stringify(payload));
     localStorage.setItem("homepageSearch", JSON.stringify({
       destination: effectiveDestination || "Anywhere",
+      destinationObject: effectiveDestinationObj,
       startDate: payload.startDate,
       endDate: payload.endDate,
       adults: nextGuests.adults,
@@ -1287,6 +1792,17 @@ export default function TBOHomepage() {
 
     if (effectiveDestination) {
       setDestination(effectiveDestination);
+      if (effectiveDestinationObj) {
+        setSelectedDestinationObj(effectiveDestinationObj);
+        const nextRecent = [effectiveDestinationObj.key, ...recentWhereKeys.filter((k) => k !== effectiveDestinationObj.key)].slice(0, 8);
+        setRecentWhereKeys(nextRecent);
+        try {
+          localStorage.setItem("voyagehack.where.recent", JSON.stringify(nextRecent));
+          localStorage.setItem("voyagehack.where.selected", JSON.stringify(effectiveDestinationObj));
+        } catch {
+          // ignore
+        }
+      }
     }
 
     const destinationKey = normalizeText(effectiveDestination).split(" ")[0];
@@ -1488,7 +2004,7 @@ export default function TBOHomepage() {
                 <div className={`pill-section ${openPanel === "where" ? "open" : ""}`} style={{maxWidth:165}}
                   onClick={() => setOpenPanel(openPanel === "where" ? null : "where")}>
                   <span className="pill-label">WHERE <span className="pill-label-chevron"/></span>
-                  <span className={`pill-value ${!destination ? "placeholder" : ""}`}>{destination || "Destinati..."}</span>
+                  <span className={`pill-value ${!destination ? "placeholder" : ""}`}>{destination || "Destination"}</span>
                 </div>
 
                 {/* WHEN */}
@@ -1544,25 +2060,72 @@ export default function TBOHomepage() {
                 )}
                 {openPanel === "where" && (
                   <div className="dropdown-panel where-dropdown" style={{left:"10%"}}>
-                    <input className="where-search-input" placeholder="Search destinations" value={destQuery} onChange={e => setDestQuery(e.target.value)} autoFocus/>
+                    <input className="where-search-input" placeholder="Search city, airport code, hotel..." value={destQuery} onChange={e => setDestQuery(e.target.value)} autoFocus/>
+                    <div className="where-type-row">
+                      {WHERE_ENTITY_TYPES.map((type) => (
+                        <button
+                          key={type.id}
+                          type="button"
+                          className={`where-type-chip ${whereEntityType === type.id ? "active" : ""}`}
+                          onClick={() => setWhereEntityType(type.id)}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
                     <div className="dest-list">
-                      {!destQuery && recents.length > 0 && (<>
+                      {!destQuery && recentWhere.length > 0 && (<>
                         <div className="dest-section-label">Recent searches</div>
-                        {recents.map(d => (
-                          <div key={d.city} className="dest-item" onClick={() => { setDestination(d.city); setOpenPanel(null); setDestQuery(""); }}>
-                            <div className="dest-thumb">{d.emoji}</div>
-                            <div><div className="dest-city">{d.city}</div><div className="dest-country">{d.country}</div></div>
+                        {recentWhere.map((item) => (
+                          <div key={item.key} className="dest-item" onClick={() => selectWhereEntity(item)}>
+                            <div className="dest-thumb">{item.emoji}</div>
+                            <div>
+                              <div className="dest-city">{formatWherePrimary(item)}</div>
+                              <div className="dest-country">{formatWhereSecondary(item)}</div>
+                              {formatWhereMeta(item) && <div className="dest-submeta">{formatWhereMeta(item)}</div>}
+                            </div>
                           </div>
                         ))}
                       </>)}
-                      <div className="dest-section-label">{destQuery ? "Results" : "Suggested"}</div>
-                      {(destQuery ? filtered : others).map(d => (
-                        <div key={d.city} className="dest-item" onClick={() => { setDestination(d.city); setOpenPanel(null); setDestQuery(""); }}>
-                          <div className="dest-thumb">{d.emoji}</div>
-                          <div><div className="dest-city">{d.city}</div><div className="dest-country">{d.country}</div></div>
+                      {!destQuery && popularWhere.length > 0 && (<>
+                        <div className="dest-section-label">Popular now</div>
+                        {popularWhere.map((item) => (
+                          <div key={item.key} className="dest-item" onClick={() => selectWhereEntity(item)}>
+                            <div className="dest-thumb">{item.emoji}</div>
+                            <div>
+                              <div className="dest-city">{formatWherePrimary(item)}</div>
+                              <div className="dest-country">{formatWhereSecondary(item)}</div>
+                              {formatWhereMeta(item) && <div className="dest-submeta">{formatWhereMeta(item)}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </>)}
+                      {["city", "airport", "hotel"].map((groupKey) => {
+                        const items = groupedWhere[groupKey];
+                        if (!items.length) return null;
+                        return (
+                          <div key={`group-${groupKey}`}>
+                            <div className="dest-section-label">
+                              {groupKey === "city" ? "Cities" : groupKey === "airport" ? "Airports" : "Hotels"}
+                            </div>
+                            {items.slice(0, 7).map((item) => (
+                              <div key={item.key} className="dest-item" onClick={() => selectWhereEntity(item)}>
+                                <div className="dest-thumb">{item.emoji}</div>
+                                <div>
+                                  <div className="dest-city">{renderHighlighted(formatWherePrimary(item), destQuery)}</div>
+                                  <div className="dest-country">{renderHighlighted(formatWhereSecondary(item), destQuery)}</div>
+                                  {formatWhereMeta(item) && <div className="dest-submeta">{renderHighlighted(formatWhereMeta(item), destQuery)}</div>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                      {rankedWhere.length === 0 && (
+                        <div className="dest-empty">
+                          No results found. Try another city name, airport code (like DEL), or hotel keyword.
                         </div>
-                      ))}
-                      {typeFiltered.length === 0 && <div style={{padding:"12px",color:"#aaa",fontSize:"0.8rem"}}>No results</div>}
+                      )}
                     </div>
                   </div>
                 )}
@@ -1578,15 +2141,58 @@ export default function TBOHomepage() {
                         <div className="cal-container">
                           <Calendar year={calMonth.y} month={calMonth.m} startDate={startDate} endDate={endDate} hoverDate={hoverDate}
                             onSelect={handleDateSelect} onHover={!endDate ? setHoverDate : null}
-                            showPrev onPrev={() => calMonth.m === 0 ? setCalMonth({y:calMonth.y-1,m:11}) : setCalMonth({y:calMonth.y,m:calMonth.m-1})}/>
+                            showPrev onPrev={() => calMonth.m === 0 ? setCalMonth({y:calMonth.y-1,m:11}) : setCalMonth({y:calMonth.y,m:calMonth.m-1})}
+                            fareMap={fareMap} minFare={fareSummary.minFare} maxFare={fareSummary.maxFare}
+                            cheapestKey={fareSummary.cheapestKey} onFareFocus={setFareFocus}/>
                           <Calendar year={nextM.y} month={nextM.m} startDate={startDate} endDate={endDate} hoverDate={hoverDate}
                             onSelect={handleDateSelect} onHover={!endDate ? setHoverDate : null}
-                            showNext onNext={() => calMonth.m === 11 ? setCalMonth({y:calMonth.y+1,m:0}) : setCalMonth({y:calMonth.y,m:calMonth.m+1})}/>
+                            showNext onNext={() => calMonth.m === 11 ? setCalMonth({y:calMonth.y+1,m:0}) : setCalMonth({y:calMonth.y,m:calMonth.m+1})}
+                            fareMap={fareMap} minFare={fareSummary.minFare} maxFare={fareSummary.maxFare}
+                            cheapestKey={fareSummary.cheapestKey} onFareFocus={setFareFocus}/>
                         </div>
                         <div className="flex-options">
                           {["Exact dates","±1 day","±2 days","±3 days","±7 days","±14 days"].map(f => (
                             <button key={f} className={`flex-chip ${flexDays === f ? "active" : ""}`} onClick={() => setFlexDays(f)}>{f}</button>
                           ))}
+                        </div>
+                        <div className="fare-info-box">
+                          <div className="fare-info-title">Calendar Fare Insights</div>
+                          {fareSummary.cheapestKey ? (
+                            <>
+                              <div className="fare-info-line">
+                                Cheapest day: <strong>{fareSummary.cheapestKey}</strong> · Rs {fareMap[fareSummary.cheapestKey]?.fare?.toLocaleString("en-IN")}
+                              </div>
+                              <div className="fare-info-line">
+                                Fare range: Rs {fareSummary.minFare.toLocaleString("en-IN")} to Rs {fareSummary.maxFare.toLocaleString("en-IN")}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="fare-info-line">Select destination to view fare trend.</div>
+                          )}
+                          {fareFocus && (
+                            <div className="fare-info-line">
+                              {fareFocus.key}: {fareFocus.airline} · {fareFocus.stops === 0 ? "Non-stop" : "1 stop"} · {fareFocus.duration} · Rs {fareFocus.fare.toLocaleString("en-IN")}
+                            </div>
+                          )}
+                          {startDate && endDate && fareMap[dateKey(startDate)] && fareMap[dateKey(endDate)] && (
+                            <div className="fare-info-line">
+                              Best round-trip combo: Rs {(fareMap[dateKey(startDate)].fare + fareMap[dateKey(endDate)].fare).toLocaleString("en-IN")} total
+                            </div>
+                          )}
+                          <div className="fare-alert-row">
+                            <span className="fare-info-line" style={{margin:0}}>Price Alert</span>
+                            <button
+                              type="button"
+                              className={`fare-alert-btn ${fareAlertEnabled ? "active" : ""}`}
+                              onClick={() => {
+                                const next = !fareAlertEnabled;
+                                setFareAlertEnabled(next);
+                                try { localStorage.setItem("voyagehack.fareAlert", next ? "1" : "0"); } catch {}
+                              }}
+                            >
+                              {fareAlertEnabled ? "Enabled" : "Enable"}
+                            </button>
+                          </div>
                         </div>
                       </>)}
                       {whenTab === "Months" && (
@@ -1596,6 +2202,9 @@ export default function TBOHomepage() {
                             <div className="months-range-text">{formatDate(new Date())} – {formatDate(addMonths(new Date(), monthsDuration))}</div>
                             <div className="months-range-sub">{monthsDuration} month{monthsDuration !== 1 ? "s" : ""} trip</div>
                             <div className="months-hint">Drag the circle handle to adjust</div>
+                            <div className="months-hint" style={{marginTop:8}}>
+                              Cheapest visible day starts at Rs {fareSummary.minFare ? fareSummary.minFare.toLocaleString("en-IN") : "—"}
+                            </div>
                           </div>
                         </div>
                       )}
