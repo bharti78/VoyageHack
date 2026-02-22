@@ -57,6 +57,7 @@ async function tboFetch(endpoint, payload = {}, options = {}) {
 const cityCache = {};
 const cityHotelCodeCache = {};
 const cityHotelDetailsCache = {};
+const hotelDetailsCache = {};
 
 function normalizeHotelCodes(rawCodes) {
   if (!rawCodes) return "";
@@ -127,22 +128,83 @@ async function getCityHotelDetails(cityCode) {
   return hotels;
 }
 
-function enrichSearchHotelResult(searchData, detailedHotels) {
-  if (!Array.isArray(searchData?.HotelResult) || !Array.isArray(detailedHotels) || detailedHotels.length === 0) {
-    return searchData;
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function getHotelDetailsForCodes(hotelCodes) {
+  const uniqueCodes = [...new Set(
+    (hotelCodes || [])
+      .map(code => String(code || "").trim())
+      .filter(Boolean)
+  )];
+
+  const missing = uniqueCodes.filter(code => !hotelDetailsCache[code]);
+  if (missing.length === 0) {
+    return uniqueCodes.map(code => hotelDetailsCache[code]).filter(Boolean);
   }
 
-  const detailMap = new Map(
+  // Try batched fetch first, then fallback to single-code calls if needed.
+  const batches = chunkArray(missing, 50);
+  for (const batch of batches) {
+    try {
+      const data = await tboFetch("HotelDetails", {
+        Hotelcodes: batch.join(","),
+        Language: "EN",
+      });
+      const details = Array.isArray(data.HotelDetails) ? data.HotelDetails : [];
+      for (const detail of details) {
+        const code = String(detail?.HotelCode || "").trim();
+        if (code) hotelDetailsCache[code] = detail;
+      }
+    } catch {
+      for (const code of batch) {
+        try {
+          const data = await tboFetch("HotelDetails", { Hotelcodes: code, Language: "EN" });
+          const detail = Array.isArray(data.HotelDetails) ? data.HotelDetails[0] : null;
+          if (detail) hotelDetailsCache[code] = detail;
+        } catch {
+          // Keep search results working even if static detail fetch fails.
+        }
+      }
+    }
+  }
+
+  return uniqueCodes.map(code => hotelDetailsCache[code]).filter(Boolean);
+}
+
+function enrichSearchHotelResult(searchData, detailedHotels, hotelDetails) {
+  if (!Array.isArray(searchData?.HotelResult) || !Array.isArray(detailedHotels) || detailedHotels.length === 0) {
+    if (!Array.isArray(searchData?.HotelResult) || !Array.isArray(hotelDetails) || hotelDetails.length === 0) {
+      return searchData;
+    }
+  }
+
+  const cityDetailMap = new Map(
     detailedHotels
+      .filter(h => h?.HotelCode !== undefined && h?.HotelCode !== null)
+      .map(h => [String(h.HotelCode), h])
+  );
+  const hotelDetailMap = new Map(
+    (hotelDetails || [])
       .filter(h => h?.HotelCode !== undefined && h?.HotelCode !== null)
       .map(h => [String(h.HotelCode), h])
   );
 
   const enriched = searchData.HotelResult.map(hotel => {
-    const detail = detailMap.get(String(hotel?.HotelCode || ""));
-    if (!detail) return hotel;
+    const cityDetail = cityDetailMap.get(String(hotel?.HotelCode || "")) || {};
+    const staticDetail = hotelDetailMap.get(String(hotel?.HotelCode || "")) || {};
+    const detail = { ...cityDetail, ...staticDetail };
+    if (!detail || Object.keys(detail).length === 0) return hotel;
 
     const mergedRating = parseHotelRating(hotel.HotelRating) ?? parseHotelRating(detail.HotelRating);
+    const images = Array.isArray(detail.Images) ? detail.Images : [];
+    const firstImage = images.length > 0 ? images[0] : undefined;
+
     return {
       ...detail,
       ...hotel,
@@ -153,6 +215,15 @@ function enrichSearchHotelResult(searchData, detailedHotels) {
       CountryName: hotel.CountryName || detail.CountryName,
       CountryCode: hotel.CountryCode || detail.CountryCode,
       HotelRating: mergedRating ?? hotel.HotelRating ?? detail.HotelRating,
+      HotelPicture: hotel.HotelPicture || detail.HotelPicture || detail.ImagePath || firstImage,
+      ImagePath: hotel.ImagePath || detail.ImagePath || firstImage,
+      Images: Array.isArray(detail.Images) ? detail.Images : (Array.isArray(hotel.Images) ? hotel.Images : []),
+      Description: hotel.Description || detail.Description,
+      HotelFacilities: hotel.HotelFacilities || detail.HotelFacilities,
+      Attractions: hotel.Attractions || detail.Attractions,
+      HotelWebsiteURL: hotel.HotelWebsiteURL || detail.HotelWebsiteURL,
+      PhoneNumber: hotel.PhoneNumber || detail.PhoneNumber,
+      FaxNumber: hotel.FaxNumber || detail.FaxNumber,
     };
   });
 
@@ -225,7 +296,11 @@ exports.hotelSearch = async (req, res) => {
 
     const data = await tboFetch("Search", payload);
     const detailedHotels = cityId ? await getCityHotelDetails(cityId) : [];
-    const enriched = enrichSearchHotelResult(data, detailedHotels);
+    const resultHotelCodes = Array.isArray(data?.HotelResult)
+      ? data.HotelResult.map(h => h?.HotelCode).filter(Boolean)
+      : [];
+    const detailedStaticHotels = await getHotelDetailsForCodes(resultHotelCodes);
+    const enriched = enrichSearchHotelResult(data, detailedHotels, detailedStaticHotels);
     console.log('Hotel search successful:', data);
     res.json(enriched);
   } catch (err) {
@@ -318,7 +393,38 @@ exports.preBook = async (req, res) => {
 
 exports.book = async (req, res) => {
   try {
-    const data = await tboFetch("Book", req.body);
+    const bookingCode = String(req.body?.BookingCode || "").trim();
+    if (!bookingCode) {
+      return res.status(400).json({ error: "Book requires a valid BookingCode." });
+    }
+
+    const normalizedCustomerDetails = Array.isArray(req.body?.CustomerDetails)
+      ? req.body.CustomerDetails.map(room => ({
+          ...room,
+          CustomerNames: Array.isArray(room?.CustomerNames)
+            ? room.CustomerNames.map(guest => ({
+                Title: guest?.Title || "Mr",
+                FirstName: guest?.FirstName || "",
+                LastName: guest?.LastName || "",
+                Type: guest?.Type === "1" ? "Adult" : (guest?.Type || "Adult"),
+              }))
+            : [],
+        }))
+      : [];
+
+    const payload = {
+      BookingCode: bookingCode,
+      CustomerDetails: normalizedCustomerDetails,
+      ClientReferenceId: req.body?.ClientReferenceId || `TBO_${Date.now()}`,
+      BookingReferenceId: req.body?.BookingReferenceId || req.body?.BookingRefNo || `BK_${Date.now()}`,
+      TotalFare: Number(req.body?.TotalFare || 0),
+      EmailId: req.body?.EmailId || req.body?.email || "",
+      PhoneNumber: req.body?.PhoneNumber || req.body?.phone || "",
+      BookingType: req.body?.BookingType || "Voucher",
+      PaymentMode: req.body?.PaymentMode || "Limit",
+    };
+
+    const data = await tboFetch("Book", payload);
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
@@ -327,7 +433,21 @@ exports.book = async (req, res) => {
 
 exports.bookingDetail = async (req, res) => {
   try {
-    const data = await tboFetch("BookingDetail", req.body);
+    const payload = {
+      ...(req.body?.ConfirmationNumber
+        ? { ConfirmationNumber: req.body.ConfirmationNumber }
+        : {}),
+      ...(req.body?.BookingReferenceId
+        ? { BookingReferenceId: req.body.BookingReferenceId }
+        : {}),
+      PaymentMode: req.body?.PaymentMode || "Limit",
+    };
+
+    if (!payload.ConfirmationNumber && !payload.BookingReferenceId) {
+      return res.status(400).json({ error: "BookingDetail requires ConfirmationNumber or BookingReferenceId." });
+    }
+
+    const data = await tboFetch("BookingDetail", payload);
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
@@ -336,7 +456,15 @@ exports.bookingDetail = async (req, res) => {
 
 exports.cancel = async (req, res) => {
   try {
-    const data = await tboFetch("Cancel", req.body);
+    const confirmationNumber = String(
+      req.body?.ConfirmationNumber || req.body?.confirmationNumber || req.body?.BookingRefNo || ""
+    ).trim();
+
+    if (!confirmationNumber) {
+      return res.status(400).json({ error: "Cancel requires ConfirmationNumber." });
+    }
+
+    const data = await tboFetch("Cancel", { ConfirmationNumber: confirmationNumber });
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });

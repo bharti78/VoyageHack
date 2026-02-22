@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
    BACKEND PROXY  ─  all TBO calls go through here
    ═══════════════════════════════════════════════ */
 const API_BASE = "http://localhost:5000/api/hotels";
+const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 
 async function apiPost(endpoint, payload) {
   const res = await fetch(`${API_BASE}/${endpoint}`, {
@@ -45,6 +46,45 @@ function getPrebookRooms(prebookRes) {
     return prebookRes.HotelResult[0]?.Rooms || [];
   }
   return prebookRes?.HotelResult?.Rooms || [];
+}
+
+function normalizeFacilities(facilities) {
+  if (Array.isArray(facilities)) return facilities.filter(Boolean);
+  if (typeof facilities !== "string") return [];
+  return facilities
+    .split(/[,|]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function firstHotelImage(hotel) {
+  if (hotel?.HotelPicture) return hotel.HotelPicture;
+  if (hotel?.ImagePath) return hotel.ImagePath;
+  if (Array.isArray(hotel?.Images) && hotel.Images.length > 0) return hotel.Images[0];
+  return null;
+}
+
+function textPreview(value, max = 120) {
+  if (!value) return "";
+  const plain = String(value).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  if (plain.length <= max) return plain;
+  return `${plain.slice(0, max - 1)}...`;
+}
+
+function loadPersistedHotelForm() {
+  try {
+    const raw = localStorage.getItem(HOTEL_FORM_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function parseStoredDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 /* ═══════════════════════════════════════════════
@@ -411,23 +451,24 @@ function MiniCal({value, onChange, onClose, minDate}){
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 export default function HotelsPage({onBack}){
+  const persistedForm = loadPersistedHotelForm() || {};
 
   /* ── search form state ── */
-  const [cityQuery,setCityQuery]   = useState("");
-  const [cityId,setCityId]         = useState("");
-  const [cityName,setCityName]     = useState("");
+  const [cityQuery,setCityQuery]   = useState(persistedForm.cityQuery || "");
+  const [cityId,setCityId]         = useState(persistedForm.cityId || "");
+  const [cityName,setCityName]     = useState(persistedForm.cityName || "");
   const [allCities,setAllCities]   = useState([]);
   const [cityLoading,setCityLoading] = useState(false);
   const [showCityDD,setShowCityDD] = useState(false);
-  const [destCountry,setDestCountry] = useState("IN");
-  const [hotelCodes,setHotelCodes] = useState("");
+  const [destCountry,setDestCountry] = useState(persistedForm.destCountry || "IN");
+  const [hotelCodes,setHotelCodes] = useState(persistedForm.hotelCodes || "");
   const [showHotelCodes,setShowHotelCodes] = useState(false);
-  const [checkIn,setCI]    = useState(null);
-  const [checkOut,setCO]   = useState(null);
-  const [roomCfg,setRC]    = useState({count:1,adults:2,children:0});
-  const [nat,setNat]       = useState("IN");
-  const [starF,setStarF]   = useState(null);
-  const [budget,setBudget] = useState("");
+  const [checkIn,setCI]    = useState(parseStoredDate(persistedForm.checkIn));
+  const [checkOut,setCO]   = useState(parseStoredDate(persistedForm.checkOut));
+  const [roomCfg,setRC]    = useState(persistedForm.roomCfg || {count:1,adults:2,children:0});
+  const [nat,setNat]       = useState(persistedForm.nat || "IN");
+  const [starF,setStarF]   = useState(persistedForm.starF ?? null);
+  const [budget,setBudget] = useState(persistedForm.budget || "");
   const [drop,setDrop]     = useState(null);
 
   /* ── api / page state ── */
@@ -438,13 +479,13 @@ export default function HotelsPage({onBack}){
   /* ── results ── */
   const [searchId,setSearchId] = useState("");
   const [hotels,setHotels]     = useState([]);
-  const [sortBy,setSortBy]     = useState("price_asc");
+  const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
 
   /* ── prebook / booking ── */
   const [selHotel,setSelHotel]   = useState(null);
   const [prebookRes,setPrebookRes] = useState(null);
   const [selRateIdx,setSelRateIdx] = useState(0);
-  const [guest,setGuest] = useState({title:"Mr",first:"",last:"",email:"",phone:"",addr:"",city2:"",country:"IN"});
+  const [guest,setGuest] = useState(persistedForm.guest || {title:"Mr",first:"",last:"",email:"",phone:"",addr:"",city2:"",country:"IN"});
 
   /* ── post-booking ── */
   const [bookingRef,setBookingRef]     = useState("");
@@ -453,12 +494,18 @@ export default function HotelsPage({onBack}){
 
   const boxRef = useRef(null);
   const cityDDRef = useRef(null);
+  const hasFetchedCitiesOnce = useRef(false);
 
   /* fetch city list when destination country changes */
   useEffect(()=>{
     let cancelled = false;
     setCityLoading(true);
-    setCityId(""); setCityName(""); setCityQuery("");
+    // Keep restored values on first load; clear only when country is changed by user.
+    if (hasFetchedCitiesOnce.current) {
+      setCityId(""); setCityName(""); setCityQuery("");
+    } else {
+      hasFetchedCitiesOnce.current = true;
+    }
     (async ()=>{
       try {
         const data = await apiPost("cities",{countryCode:destCountry});
@@ -468,6 +515,30 @@ export default function HotelsPage({onBack}){
     })();
     return ()=>{ cancelled=true; };
   },[destCountry]);
+
+  /* persist hotel form inputs so refresh does not wipe user-entered details */
+  useEffect(() => {
+    const payload = {
+      cityQuery,
+      cityId,
+      cityName,
+      destCountry,
+      hotelCodes,
+      checkIn: checkIn ? checkIn.toISOString() : null,
+      checkOut: checkOut ? checkOut.toISOString() : null,
+      roomCfg,
+      nat,
+      starF,
+      budget,
+      sortBy,
+      guest,
+    };
+    try {
+      localStorage.setItem(HOTEL_FORM_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Ignore storage errors and keep app usable.
+    }
+  }, [cityQuery, cityId, cityName, destCountry, hotelCodes, checkIn, checkOut, roomCfg, nat, starF, budget, sortBy, guest]);
 
   /* close dropdowns on outside click */
   useEffect(()=>{
@@ -570,38 +641,56 @@ export default function HotelsPage({onBack}){
     const rates    = getPrebookRooms(prebookRes).length ? getPrebookRooms(prebookRes) : (selHotel?.Rooms || []);
     const rate     = rates[selRateIdx] || rates[0] || selHotel || {};
     const bcode    = prebookRes?.BookingCode || rate.BookingCode || selHotel?.BookingCode || "";
+    if (!bcode) {
+      setApiErr("Unable to confirm booking: booking code is missing. Please re-open room selection.");
+      setLoading(false);
+      return;
+    }
 
-    const roomsPayload = [{
-      RoomIndex   : rate.RoomIndex||1,
-      RoomTypeCode: rate.RoomTypeCode||"",
-      RoomTypeName: rate.RoomTypeName||"Standard",
-      RatePlanCode: rate.RatePlanCode||"",
-      BookingCode : rate.BookingCode||bcode,
-      Guests      : {
-        Adults  :[{Title:guest.title,FirstName:guest.first,LastName:guest.last}],
-        Children:[],
-      },
-    }];
+    const customerDetails = Array.from({ length: Math.max(roomCfg.count, 1) }, (_, roomIdx) => {
+      const customerNames = [];
+
+      for (let i = 0; i < Math.max(roomCfg.adults, 1); i += 1) {
+        const isLeadGuest = roomIdx === 0 && i === 0;
+        customerNames.push({
+          Title: isLeadGuest ? guest.title : "Mr",
+          FirstName: isLeadGuest ? guest.first : `Adult${roomIdx + 1}${i + 1}`,
+          LastName: isLeadGuest ? guest.last : "Guest",
+          Type: "Adult",
+        });
+      }
+
+      for (let i = 0; i < Math.max(roomCfg.children, 0); i += 1) {
+        customerNames.push({
+          Title: "Ms",
+          FirstName: `Child${roomIdx + 1}${i + 1}`,
+          LastName: "Guest",
+          Type: "Child",
+        });
+      }
+
+      return { CustomerNames: customerNames };
+    });
+    const computedFare = Number(
+      rate?.TotalFare ??
+      prebookRes?.HotelResult?.[0]?.Rooms?.[0]?.TotalFare ??
+      totalPrice ??
+      0
+    );
 
     try{
       const data = await apiPost("book",{
-        BookingCode      : bcode,
-        ClientReferenceId: `TBO_${Date.now()}`,
-        BookingType      : "Voucher",
-        Rooms            : roomsPayload,
-        CustomerDetails  : [{
-          CustomerNames:[{Title:guest.title,FirstName:guest.first,LastName:guest.last,Type:"1"}],
-          EmailId      : guest.email,
-          PhoneNumber  : guest.phone,
-          BillingDetails:{
-            Address   : guest.addr||"NA",
-            City      : guest.city2||"NA",
-            PostalCode: "000000",
-            countryCode: guest.country||"IN",
-          },
-        }],
+        BookingCode       : bcode,
+        CustomerDetails   : customerDetails,
+        ClientReferenceId : `TBO_${Date.now()}`,
+        BookingReferenceId: `BK_${Date.now()}`,
+        TotalFare         : computedFare,
+        EmailId           : guest.email,
+        PhoneNumber       : guest.phone,
+        BookingType       : "Voucher",
+        PaymentMode       : "Limit",
       });
-      const ref = data.BookingRefNo||data.ConfirmationNumber||data.BookingId||`REF${Date.now()}`;
+      const ref = data.ConfirmationNumber || data.BookingReferenceId || data.BookingId || `REF${Date.now()}`;
       setBookingRef(ref);
       setPage("confirm");
     }catch(e){
@@ -615,7 +704,7 @@ export default function HotelsPage({onBack}){
   async function doDetail(){
     setApiErr(""); setLoading(true);
     try{
-      const data = await apiPost("detail",{BookingRefNo:bookingRef});
+      const data = await apiPost("detail",{ConfirmationNumber:bookingRef,PaymentMode:"Limit"});
       setBookingDetail(data.BookingDetail||data);
       setPage("detail");
     }catch(e){
@@ -630,8 +719,9 @@ export default function HotelsPage({onBack}){
     if(!window.confirm("Are you sure you want to cancel this booking? This action may be irreversible.")) return;
     setApiErr(""); setLoading(true); setCancelMsg("");
     try{
-      const data = await apiPost("cancel",{BookingRefNo:bookingRef,RequestType:"4"});
+      const data = await apiPost("cancel",{ConfirmationNumber:bookingRef});
       const ok   = data.Status?.Code==="01"
+                || data.Status?.Code===200
                 || String(data.Status?.Description||"").toLowerCase().includes("success")
                 || String(data.Status?.Description||"").toLowerCase().includes("cancel");
       if(ok){
@@ -1014,10 +1104,14 @@ export default function HotelsPage({onBack}){
               {sorted.map((h,idx)=>{
                 const price = roomTotal(h?.Rooms?.[0], h);
                 const cur   = h.Price?.CurrencyCode || h.Currency || "INR";
-                const img   = h.HotelPicture || h.ImagePath || null;
+                const img   = firstHotelImage(h);
                 const ref   = h.IsRefundable ?? true;
                 const stRaw = h.HotelRating  || h.StarRating || 0;
-                const facilities = h.HotelFacilities?.slice(0,4) || [];
+                const facilities = normalizeFacilities(h.HotelFacilities).slice(0,4);
+                const attractionPreview = Array.isArray(h.Attractions)
+                  ? textPreview(h.Attractions[0], 95)
+                  : textPreview(h.Attractions, 95);
+                const descriptionPreview = textPreview(h.Description, 140);
                 return (
                   <div key={h.HotelCode||idx} className="hp-hcard">
                     <div className="hp-hcard-inner">
@@ -1035,9 +1129,26 @@ export default function HotelsPage({onBack}){
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                           {h.HotelAddress||h.Address||"Address not provided"}
                         </div>
+                        {descriptionPreview && (
+                          <div style={{fontSize:".69rem",color:"#475569",lineHeight:1.45}}>
+                            {descriptionPreview}
+                          </div>
+                        )}
+                        {attractionPreview && (
+                          <div style={{fontSize:".68rem",color:"#64748b"}}>
+                            Nearby: {attractionPreview}
+                          </div>
+                        )}
                         {facilities.length>0 && (
                           <div className="hp-htags">
                             {facilities.map((f,i)=><span key={i} className="hp-htag">{f}</span>)}
+                          </div>
+                        )}
+                        {(h.PhoneNumber || h.FaxNumber || h.HotelWebsiteURL) && (
+                          <div style={{display:"flex",gap:10,flexWrap:"wrap",fontSize:".66rem",color:"#64748b"}}>
+                            {h.PhoneNumber && <span>Phone: {h.PhoneNumber}</span>}
+                            {h.FaxNumber && <span>Fax: {h.FaxNumber}</span>}
+                            {h.HotelWebsiteURL && <a href={h.HotelWebsiteURL} target="_blank" rel="noreferrer" style={{color:"#0f5298",textDecoration:"none"}}>Hotel Site</a>}
                           </div>
                         )}
                         {h.Rooms?.length>0 && <div className="hp-havail">✓ {h.Rooms.length} room option{h.Rooms.length>1?"s":""} available</div>}
