@@ -12,6 +12,21 @@ if (!TBO_USER || !TBO_PASS || !TBO_BASE) {
 const AUTH = "Basic " + Buffer.from(`${TBO_USER}:${TBO_PASS}`).toString("base64");
 const MAX_SEARCH_HOTEL_CODES = 100;
 const SUCCESS_CODES = new Set([200, "200", "01", 201, "201"]);
+const ALLOWED_IMAGE_HOSTS = new Set([
+  "api.tbotechnology.in",
+  "tbotechnology.in",
+  "static-sources.s3-eu-west-1.amazonaws.com",
+]);
+
+function isAllowedImageHost(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  if (!host) return false;
+  if (ALLOWED_IMAGE_HOSTS.has(host)) return true;
+  if (host.endsWith(".tbotechnology.in")) return true;
+  if (host.endsWith(".tbotechnology.com")) return true;
+  if (host.endsWith(".amazonaws.com")) return true;
+  return false;
+}
 
 async function tboFetch(endpoint, payload = {}, options = {}) {
   const method = (options.method || "POST").toUpperCase();
@@ -113,6 +128,62 @@ function parseHotelRating(value) {
   return map[lowered] ?? null;
 }
 
+function sanitizeImageUrl(value) {
+  if (!value) return "";
+  const raw = String(value).replace(/[\r\n\t]/g, "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return "";
+}
+
+function parseImageList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(sanitizeImageUrl).filter(Boolean);
+  if (typeof value !== "string") return [];
+
+  const text = value.trim();
+  if (!text) return [];
+
+  // Try JSON array first.
+  if ((text.startsWith("[") && text.endsWith("]")) || (text.startsWith("\"") && text.endsWith("\""))) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed.map(sanitizeImageUrl).filter(Boolean);
+      return [sanitizeImageUrl(parsed)].filter(Boolean);
+    } catch {
+      // fall through
+    }
+  }
+
+  return text
+    .split(/[,\s]+/)
+    .map(sanitizeImageUrl)
+    .filter(Boolean);
+}
+
+function extractHotelImages(detail, hotel) {
+  const images = [
+    ...parseImageList(detail?.Images),
+    ...parseImageList(detail?.ImageUrls),
+    ...parseImageList(detail?.imageURL),
+    ...parseImageList(detail?.HotelPicture),
+    ...parseImageList(detail?.ImagePath),
+    ...parseImageList(hotel?.Images),
+    ...parseImageList(hotel?.HotelPicture),
+    ...parseImageList(hotel?.ImagePath),
+  ];
+
+  const roomDetails = Array.isArray(detail?.RoomDetails) ? detail.RoomDetails : [];
+  for (const room of roomDetails) {
+    images.push(...parseImageList(room?.imageURL));
+    images.push(...parseImageList(room?.ImageURL));
+    images.push(...parseImageList(room?.Images));
+  }
+
+  return [...new Set(images.filter(Boolean))];
+}
+
 async function getCityHotelDetails(cityCode) {
   const key = String(cityCode || "").trim();
   if (!key) return [];
@@ -155,6 +226,7 @@ async function getHotelDetailsForCodes(hotelCodes) {
       const data = await tboFetch("HotelDetails", {
         Hotelcodes: batch.join(","),
         Language: "EN",
+        IsRoomDetailRequired: true,
       });
       const details = Array.isArray(data.HotelDetails) ? data.HotelDetails : [];
       for (const detail of details) {
@@ -164,7 +236,7 @@ async function getHotelDetailsForCodes(hotelCodes) {
     } catch {
       for (const code of batch) {
         try {
-          const data = await tboFetch("HotelDetails", { Hotelcodes: code, Language: "EN" });
+          const data = await tboFetch("HotelDetails", { Hotelcodes: code, Language: "EN", IsRoomDetailRequired: true });
           const detail = Array.isArray(data.HotelDetails) ? data.HotelDetails[0] : null;
           if (detail) hotelDetailsCache[code] = detail;
         } catch {
@@ -202,7 +274,7 @@ function enrichSearchHotelResult(searchData, detailedHotels, hotelDetails) {
     if (!detail || Object.keys(detail).length === 0) return hotel;
 
     const mergedRating = parseHotelRating(hotel.HotelRating) ?? parseHotelRating(detail.HotelRating);
-    const images = Array.isArray(detail.Images) ? detail.Images : [];
+    const images = extractHotelImages(detail, hotel);
     const firstImage = images.length > 0 ? images[0] : undefined;
 
     return {
@@ -217,7 +289,7 @@ function enrichSearchHotelResult(searchData, detailedHotels, hotelDetails) {
       HotelRating: mergedRating ?? hotel.HotelRating ?? detail.HotelRating,
       HotelPicture: hotel.HotelPicture || detail.HotelPicture || detail.ImagePath || firstImage,
       ImagePath: hotel.ImagePath || detail.ImagePath || firstImage,
-      Images: Array.isArray(detail.Images) ? detail.Images : (Array.isArray(hotel.Images) ? hotel.Images : []),
+      Images: images,
       Description: hotel.Description || detail.Description,
       HotelFacilities: hotel.HotelFacilities || detail.HotelFacilities,
       Attractions: hotel.Attractions || detail.Attractions,
@@ -369,6 +441,52 @@ exports.bookingDetailsByDate = async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
+  }
+};
+
+exports.proxyHotelImage = async (req, res) => {
+  try {
+    const raw = String(req.query?.url || "").trim();
+    if (!raw) return res.status(400).json({ error: "Image URL is required." });
+
+    const normalizedRaw = raw.startsWith("//") ? `https:${raw}` : raw;
+    const withProtocol = /^https?:\/\//i.test(normalizedRaw) ? normalizedRaw : `https://${normalizedRaw}`;
+
+    let parsed;
+    try {
+      parsed = new URL(withProtocol);
+    } catch {
+      return res.status(400).json({ error: "Invalid image URL." });
+    }
+
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return res.status(400).json({ error: "Unsupported image URL protocol." });
+    }
+    if (!isAllowedImageHost(parsed.hostname)) {
+      return res.status(403).json({ error: "Image host is not allowed." });
+    }
+
+    const imgResp = await fetch(parsed.toString(), {
+      method: "GET",
+      headers: {
+        "User-Agent": "VoyageHack-ImageProxy/1.0",
+        Accept: "image/*,*/*;q=0.8",
+      },
+    });
+    if (!imgResp.ok) {
+      return res.status(imgResp.status).json({ error: "Unable to fetch image." });
+    }
+
+    const contentType = imgResp.headers.get("content-type") || "image/jpeg";
+    const cacheControl = imgResp.headers.get("cache-control") || "public, max-age=86400";
+    const arr = await imgResp.arrayBuffer();
+    const buffer = Buffer.from(arr);
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", cacheControl);
+    res.send(buffer);
+  } catch (err) {
+    res.status(502).json({ error: err.message || "Image proxy failed." });
   }
 };
 

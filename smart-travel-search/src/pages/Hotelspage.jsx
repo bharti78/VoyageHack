@@ -110,6 +110,74 @@ function parseHotelMapPoint(hotel) {
   return { lat, lng };
 }
 
+function normalizeImageUrl(url) {
+  if (!url) return "";
+  const clean = String(url).replace(/[\r\n\t]/g, "").replace(/\s+/g, "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("//")) return `https:${clean}`;
+  try {
+    return encodeURI(clean);
+  } catch {
+    return clean;
+  }
+}
+
+function hotelImageUrls(hotel) {
+  const parseAnyImages = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.map(normalizeImageUrl).filter(Boolean);
+    if (typeof value !== "string") return [];
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map(normalizeImageUrl).filter(Boolean);
+      } catch {
+        // fallback split
+      }
+    }
+    return trimmed.split(/[,\s]+/).map(normalizeImageUrl).filter(Boolean);
+  };
+
+  const urls = [
+    hotel?.HotelPicture,
+    hotel?.ImagePath,
+    ...parseAnyImages(hotel?.Images),
+    ...parseAnyImages(hotel?.ImageUrls),
+    ...parseAnyImages(hotel?.imageURL),
+  ]
+    .map(normalizeImageUrl)
+    .filter(Boolean);
+  return [...new Set(urls)];
+}
+
+function proxyImageUrl(url) {
+  if (!url) return "";
+  return `${API_BASE}/image?url=${encodeURIComponent(url)}`;
+}
+
+function HotelImage({ hotel, alt, style, className }) {
+  const urls = hotelImageUrls(hotel);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => { setIdx(0); }, [hotel?.HotelCode, hotel?.HotelName]);
+
+  if (urls.length === 0) return <span>🏨</span>;
+  return (
+    <img
+      src={proxyImageUrl(urls[idx])}
+      alt={alt}
+      className={className}
+      style={style}
+      loading="lazy"
+      onError={() => {
+        if (idx < urls.length - 1) setIdx((i) => i + 1);
+      }}
+    />
+  );
+}
+
 /* ═══════════════════════════════════════════════
    CSS
    ═══════════════════════════════════════════════ */
@@ -504,6 +572,8 @@ export default function HotelsPage({onBack}){
   const [hotels,setHotels]     = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
   const [showMap,setShowMap]   = useState(true);
+  const [detailHotel,setDetailHotel] = useState(null);
+  const [detailImageIdx,setDetailImageIdx] = useState(0);
 
   /* ── prebook / booking ── */
   const [selHotel,setSelHotel]   = useState(null);
@@ -1224,14 +1294,14 @@ export default function HotelsPage({onBack}){
                   <div key={h.HotelCode||idx} className="hp-hcard">
                     <div className="hp-hcard-inner">
                       {/* image */}
-                      <div className="hp-himg">
+                      <div className="hp-himg" style={{cursor:"pointer"}} onClick={()=>{ setDetailHotel(h); setDetailImageIdx(0); }}>
                         {img
-                          ? <img src={img} alt={h.HotelName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          ? <HotelImage hotel={h} alt={h.HotelName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           : <span>🏨</span>}
                       </div>
                       {/* body */}
                       <div className="hp-hbody">
-                        <div className="hp-hname">{h.HotelName||"Hotel"}</div>
+                        <div className="hp-hname" style={{cursor:"pointer"}} onClick={()=>{ setDetailHotel(h); setDetailImageIdx(0); }}>{h.HotelName||"Hotel"}</div>
                         {stRaw>0 && <div className="hp-hstars">{stars(stRaw)}</div>}
                         <div className="hp-haddr">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1276,6 +1346,7 @@ export default function HotelsPage({onBack}){
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
                           <span className={`hp-rbadge ${ref?"ref":"nref"}`}>{ref?"✓ Refundable":"Non-Refundable"}</span>
+                          <button className="hp-detail-btn" style={{background:"#eef6ff",border:"1px solid #bfdbfe",color:"#0f5298",borderRadius:8,padding:"7px 10px",fontSize:".72rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}} onClick={()=>{ setDetailHotel(h); setDetailImageIdx(0); }}>View Details</button>
                           <button className="hp-selrm-btn" onClick={()=>doPrebook(h)}>Select Room →</button>
                         </div>
                       </div>
@@ -1283,6 +1354,78 @@ export default function HotelsPage({onBack}){
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {detailHotel && (
+            <div className="hp-modal-bg" onClick={()=>setDetailHotel(null)}>
+              <div className="hp-modal" onClick={(e)=>e.stopPropagation()} style={{maxWidth:980}}>
+                <div className="hp-mhdr">
+                  <div>
+                    <div className="hp-mttl">{detailHotel.HotelName || "Hotel Details"}</div>
+                    <div className="hp-msub">{detailHotel.HotelAddress || detailHotel.Address || "Address not available"}</div>
+                  </div>
+                  <button className="hp-mclose" onClick={()=>setDetailHotel(null)}>×</button>
+                </div>
+                <div className="hp-mbody" style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:14}}>
+                  <div>
+                    <div style={{height:290,borderRadius:12,overflow:"hidden",border:"1px solid #dbeafe",background:"#f8fafc",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <HotelImage
+                        hotel={{...detailHotel, Images: hotelImageUrls(detailHotel).slice(detailImageIdx)}}
+                        alt={detailHotel.HotelName}
+                        style={{width:"100%",height:"100%",objectFit:"cover"}}
+                      />
+                    </div>
+                    {hotelImageUrls(detailHotel).length > 1 && (
+                      <div style={{display:"flex",gap:8,overflowX:"auto",marginTop:8,paddingBottom:2}}>
+                        {hotelImageUrls(detailHotel).map((u, i) => (
+                          <button
+                            key={`${u}-${i}`}
+                            type="button"
+                            onClick={()=>setDetailImageIdx(i)}
+                            style={{border:i===detailImageIdx?"2px solid #0f5298":"1px solid #cbd5e1",borderRadius:8,padding:0,overflow:"hidden",width:84,height:56,background:"#fff",cursor:"pointer",flexShrink:0}}
+                          >
+                            <img src={proxyImageUrl(u)} alt={`Hotel ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {detailHotel.Description && (
+                      <div style={{marginTop:10,fontSize:".78rem",color:"#334155",lineHeight:1.6}}>
+                        {String(detailHotel.Description).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()}
+                      </div>
+                    )}
+                    {normalizeFacilities(detailHotel.HotelFacilities).length > 0 && (
+                      <div className="hp-htags" style={{marginTop:10}}>
+                        {normalizeFacilities(detailHotel.HotelFacilities).slice(0,12).map((f,i)=><span key={i} className="hp-htag">{f}</span>)}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {parseHotelMapPoint(detailHotel) ? (
+                      <div style={{height:210,borderRadius:10,overflow:"hidden",border:"1px solid #dbeafe"}}>
+                        <MapContainer center={[parseHotelMapPoint(detailHotel).lat, parseHotelMapPoint(detailHotel).lng]} zoom={14} style={{height:"100%",width:"100%"}} scrollWheelZoom={false}>
+                          <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <Marker position={[parseHotelMapPoint(detailHotel).lat, parseHotelMapPoint(detailHotel).lng]}>
+                            <Popup>{detailHotel.HotelName}</Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
+                    ) : (
+                      <div style={{fontSize:".74rem",color:"#64748b",background:"#f8fafc",border:"1px dashed #cbd5e1",borderRadius:10,padding:12}}>Map location not available for this hotel.</div>
+                    )}
+                    <div className="hp-sumbox" style={{marginBottom:0}}>
+                      <div className="hp-sumttl">Contact</div>
+                      <div className="hp-sumrow"><span>Phone</span><span className="hp-sumval">{detailHotel.PhoneNumber || "N/A"}</span></div>
+                      <div className="hp-sumrow"><span>Fax</span><span className="hp-sumval">{detailHotel.FaxNumber || "N/A"}</span></div>
+                      <div className="hp-sumrow"><span>Website</span><span className="hp-sumval">{detailHotel.HotelWebsiteURL ? <a href={detailHotel.HotelWebsiteURL} target="_blank" rel="noreferrer">Visit</a> : "N/A"}</span></div>
+                    </div>
+                    <button className="hp-btn-pri" style={{justifyContent:"center"}} onClick={()=>{ const h = detailHotel; setDetailHotel(null); doPrebook(h); }}>
+                      Select Room & Book
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
