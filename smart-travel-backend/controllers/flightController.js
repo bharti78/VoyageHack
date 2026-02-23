@@ -3,8 +3,10 @@ const axios = require("axios");
 const TBO_FLIGHT_BASE = process.env.TBO_FLIGHT_BASE || "https://Sharedapi.tektravels.com/SharedData.svc/rest";
 const FLIGHT_API_BASE = process.env.TBO_FLIGHT_API_BASE || "http://api.tektravels.com/BookingEngineService_Air/AirService.svc/rest";
 const AUTH_TIMEOUT_MS = Number(process.env.TBO_FLIGHT_AUTH_TIMEOUT_MS || 15000);
-const SEARCH_TIMEOUT_MS = Number(process.env.TBO_FLIGHT_SEARCH_TIMEOUT_MS || 65000);
+const SEARCH_TIMEOUT_MS = Number(process.env.TBO_FLIGHT_SEARCH_TIMEOUT_MS || 120000);
 const DEFAULT_TIMEOUT_MS = Number(process.env.TBO_FLIGHT_TIMEOUT_MS || 30000);
+const SEARCH_RETRIES = Math.max(0, Number(process.env.TBO_FLIGHT_SEARCH_RETRIES || 1));
+const RETRY_DELAY_MS = Math.max(0, Number(process.env.TBO_FLIGHT_RETRY_DELAY_MS || 1500));
 
 const TBO_CREDS = {
   UserName: process.env.TBO_FLIGHT_USER || "Hackathon",
@@ -34,13 +36,14 @@ function buildSearchPayload(body, token) {
 }
 
 async function callFlightSearch(payload) {
-  return axios.post(
+  return postWithRetry(
     `${FLIGHT_API_BASE}/Search`,
     payload,
     {
       headers: { "Content-Type": "application/json" },
       timeout: SEARCH_TIMEOUT_MS,
-    }
+    },
+    SEARCH_RETRIES
   );
 }
 
@@ -96,6 +99,9 @@ function getCheapestItineraryDetail(data) {
 }
 
 function extractFlightError(err, fallback) {
+  if (err?.code === "ECONNABORTED" || String(err?.message || "").toLowerCase().includes("timeout")) {
+    return `Flight provider timeout after ${SEARCH_TIMEOUT_MS}ms. Please retry.`;
+  }
   return (
     err?.response?.data?.Response?.Error?.ErrorMessage ||
     err?.response?.data?.Response?.Error?.Error?.ErrorMessage ||
@@ -104,6 +110,30 @@ function extractFlightError(err, fallback) {
     err?.message ||
     fallback
   );
+}
+
+function isRetriableTimeout(err) {
+  return err?.code === "ECONNABORTED" || String(err?.message || "").toLowerCase().includes("timeout");
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function postWithRetry(url, payload, config, retries) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await axios.post(url, payload, config);
+    } catch (err) {
+      lastErr = err;
+      if (!isRetriableTimeout(err) || attempt === retries) {
+        throw err;
+      }
+      await sleep(RETRY_DELAY_MS);
+    }
+  }
+  throw lastErr;
 }
 
 async function getToken() {
