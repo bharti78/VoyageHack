@@ -62,6 +62,20 @@ function Search() {
       localStorage.setItem("searchQuery", input);
       localStorage.setItem("voyagehack.smartQuery", JSON.stringify(data.intent || {}));
       localStorage.setItem("voyagehack.smartResults", JSON.stringify(data));
+      localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
+        source: "search-page",
+        inputType: "text",
+        query: input,
+        destination: data?.intent?.destination || "",
+        startDate: null,
+        endDate: null,
+        whenTab: "Dates",
+        selectedTypes: [],
+        guests: { adults: 1, children: 0, infants: 0 },
+        budget: { selectedBudget: null, maxValue: Number(data?.intent?.budget || 0) },
+        intentService: "all",
+        intent: data?.intent || {},
+      }));
       navigate("/results", { state: { back: true } });
     } catch (e) {
       setError(e.message || "Search failed.");
@@ -106,6 +120,19 @@ function Search() {
     reader.onloadend = () => {
       localStorage.setItem("uploadedImage", reader.result);
       localStorage.setItem("searchType", "image");
+      localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
+        source: "search-page",
+        inputType: "image",
+        query: file.name || "Image search",
+        destination: "",
+        startDate: null,
+        endDate: null,
+        whenTab: "Dates",
+        selectedTypes: [],
+        guests: { adults: 1, children: 0, infants: 0 },
+        budget: { selectedBudget: null, maxValue: 0 },
+        intentService: "all",
+      }));
       navigate("/results", { state: { back: true } });
     };
     reader.readAsDataURL(file);

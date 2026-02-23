@@ -1988,14 +1988,23 @@ export default function TBOHomepage() {
       (queryForService.includes("car rental") || queryForService.includes("self drive")) ? "carrental" :
       (queryForService.includes("trip") || queryForService.includes("plan")) ? "hotels" :
       null;
-    const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
-    if (service && routeMap[service]) {
-      navigate(routeMap[service]);
-      return;
-    }
-    if (flightRoute) {
-      navigate("/flights");
-      return;
+    try {
+      localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
+        source: payload.source,
+        inputType: spokenInput ? "voice" : (searchExpanded ? "text" : "filter"),
+        query: payload.query,
+        destination: effectiveDestination,
+        destinationObject: effectiveDestinationObj,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        whenTab: payload.whenTab,
+        selectedTypes,
+        guests: nextGuests,
+        budget: payload.budget,
+        intentService: service || "all",
+      }));
+    } catch {
+      // ignore localStorage failures
     }
     navigate("/results");
   }
