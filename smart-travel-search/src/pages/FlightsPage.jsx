@@ -77,7 +77,8 @@ const css = `
 .fp-sbtn svg{width:16px;height:16px}
 
 /* dropdown */
-.fp-drop{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14);z-index:400;animation:fdDown .18s ease both;overflow:hidden;min-width:250px}
+.fp-drop{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14);z-index:400;animation:fdDown .18s ease both;overflow:hidden;min-width:250px;max-width:min(92vw,340px)}
+.fp-drop.right{left:auto;right:0}
 @keyframes fdDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .fp-drop-item{padding:10px 14px;font-size:.82rem;color:#334155;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f8fafc}
 .fp-drop-item:last-child{border-bottom:none}
@@ -86,7 +87,7 @@ const css = `
 .fp-drop-name{flex:1}
 
 /* calendar */
-.fp-cal{padding:15px;min-width:275px}
+.fp-cal{padding:15px;min-width:290px}
 .fp-cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
 .fp-cal-nav{background:#f0f4f8;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#334155;transition:background .15s}
 .fp-cal-nav:hover{background:#ede0ff;color:#3d0099}
@@ -760,7 +761,7 @@ export default function FlightsPage() {
                   </div>
                 </div>
                 {openPanel === "dep" && (
-                  <div className="fp-drop"><FlightCalendar value={depDate} onChange={setDepDate} onClose={() => setOpenPanel(null)} /></div>
+                  <div className="fp-drop right"><FlightCalendar value={depDate} onChange={setDepDate} onClose={() => setOpenPanel(null)} /></div>
                 )}
               </div>
 
@@ -776,7 +777,7 @@ export default function FlightsPage() {
                     </div>
                   </div>
                   {openPanel === "ret" && (
-                    <div className="fp-drop"><FlightCalendar value={retDate} onChange={setRetDate} onClose={() => setOpenPanel(null)} /></div>
+                    <div className="fp-drop right"><FlightCalendar value={retDate} onChange={setRetDate} onClose={() => setOpenPanel(null)} /></div>
                   )}
                 </div>
               )}
