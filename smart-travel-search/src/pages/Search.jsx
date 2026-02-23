@@ -1,59 +1,85 @@
- import { useState, useRef, useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatAssistant from "../components/ChatAssistant";
 import Navbar from "../components/HomepageNavbar";
-import SearchSection from "../components/SearchSection";
+
+const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
 
 function Search() {
   const [query, setQuery] = useState("");
   const [listening, setListening] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/");
-    }
-
-    // Load homepage search data if available
-    const homepageSearch = localStorage.getItem("homepageSearch");
-    if (homepageSearch) {
-      const searchData = JSON.parse(homepageSearch);
-      if (searchData.destination && searchData.destination !== "Anywhere") {
-        setQuery(searchData.destination);
-      }
-      // Clear the homepage search data after loading
-      localStorage.removeItem("homepageSearch");
-    }
+    if (!token) navigate("/");
   }, [navigate]);
 
-  // 🔍 Normal Search
-  const handleSearch = () => {
-    if (!query.trim()) return;
-    localStorage.setItem("searchQuery", query);
-    navigate("/results", { state: { back: true } });
-  };
+  useEffect(() => {
+    const homepageSearch = localStorage.getItem("homepageSearch");
+    if (!homepageSearch) return;
+    try {
+      const data = JSON.parse(homepageSearch);
+      if (data.destination && data.destination !== "Anywhere") {
+        setQuery(data.destination);
+      }
+    } catch {
+      // ignore malformed local storage
+    } finally {
+      localStorage.removeItem("homepageSearch");
+    }
+  }, []);
 
-  // 🎤 Voice Search (Stable + Auto Retry Version)
-  const handleVoice = () => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+  async function handleSearch(customQuery = null) {
+    const input = String(customQuery ?? query).trim();
+    if (!input) return;
 
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const persona = localStorage.getItem("persona") || "solo";
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(SMART_SEARCH_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: input,
+          userGender: user?.gender || "",
+          persona,
+          tripType: persona,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Unable to build trip plan.");
+      }
+
+      localStorage.setItem("searchQuery", input);
+      localStorage.setItem("voyagehack.smartQuery", JSON.stringify(data.intent || {}));
+      localStorage.setItem("voyagehack.smartResults", JSON.stringify(data));
+      navigate("/results", { state: { back: true } });
+    } catch (e) {
+      setError(e.message || "Search failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Speech Recognition not supported. Please use Google Chrome.");
+      setError("Speech recognition is not supported in this browser.");
       return;
     }
-
-    // Stop previous session if running
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+    if (recognitionRef.current) recognitionRef.current.stop();
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
-
     recognition.lang = "en-IN";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -62,71 +88,35 @@ function Search() {
     setListening(true);
     recognition.start();
 
-    recognition.onresult = (event) => {
+    recognition.onresult = async (event) => {
       const speechResult = event.results[0][0].transcript;
       setQuery(speechResult);
       setListening(false);
-
-      localStorage.setItem("searchQuery", speechResult);
-      navigate("/results");
+      await handleSearch(speechResult);
     };
 
-    recognition.onerror = (event) => {
-      console.log("Speech error:", event.error);
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+  }
 
-      if (event.error === "no-speech") {
-        // 🔥 Auto retry once if user silent
-        recognition.stop();
-        setTimeout(() => {
-          try {
-            recognition.start();
-          } catch (err) {
-            setListening(false);
-          }
-        }, 500);
-      } else if (event.error === "not-allowed") {
-        alert("Microphone permission denied.");
-        setListening(false);
-      } else if (event.error === "audio-capture") {
-        alert("No microphone detected.");
-        setListening(false);
-      } else {
-        alert("Voice recognition error: " + event.error);
-        setListening(false);
-      }
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-    };
-  };
-
-  // 🖼 Image Upload (Temporary)
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  function handleImageUpload(event) {
+    const file = event.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-
     reader.onloadend = () => {
       localStorage.setItem("uploadedImage", reader.result);
       localStorage.setItem("searchType", "image");
-      navigate("/results");
+      navigate("/results", { state: { back: true } });
     };
-
     reader.readAsDataURL(file);
-  };
+  }
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar user={JSON.parse(localStorage.getItem("user") || "{}")} />
-      
-      {/* Hero Section with Search */}
+
       <div className="relative bg-gradient-to-br from-pink-50 via-white to-blue-50">
-        {/* Hero Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-transparent to-blue-100/20"></div>
-        
-        {/* Hero Content */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-transparent to-blue-100/20" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
@@ -136,88 +126,64 @@ function Search() {
               </span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Search for amazing places and create unforgettable memories
+              Try: Plan a trip to Manali at 5000 budget
             </p>
           </div>
 
-          {/* Search Card */}
           <div className="max-w-5xl mx-auto">
             <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-2 border border-white/20">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                {/* Search Input */}
                 <div className="md:col-span-3">
                   <div className="flex w-full bg-gray-800 rounded-full overflow-hidden shadow-xl">
                     <input
                       type="text"
-                      placeholder="Plan a winter trip to Manali for 5 days under 40k..."
+                      placeholder="Plan a trip to Manali at 5000 budget..."
                       className="flex-1 p-4 bg-transparent outline-none text-white placeholder-gray-400"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     />
-
-                    {/* Voice Button */}
                     <button
                       onClick={handleVoice}
+                      disabled={loading}
                       className={`px-5 transition duration-300 ${
-                        listening
-                          ? "bg-red-600 animate-pulse"
-                          : "bg-gray-700 hover:bg-gray-600"
+                        listening ? "bg-red-600 animate-pulse" : "bg-gray-700 hover:bg-gray-600"
                       }`}
                     >
-                      {listening ? "🎙 Listening..." : "🎤"}
+                      {listening ? "Listening..." : "Voice"}
                     </button>
                   </div>
                 </div>
-
-                {/* Search Button */}
                 <div className="flex items-end">
                   <button
-                    onClick={handleSearch}
-                    className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-4 rounded-2xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    onClick={() => handleSearch()}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-4 rounded-2xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Search
+                    {loading ? "Planning..." : "Search"}
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Extra Options */}
-          <div className="flex justify-center gap-8 mt-12">
+          {error && (
+            <div className="max-w-5xl mx-auto mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-center gap-4 mt-10 flex-wrap">
             <label className="cursor-pointer bg-white/80 backdrop-blur-sm hover:bg-white/90 px-6 py-3 rounded-xl transition shadow-md border border-gray-200">
-              🖼 Search by Image
+              Search by Image
               <input type="file" className="hidden" onChange={handleImageUpload} />
             </label>
-
             <button
               onClick={() => setChatOpen(true)}
               className="bg-white/80 backdrop-blur-sm hover:bg-white/90 px-6 py-3 rounded-xl transition shadow-md border border-gray-200"
             >
-              💬 AI Travel Assistant
+              AI Travel Assistant
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-pink-600">500+</div>
-            <div className="text-gray-600">Destinations</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-pink-600">10K+</div>
-            <div className="text-gray-600">Happy Travelers</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-pink-600">4.8</div>
-            <div className="text-gray-600">Average Rating</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-pink-600">24/7</div>
-            <div className="text-gray-600">Support</div>
           </div>
         </div>
       </div>

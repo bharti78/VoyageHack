@@ -482,6 +482,11 @@ export default function FlightsPage() {
   const [flights, setFlights] = useState([]);
   const [searched, setSearched] = useState(false);
   const [calendarFares, setCalendarFares] = useState([]);
+  const [cheapestMonths, setCheapestMonths] = useState([]);
+  const [calendarFlexDays, setCalendarFlexDays] = useState(3);
+  const [priceAlertEnabled, setPriceAlertEnabled] = useState(() => {
+    try { return localStorage.getItem("voyagehack.flightPriceAlert") === "1"; } catch { return false; }
+  });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const panelRef = useRef(null);
@@ -611,16 +616,22 @@ export default function FlightsPage() {
         Destination: to.code,
         StartDate: fmtDate(depDate),
         Days: 14,
+        FlexDays: calendarFlexDays,
+        EndDate: tripType === "roundtrip" && retDate ? fmtDate(retDate) : null,
+        IncludeRoundTrip: tripType === "roundtrip",
+        IncludeMonthView: true,
         FlightCabinClass: cabin === "Economy" ? "1" : cabin === "Business" ? "3" : cabin === "First" ? "4" : "2",
         AdultCount: String(pax.adults),
         ChildCount: String(pax.children),
         InfantCount: String(pax.infants || 0),
-        JourneyType: "1",
+        JourneyType: tripType === "roundtrip" ? "2" : "1",
       });
       setCalendarFares(Array.isArray(data.fares) ? data.fares : []);
+      setCheapestMonths(Array.isArray(data.cheapestMonthView) ? data.cheapestMonthView : []);
     } catch (e) {
       setError(e.message || "Failed to fetch calendar fares.");
       setCalendarFares([]);
+      setCheapestMonths([]);
     } finally {
       setCalendarLoading(false);
     }
@@ -833,6 +844,22 @@ export default function FlightsPage() {
               <button className="fp-sbtn" onClick={loadCalendarFares} disabled={calendarLoading} style={{background:"linear-gradient(135deg,#0f766e,#0d9488)"}}>
                 {calendarLoading ? <><div className="fp-spin" />Loading...</> : "Calendar Fare"}
               </button>
+              <button
+                className="fp-sbtn"
+                type="button"
+                onClick={() => setCalendarFlexDays(3)}
+                style={{background:calendarFlexDays === 3 ? "linear-gradient(135deg,#0f766e,#0d9488)" : "linear-gradient(135deg,#64748b,#475569)"}}
+              >
+                Â±3 Days
+              </button>
+              <button
+                className="fp-sbtn"
+                type="button"
+                onClick={() => setCalendarFlexDays(7)}
+                style={{background:calendarFlexDays === 7 ? "linear-gradient(135deg,#0f766e,#0d9488)" : "linear-gradient(135deg,#64748b,#475569)"}}
+              >
+                Â±7 Days
+              </button>
             </div>
           </div>
 
@@ -846,6 +873,28 @@ export default function FlightsPage() {
                   Green = cheaper, Yellow = medium, Red = expensive
                 </div>
               </div>
+              <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !priceAlertEnabled;
+                    setPriceAlertEnabled(next);
+                    try { localStorage.setItem("voyagehack.flightPriceAlert", next ? "1" : "0"); } catch { void 0; }
+                  }}
+                  style={{
+                    border:`1px solid ${priceAlertEnabled ? "#16a34a" : "#cbd5e1"}`,
+                    background:priceAlertEnabled ? "#16a34a" : "#fff",
+                    color:priceAlertEnabled ? "#fff" : "#334155",
+                    borderRadius:999,
+                    fontSize:".64rem",
+                    fontWeight:700,
+                    padding:"4px 10px",
+                    cursor:"pointer",
+                  }}
+                >
+                  {priceAlertEnabled ? "Price Alert On" : "Enable Price Alert"}
+                </button>
+              </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
                 {calendarFares.map((f) => {
                   const bg = f.level === "low" ? "#dcfce7" : f.level === "mid" ? "#fef9c3" : f.level === "high" ? "#fee2e2" : "#f8fafc";
@@ -855,6 +904,11 @@ export default function FlightsPage() {
                       key={f.date}
                       type="button"
                       onClick={() => { const d = new Date(f.date); if (!Number.isNaN(d.getTime())) setDepDate(d); }}
+                      title={
+                        f?.detail
+                          ? `${f.detail.airlineName || f.detail.airlineCode || "Airline"} | Stops: ${f.detail.stops || 0} | Duration: ${f.detail.durationMinutes || 0} mins`
+                          : "No detail available"
+                      }
                       style={{textAlign:"left",background:bg,border:`1.5px solid ${bd}`,borderRadius:10,padding:"9px 10px",cursor:"pointer",fontFamily:"inherit"}}
                     >
                       <div style={{fontSize:".68rem",color:"#475569",fontWeight:600}}>{f.date}</div>
@@ -862,9 +916,29 @@ export default function FlightsPage() {
                         {Number.isFinite(f.minFare) ? `₹${Math.round(f.minFare).toLocaleString("en-IN")}` : "N/A"}
                       </div>
                       {f.isLowest && <div style={{fontSize:".6rem",fontWeight:700,color:"#166534",marginTop:3}}>Lowest Fare</div>}
+                      {f.roundTrip && Number.isFinite(f.roundTrip.fare) && (
+                        <div style={{fontSize:".6rem",fontWeight:700,color:"#0f766e",marginTop:3}}>
+                          RT: â‚¹{Math.round(f.roundTrip.fare).toLocaleString("en-IN")}
+                        </div>
+                      )}
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {cheapestMonths.length > 0 && (
+            <div className="fp-sbox" style={{padding:"12px 16px"}}>
+              <div style={{fontSize:".78rem",fontWeight:700,color:"#334155",marginBottom:8}}>Cheapest Month View</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8}}>
+                {cheapestMonths.map((m) => (
+                  <div key={m.month} style={{border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 10px",background:"#f8fafc"}}>
+                    <div style={{fontSize:".68rem",fontWeight:700,color:"#334155"}}>{m.month}</div>
+                    <div style={{fontSize:".8rem",fontWeight:800,color:"#0f172a",marginTop:2}}>â‚¹{Math.round(m.lowestFare || 0).toLocaleString("en-IN")}</div>
+                    <div style={{fontSize:".58rem",color:"#64748b",marginTop:2}}>Date: {m.date}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

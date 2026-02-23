@@ -1,198 +1,179 @@
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import HotelCard from "../components/HotelCard"
-import CabCard from "../components/CabCard"
-import MapView from "../components/MapView"
-import Navbar from "../components/HomepageNavbar"
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/HomepageNavbar";
 
-function Results() {
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState("hotels")
+function money(v) {
+  const value = Number(v || 0);
+  return `Rs ${value.toLocaleString("en-IN")}`;
+}
 
-  const persona = localStorage.getItem("persona") || ""
-  const query = localStorage.getItem("searchQuery") || ""
-  const searchType = localStorage.getItem("searchType") || ""
-  const imagePreview = localStorage.getItem("uploadedImage") || ""
-  
-  // Get search data from homepage search
-  const homepageSearch = localStorage.getItem("homepageSearch")
-  let searchData = {}
-  if (homepageSearch) {
-    searchData = JSON.parse(homepageSearch)
-  }
+function safetyModeLabel(mode) {
+  if (mode === "female_only") return "Female-only drivers assigned";
+  if (mode === "night_trusted_fallback") return "Night safety fallback: 4-5 star experienced drivers";
+  if (mode === "fallback_no_female") return "Female driver unavailable, showing verified fallback";
+  return "Standard verified driver allocation";
+}
+
+export default function Results() {
+  const navigate = useNavigate();
+  const [smartData] = useState(() => {
+    try {
+      const raw = localStorage.getItem("voyagehack.smartResults");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (!token) {
-      navigate("/")
-      return
+      navigate("/");
     }
-  }, [navigate])
+  }, [navigate]);
 
-  // Temporary mock data (backend later)
- const hotels = [
-  {
-    name: "Mountain View Resort",
-    price: 4500,
-    rating: 4.5,
-    safety: 4.7,
-    lat: 31.1048,
-    lng: 77.1734
-  },
-  {
-    name: "Snow Peak Hotel",
-    price: 3800,
-    rating: 4.2,
-    safety: 4.5,
-    lat: 31.1100,
-    lng: 77.1800
-  }
-]
+  const error = smartData ? "" : "No smart search result available. Run a search first.";
 
-  const cabs = persona === "solo"
-    ? [{ driver: "Priya Sharma", type: "Sedan", rating: 4.8 }]
-    : [{ driver: "Rahul Verma", type: "SUV", rating: 4.6 }]
-
-  // Get display text for search criteria
-  const getDestinationDisplay = () => {
-    if (searchData.destination && searchData.destination !== 'Anywhere') {
-      return searchData.destination
-    }
-    return query || 'Anywhere'
-  }
-
-  const getDatesDisplay = () => {
-    if (searchData.startDate && searchData.endDate) {
-      const start = new Date(searchData.startDate)
-      const end = new Date(searchData.endDate)
-      return `${start.toLocaleString('default', { month: 'short', day: 'numeric' })}–${end.toLocaleString('default', { month: 'short', day: 'numeric' })}`
-    }
-    return 'Any dates'
-  }
-
-  const getGuestsDisplay = () => {
-    const total = (searchData.adults || 1) + (searchData.children || 0)
-    return `${total} Guest${total > 1 ? 's' : ''}`
-  }
-
-  const tabs = [
-    { id: 'hotels', label: 'Hotels', icon: '🏨' },
-    { id: 'homestays', label: 'Homestays', icon: '🏠' },
-    { id: 'packages', label: 'Packages', icon: '📦' },
-    { id: 'activities', label: 'Activities', icon: '🎯' },
-    { id: 'flights', label: 'Flights', icon: '✈️' }
-  ]
+  const hotels = useMemo(
+    () => (Array.isArray(smartData?.realtime?.hotels?.items) ? smartData.realtime.hotels.items : []),
+    [smartData]
+  );
+  const cabs = useMemo(
+    () => (Array.isArray(smartData?.realtime?.cabs?.items) ? smartData.realtime.cabs.items : []),
+    [smartData]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50">
-      {/* Hero Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-transparent to-blue-100/20"></div>
-      
-      {/* Results Content */}
-      <div className="relative min-h-screen">
-        <Navbar user={JSON.parse(localStorage.getItem("user") || "{}")} />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Search Criteria Bar */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-4 mb-6">
-            <div className="flex flex-wrap items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">📍</span>
-                <span className="font-medium text-gray-900">{getDestinationDisplay()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">📅</span>
-                <span className="font-medium text-gray-900">{getDatesDisplay()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900">{getGuestsDisplay()}</span>
-              </div>
-            </div>
+      <Navbar user={JSON.parse(localStorage.getItem("user") || "{}")} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm mb-5">
+            {error}
           </div>
+        )}
 
-          {/* Tabs Navigation */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 mb-8">
-            <div className="flex overflow-x-auto">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-4 font-medium transition-all duration-200 whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="text-lg">{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab Content */}
-          <div className="space-y-8">
-            {/* Hotels Tab (Default Active) */}
-            {activeTab === 'hotels' && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Hotels</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {hotels.map((hotel, index) => (
-                    <HotelCard key={index} hotel={hotel} />
-                  ))}
+        {smartData && (
+          <>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
+              <h1 className="text-2xl font-bold text-slate-900">Smart Trip Plan</h1>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-slate-500">Destination</div>
+                  <div className="font-semibold text-slate-900">{smartData?.intent?.destination || "N/A"}</div>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-slate-500">Trip Nights</div>
+                  <div className="font-semibold text-slate-900">{smartData?.intent?.nights || 0}</div>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-slate-500">Budget</div>
+                  <div className="font-semibold text-slate-900">{money(smartData?.intent?.budget)}</div>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-slate-500">Cab Safety</div>
+                  <div className="font-semibold text-slate-900">
+                    {safetyModeLabel(smartData?.realtime?.cabs?.safetyMode)}
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* Homestays Tab */}
-            {activeTab === 'homestays' && (
-              <div className="text-center py-16">
-                <div className="text-gray-500 text-lg">Homestays coming soon...</div>
-              </div>
-            )}
-
-            {/* Packages Tab */}
-            {activeTab === 'packages' && (
-              <div className="text-center py-16">
-                <div className="text-gray-500 text-lg">Travel packages coming soon...</div>
-              </div>
-            )}
-
-            {/* Activities Tab */}
-            {activeTab === 'activities' && (
-              <div className="text-center py-16">
-                <div className="text-gray-500 text-lg">Activities coming soon...</div>
-              </div>
-            )}
-
-            {/* Flights Tab */}
-            {activeTab === 'flights' && (
-              <div className="text-center py-16">
-                <div className="text-gray-500 text-lg">Flights coming soon...</div>
-              </div>
-            )}
-          </div>
-
-          {/* Transportation Section (Always Visible) */}
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Transportation Options</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cabs.map((cab, index) => (
-                <CabCard key={index} cab={cab} persona={persona} />
-              ))}
             </div>
-          </div>
 
-          {/* Map Section */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8 mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Map View</h2>
-            <MapView hotels={hotels} />
-          </div>
-        </div>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
+              <h2 className="text-lg font-semibold text-slate-900 mb-3">AI Budget Distribution</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="rounded-xl bg-emerald-50 p-3">
+                  <div className="text-emerald-800">Flights</div>
+                  <div className="font-bold text-emerald-900">{money(smartData?.budgetDistribution?.flights)}</div>
+                </div>
+                <div className="rounded-xl bg-blue-50 p-3">
+                  <div className="text-blue-800">Hotels</div>
+                  <div className="font-bold text-blue-900">{money(smartData?.budgetDistribution?.hotels)}</div>
+                </div>
+                <div className="rounded-xl bg-amber-50 p-3">
+                  <div className="text-amber-800">Cab</div>
+                  <div className="font-bold text-amber-900">{money(smartData?.budgetDistribution?.cabs)}</div>
+                </div>
+                <div className="rounded-xl bg-violet-50 p-3">
+                  <div className="text-violet-800">Contingency</div>
+                  <div className="font-bold text-violet-900">{money(smartData?.budgetDistribution?.contingency)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+              <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 xl:col-span-1">
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Flights</h3>
+                <p className="text-sm text-slate-600">
+                  {smartData?.realtime?.flights?.source}
+                </p>
+                <p className="text-sm mt-3">
+                  Recommended spend: <span className="font-semibold">{money(smartData?.realtime?.flights?.estimatedBudget)}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/flights")}
+                  className="mt-4 w-full rounded-xl bg-slate-900 text-white py-2.5 text-sm font-semibold hover:bg-slate-700 transition"
+                >
+                  Open Flight Calendar
+                </button>
+              </section>
+
+              <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 xl:col-span-1">
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  Hotels ({hotels.length})
+                </h3>
+                <div className="space-y-3 max-h-80 overflow-auto pr-1">
+                  {hotels.length === 0 && <p className="text-sm text-slate-500">No hotels found in budget.</p>}
+                  {hotels.slice(0, 8).map((h) => (
+                    <div key={`${h._id || h.name}`} className="rounded-xl border border-slate-200 p-3">
+                      <p className="font-semibold text-slate-900">{h.name}</p>
+                      <p className="text-sm text-slate-600">{h.city}</p>
+                      <p className="text-sm text-slate-800 mt-1">
+                        Price: {money(h.price)} | Rating: {Number(h.rating || 0).toFixed(1)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/hotels")}
+                  className="mt-4 w-full rounded-xl bg-blue-700 text-white py-2.5 text-sm font-semibold hover:bg-blue-600 transition"
+                >
+                  Explore Hotels
+                </button>
+              </section>
+
+              <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 xl:col-span-1">
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  Cabs ({cabs.length})
+                </h3>
+                <div className="rounded-xl bg-teal-50 border border-teal-100 p-3 text-sm text-teal-800 mb-3">
+                  {safetyModeLabel(smartData?.realtime?.cabs?.safetyMode)}
+                </div>
+                <div className="space-y-3 max-h-72 overflow-auto pr-1">
+                  {cabs.length === 0 && <p className="text-sm text-slate-500">No verified drivers available.</p>}
+                  {cabs.slice(0, 8).map((d) => (
+                    <div key={`${d._id || d.name}`} className="rounded-xl border border-slate-200 p-3">
+                      <p className="font-semibold text-slate-900">{d.name}</p>
+                      <p className="text-sm text-slate-600">
+                        {d.gender} | Rating {Number(d.rating || 0).toFixed(1)} | Exp {d.experienceYears || 0} yrs
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/cabs")}
+                  className="mt-4 w-full rounded-xl bg-emerald-700 text-white py-2.5 text-sm font-semibold hover:bg-emerald-600 transition"
+                >
+                  Book Safe Cabs
+                </button>
+              </section>
+            </div>
+          </>
+        )}
       </div>
     </div>
-  )
+  );
 }
-
-export default Results

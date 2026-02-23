@@ -62,6 +62,39 @@ function getMinFareFromResponse(data) {
   return Math.min(...fares);
 }
 
+function extractItineraries(data) {
+  const raw = data?.Response?.Results ?? data?.Results ?? [];
+  const outer = Array.isArray(raw) ? raw : [raw];
+  return outer.flatMap((item) => (Array.isArray(item) ? item : [item]));
+}
+
+function getCheapestItineraryDetail(data) {
+  const itineraries = extractItineraries(data);
+  if (itineraries.length === 0) return null;
+
+  let best = null;
+  for (const itinerary of itineraries) {
+    const fare = Number(
+      itinerary?.Fare?.PublishedFare ??
+      itinerary?.Fare?.OfferedFare ??
+      itinerary?.TotalFare
+    );
+    if (!Number.isFinite(fare) || fare <= 0) continue;
+    if (!best || fare < best.fare) {
+      const firstSegment = itinerary?.Segments?.[0]?.[0] || itinerary?.Segments?.[0] || {};
+      best = {
+        fare,
+        airlineCode: firstSegment?.Airline?.AirlineCode || firstSegment?.AirlineCode || "",
+        airlineName: firstSegment?.Airline?.AirlineName || "",
+        stops: Math.max(0, Number(itinerary?.Segments?.[0]?.length || 1) - 1),
+        durationMinutes: Number(itinerary?.Duration || firstSegment?.Duration || 0),
+      };
+    }
+  }
+
+  return best;
+}
+
 function extractFlightError(err, fallback) {
   return (
     err?.response?.data?.Response?.Error?.ErrorMessage ||
@@ -126,6 +159,10 @@ exports.calendarFares = async (req, res) => {
       Destination,
       StartDate,
       Days = 14,
+      FlexDays = 0,
+      EndDate,
+      IncludeRoundTrip = false,
+      IncludeMonthView = true,
       FlightCabinClass = "1",
       AdultCount = "1",
       ChildCount = "0",
@@ -146,14 +183,29 @@ exports.calendarFares = async (req, res) => {
       return res.status(400).json({ error: "StartDate must be a valid date (YYYY-MM-DD)." });
     }
 
+    const returnDate = EndDate ? new Date(EndDate) : null;
+    if (returnDate && Number.isNaN(returnDate.getTime())) {
+      return res.status(400).json({ error: "EndDate must be a valid date (YYYY-MM-DD)." });
+    }
+
     const totalDays = Math.max(1, Math.min(31, Number(Days) || 14));
+    const flexDays = Math.max(0, Math.min(14, Number(FlexDays) || 0));
+    const includeRoundTrip = String(IncludeRoundTrip) === "true" || IncludeRoundTrip === true;
     const token = await getToken();
     const calendar = [];
+    const searchedDates = [];
 
-    for (let i = 0; i < totalDays; i += 1) {
+    for (let i = -flexDays; i < totalDays + flexDays; i += 1) {
       const dt = new Date(baseDate);
       dt.setDate(baseDate.getDate() + i);
-      const dateStr = formatYMD(dt);
+      searchedDates.push(formatYMD(dt));
+    }
+
+    const uniqDates = [...new Set(searchedDates)];
+
+    for (const dateStr of uniqDates) {
+      let roundTripMinFare = null;
+      let roundTripDetail = null;
 
       const searchBody = {
         AdultCount,
@@ -178,8 +230,71 @@ exports.calendarFares = async (req, res) => {
       try {
         const payload = buildSearchPayload(searchBody, token);
         const response = await callFlightSearch(payload);
-        const minFare = getMinFareFromResponse(response.data);
-        calendar.push({ date: dateStr, minFare, currency: "INR" });
+        const detail = getCheapestItineraryDetail(response.data);
+        const minFare = detail?.fare ?? null;
+
+        if (includeRoundTrip && returnDate) {
+          const returnDateStr = formatYMD(returnDate);
+          const returnSearchBody = {
+            AdultCount,
+            ChildCount,
+            InfantCount,
+            DirectFlight,
+            OneStopFlight,
+            JourneyType: "2",
+            PreferredAirlines,
+            Sources,
+            Segments: [
+              {
+                Origin,
+                Destination,
+                FlightCabinClass,
+                PreferredDepartureTime: `${dateStr}T00:00:00`,
+                PreferredArrivalTime: `${dateStr}T00:00:00`,
+              },
+              {
+                Origin: Destination,
+                Destination: Origin,
+                FlightCabinClass,
+                PreferredDepartureTime: `${returnDateStr}T00:00:00`,
+                PreferredArrivalTime: `${returnDateStr}T00:00:00`,
+              },
+            ],
+          };
+          try {
+            const roundTripPayload = buildSearchPayload(returnSearchBody, token);
+            const roundTripResponse = await callFlightSearch(roundTripPayload);
+            roundTripDetail = getCheapestItineraryDetail(roundTripResponse.data);
+            roundTripMinFare = roundTripDetail?.fare ?? null;
+          } catch {
+            roundTripMinFare = null;
+            roundTripDetail = null;
+          }
+        }
+
+        calendar.push({
+          date: dateStr,
+          minFare,
+          currency: "INR",
+          detail: detail
+            ? {
+              airlineCode: detail.airlineCode,
+              airlineName: detail.airlineName,
+              stops: detail.stops,
+              durationMinutes: detail.durationMinutes,
+            }
+            : null,
+          roundTrip: roundTripDetail
+            ? {
+              fare: roundTripMinFare,
+              airlineCode: roundTripDetail.airlineCode,
+              airlineName: roundTripDetail.airlineName,
+              stops: roundTripDetail.stops,
+              durationMinutes: roundTripDetail.durationMinutes,
+              returnDate: formatYMD(returnDate),
+            }
+            : null,
+        });
       } catch (err) {
         calendar.push({ date: dateStr, minFare: null, currency: "INR", error: extractFlightError(err, "No fare") });
       }
@@ -187,17 +302,43 @@ exports.calendarFares = async (req, res) => {
 
     const valid = calendar.filter((d) => Number.isFinite(d.minFare));
     const lowestFare = valid.length ? Math.min(...valid.map((d) => d.minFare)) : null;
+    const lowestRoundTripFare = includeRoundTrip
+      ? (() => {
+        const rValid = calendar.filter((d) => Number.isFinite(d?.roundTrip?.fare));
+        if (rValid.length === 0) return null;
+        return Math.min(...rValid.map((d) => d.roundTrip.fare));
+      })()
+      : null;
+
+    const monthBuckets = {};
+    if (IncludeMonthView !== false && IncludeMonthView !== "false") {
+      for (const item of calendar) {
+        if (!Number.isFinite(item.minFare)) continue;
+        const monthKey = String(item.date).slice(0, 7);
+        if (!monthBuckets[monthKey] || item.minFare < monthBuckets[monthKey].lowestFare) {
+          monthBuckets[monthKey] = {
+            month: monthKey,
+            lowestFare: item.minFare,
+            date: item.date,
+          };
+        }
+      }
+    }
 
     res.json({
       success: true,
       origin: Origin,
       destination: Destination,
       startDate: formatYMD(baseDate),
+      endDate: returnDate ? formatYMD(returnDate) : null,
       days: totalDays,
+      flexDays,
       lowestFare,
+      lowestRoundTripFare,
       fares: calendar.map((d) => ({
         ...d,
         isLowest: lowestFare !== null && d.minFare === lowestFare,
+        isLowestRoundTrip: includeRoundTrip && lowestRoundTripFare !== null && d?.roundTrip?.fare === lowestRoundTripFare,
         level: !Number.isFinite(d.minFare)
           ? "na"
           : d.minFare <= lowestFare * 1.15
@@ -206,6 +347,7 @@ exports.calendarFares = async (req, res) => {
               ? "mid"
               : "high",
       })),
+      cheapestMonthView: Object.values(monthBuckets),
     });
   } catch (err) {
     const msg = extractFlightError(err, "Calendar fare search failed");

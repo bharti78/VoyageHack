@@ -26,6 +26,48 @@ const css = `
   .tbo-nav.scrolled {
     box-shadow: 0 2px 16px rgba(0,0,0,0.08);
   }
+  .mobile-nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+  }
+  .mobile-nav-toggle svg { width: 18px; height: 18px; }
+  .mobile-nav-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 10px;
+    right: 10px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+    padding: 8px;
+    z-index: 700;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mobile-nav-menu.open { display: flex; }
+  .mobile-nav-item {
+    border: 1px solid #f0f0f0;
+    background: #fff;
+    border-radius: 10px;
+    padding: 9px 10px;
+    text-align: left;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #444;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mobile-nav-item:hover { background: #fff5f0; color: #ff6600; border-color: #ffd8bf; }
 
   /* Logo */
   .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; padding-left: 60px; }
@@ -194,6 +236,8 @@ const css = `
   }
   .search-pill:hover { box-shadow: 0 4px 22px rgba(0,0,0,0.13); }
   .search-pill.active { box-shadow: 0 6px 28px rgba(0,0,0,0.15); border-color: transparent; }
+  .mobile-filter-trigger { display: none; }
+  .mobile-search-inline { display: none; }
 
   .pill-section {
     flex: 1;
@@ -753,6 +797,7 @@ const css = `
     .tbo-nav { min-height: 72px; }
     .tbo-nav-links { display: none; }
     .tbo-nav-right { margin-left: auto; }
+    .mobile-nav-toggle { display: inline-flex; }
     .expanded-search-bar { width: min(100%, 760px); }
     .tbo-hero { grid-template-columns: 1fr; text-align: center; gap: 24px; }
     .hero-btns { justify-content: center; }
@@ -782,6 +827,78 @@ const css = `
       box-shadow: 0 8px 22px rgba(0,0,0,0.08);
       border-color: #ececec;
     }
+    .mobile-filter-trigger {
+      display: flex;
+      grid-column: 1 / -1;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #ececec;
+      border-radius: 12px;
+      min-height: 48px;
+      padding: 10px 12px;
+      background: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #333;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .mobile-filter-trigger span:last-child { color: #ff6600; font-weight: 700; }
+    .mobile-search-inline {
+      display: flex;
+      grid-column: 1 / -1;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #ececec;
+      border-radius: 12px;
+      background: #fff;
+      min-height: 48px;
+      padding: 6px 8px 6px 10px;
+    }
+    .mobile-search-inline.voice-active { box-shadow: 0 0 0 2px rgba(255, 51, 0, 0.18); }
+    .mobile-search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 0.84rem;
+      color: #222;
+      font-family: 'DM Sans', sans-serif;
+      background: transparent;
+    }
+    .mobile-search-input::placeholder { color: #999; }
+    .mobile-search-icon {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #ececec;
+      border-radius: 10px;
+      background: #fff;
+      color: #555;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .mobile-search-icon svg { width: 16px; height: 16px; }
+    .mobile-search-icon.voice-on {
+      background: #ffece6;
+      color: #ff3300;
+      border-color: #ffc5b2;
+    }
+    .mobile-search-go {
+      border: none;
+      background: #ff6600;
+      color: #fff;
+      border-radius: 10px;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      flex-shrink: 0;
+    }
+    .search-pill:not(.mobile-filters-open) .filter-section { display: none; }
     .pill-section {
       min-height: 58px;
       border: 1px solid #ededed;
@@ -861,6 +978,7 @@ const css = `
       min-height: 64px;
       padding: 6px 10px;
       gap: 8px;
+      position: sticky;
     }
     .tbo-logo-img { height: 58px; }
     .tbo-nav-right { align-items: flex-end; gap: 2px; }
@@ -870,6 +988,8 @@ const css = `
       padding: 8px 12px;
       border-radius: 11px;
     }
+    .tbo-nav-right .already-reg,
+    .tbo-nav-right .btn-book { display: none; }
 
     .stats-row { gap: 22px; }
     .footer-inner { flex-direction: column; align-items: flex-start; }
@@ -1308,6 +1428,8 @@ export default function TBOHomepage() {
   // Nav dropdowns
   const [productsOpen, setProductsOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const productsRef = useRef(null);
   const solutionsRef = useRef(null);
 
@@ -1345,6 +1467,7 @@ export default function TBOHomepage() {
       }
       if (productsRef.current && !productsRef.current.contains(e.target)) setProductsOpen(false);
       if (solutionsRef.current && !solutionsRef.current.contains(e.target)) setSolutionsOpen(false);
+      if (!e.target.closest(".mobile-nav-toggle") && !e.target.closest(".mobile-nav-menu")) setMobileNavOpen(false);
     }
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
@@ -1690,6 +1813,16 @@ export default function TBOHomepage() {
     return `${selectedTypes.length} types`;
   }
   function budgetValue() { return selectedBudget ? BUDGET_OPTIONS.find(b => b.id === selectedBudget)?.label : null; }
+  function mobileFilterSummary() {
+    const count = [
+      selectedTypes.length > 0,
+      Boolean(destination),
+      Boolean(whenValue()),
+      guests.adults + guests.children + guests.infants + guests.pets > 1,
+      Boolean(budgetValue()),
+    ].filter(Boolean).length;
+    return `${count} selected`;
+  }
   function toggleType(id) { setSelectedTypes(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]); }
   function toggleMonth(key) { setSelectedMonths(p => p.includes(key) ? p.filter(k => k !== key) : [...p, key]); }
 
@@ -1948,6 +2081,34 @@ export default function TBOHomepage() {
                 <button className="btn-book" onClick={() => setShowRegister(true)}>Book Now</button>
               </>
             )}
+            <button
+              type="button"
+              className="mobile-nav-toggle"
+              onClick={() => setMobileNavOpen((v) => !v)}
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                {mobileNavOpen ? <path d="M6 6l12 12M18 6l-12 12" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
+              </svg>
+            </button>
+          </div>
+          <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Search</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/flights"); }}>Flights</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/hotels"); }}>Hotels</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/cabs"); }}>Cabs</button>
+            {isLoggedIn ? (
+              <>
+                <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); handleBookNow(); }}>Book Now</button>
+                <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); logout(); }}>Logout</button>
+              </>
+            ) : (
+              <>
+                <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); setShowRegister(true); }}>Book Now</button>
+                <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); setShowLogin(true); }}>Sign in</button>
+              </>
+            )}
           </div>
         </nav>
 
@@ -1992,37 +2153,86 @@ export default function TBOHomepage() {
               </div>
             ) : (
               /* ── PILL SEARCH BAR ── */
-              <div className={`search-pill ${openPanel ? "active" : ""}`}>
+              <div className={`search-pill ${openPanel ? "active" : ""} ${mobileFiltersOpen ? "mobile-filters-open" : ""}`}>
+                <button
+                  type="button"
+                  className="mobile-filter-trigger"
+                  onClick={() => {
+                    const next = !mobileFiltersOpen;
+                    setMobileFiltersOpen(next);
+                    if (!next) setOpenPanel(null);
+                  }}
+                >
+                  <span>Filters</span>
+                  <span>{mobileFilterSummary()}</span>
+                </button>
+                <div className={`mobile-search-inline ${isListening ? "voice-active" : ""}`}>
+                  <input
+                    className="mobile-search-input"
+                    placeholder="Search destination..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleRedirectClick(); }}
+                  />
+                  <button
+                    type="button"
+                    className={`mobile-search-icon ${isListening ? "voice-on" : ""}`}
+                    onClick={() => (isListening ? stopVoiceSearch() : startVoiceSearch())}
+                    aria-label={isListening ? "Stop voice search" : "Start voice search"}
+                    title={isListening ? "Stop voice search" : "Voice search"}
+                  >
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="2" width="6" height="12" rx="3"/>
+                      <path d="M5 10a7 7 0 0014 0"/>
+                      <line x1="12" y1="19" x2="12" y2="23"/>
+                      <line x1="9" y1="23" x2="15" y2="23"/>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-search-icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Search by image"
+                    title="Search by image"
+                  >
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21,15 16,10 5,21"/>
+                    </svg>
+                  </button>
+                  <button type="button" className="mobile-search-go" onClick={handleRedirectClick}>Search</button>
+                </div>
                 {/* TYPE */}
-                <div className={`pill-section ${openPanel === "type" ? "open" : ""}`} style={{maxWidth:140}}
+                <div className={`pill-section filter-section ${openPanel === "type" ? "open" : ""}`} style={{maxWidth:140}}
                   onClick={() => setOpenPanel(openPanel === "type" ? null : "type")}>
                   <span className="pill-label">TYPE <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!typeValue() ? "placeholder" : ""}`}>{typeValue() || "Any type"}</span>
                 </div>
 
                 {/* WHERE */}
-                <div className={`pill-section ${openPanel === "where" ? "open" : ""}`} style={{maxWidth:165}}
+                <div className={`pill-section filter-section ${openPanel === "where" ? "open" : ""}`} style={{maxWidth:165}}
                   onClick={() => setOpenPanel(openPanel === "where" ? null : "where")}>
                   <span className="pill-label">WHERE <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!destination ? "placeholder" : ""}`}>{destination || "Destination"}</span>
                 </div>
 
                 {/* WHEN */}
-                <div className={`pill-section ${openPanel === "when" ? "open" : ""}`} style={{maxWidth:155}}
+                <div className={`pill-section filter-section ${openPanel === "when" ? "open" : ""}`} style={{maxWidth:155}}
                   onClick={() => setOpenPanel(openPanel === "when" ? null : "when")}>
                   <span className="pill-label">WHEN <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!whenValue() ? "placeholder" : ""}`}>{whenValue() || "Add dates"}</span>
                 </div>
 
                 {/* WHO */}
-                <div className={`pill-section ${openPanel === "who" ? "open" : ""}`} style={{maxWidth:145}}
+                <div className={`pill-section filter-section ${openPanel === "who" ? "open" : ""}`} style={{maxWidth:145}}
                   onClick={() => setOpenPanel(openPanel === "who" ? null : "who")}>
                   <span className="pill-label">WHO <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!whoValue() ? "placeholder" : ""}`}>{whoValue() || `${guests.adults} guest`}</span>
                 </div>
 
                 {/* BUDGET */}
-                <div className={`pill-section ${openPanel === "budget" ? "open" : ""}`} style={{maxWidth:130}}
+                <div className={`pill-section filter-section ${openPanel === "budget" ? "open" : ""}`} style={{maxWidth:130}}
                   onClick={() => setOpenPanel(openPanel === "budget" ? null : "budget")}>
                   <span className="pill-label">BUDGET <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!budgetValue() ? "placeholder" : ""}`}>{budgetValue() || "Any"}</span>
