@@ -278,8 +278,8 @@ const css = `
 .hp-wrap{font-family:'Plus Jakarta Sans',sans-serif;background:#eef2f7;min-height:100vh;display:flex;flex-direction:column}
 
 /* ── header ── */
-.hp-hdr{background:linear-gradient(135deg,#0b3d6e 0%,#0f5298 55%,#1565c0 100%);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
-.hp-logo{display:flex;align-items:baseline;gap:1px;text-decoration:none}
+.hp-hdr{background:linear-gradient(135deg,#0b3d6e 0%,#0f5298 55%,#1565c0 100%);display:flex;align-items:center;justify-content:space-between;padding:8px 28px;min-height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
+.hp-logo{display:flex;align-items:center;gap:1px;text-decoration:none}
 .hp-logo-tbo{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#fff}
 .hp-logo-hol{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#ffd740}
 .hp-logo-dot{color:#ffd740;font-size:1.2rem;font-weight:700}
@@ -288,7 +288,7 @@ const css = `
 .hp-banner:hover{transform:scale(1.04)}
 .hp-pulse{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hp-hdr-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.hp-hdr-right{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:auto}
 .hp-quot-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:5px 12px;color:#fff;font-size:.7rem;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;font-family:inherit}
 .hp-badge{background:#e53935;color:#fff;font-size:.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:absolute;top:-6px;right:-6px;border:1.5px solid #0f5298}
 .hp-hdivider{width:1px;height:24px;background:rgba(255,255,255,.2)}
@@ -557,6 +557,8 @@ const css = `
   .hp-ffin{min-height:42px}
 }
 @media(max-width:640px){
+  .hp-hdr{padding:8px 12px;min-height:56px;gap:10px}
+  .hp-hdr-right{gap:8px}
   .hp-banner{display:none}
   .hp-content{padding:12px 14px 32px}
   .hp-hcard-inner{grid-template-columns:1fr}
@@ -1075,34 +1077,7 @@ export default function HotelsPage({onBack}){
           </div>
         </header>
 
-        {/* ── SUB-NAV ── */}
-        <nav className="hp-nav">
-          <button
-            type="button"
-            className="hp-nav-toggle"
-            onClick={()=>setMobileNavOpen(v=>!v)}
-            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-              {mobileNavOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
-            </svg>
-            <span>Menu</span>
-          </button>
-          <div className={`hp-nav-menu${mobileNavOpen ? " open" : ""}`}>
-            {[
-              {lbl:"Hotels",act:true,ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>},
-              {lbl:"Queues",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>},
-              {lbl:"Accounts",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>},
-              {lbl:"Reports",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-              {lbl:"Admin",ic:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 4.93"/><path d="M19.07 19.07A10 10 0 0 0 4.93 19.07"/></svg>},
-            ].map(item=>(
-              <div key={item.lbl} className={`hp-ni${item.act?" act":""}`}>
-                {item.ic}<span>{item.lbl}</span>
-              </div>
-            ))}
-            {onBack && <button className="hp-back-btn" onClick={onBack}>← Back to TBO</button>}
-          </div>
-        </nav>
+        
 
         {/* ── CONTENT ── */}
         <div className="hp-content">

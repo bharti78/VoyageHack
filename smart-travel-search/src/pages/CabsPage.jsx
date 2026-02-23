@@ -94,10 +94,10 @@ const css = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 .cp-wrap{font-family:'Plus Jakarta Sans',sans-serif;background:#f0fdf4;min-height:100vh;display:flex;flex-direction:column}
-.cp-hdr{background:linear-gradient(135deg,#064e3b 0%,#047857 55%,#059669 100%);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
+.cp-hdr{background:linear-gradient(135deg,#064e3b 0%,#047857 55%,#059669 100%);display:flex;align-items:center;justify-content:space-between;padding:8px 28px;min-height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
 .cp-logo-v{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;color:#fff}
 .cp-logo-cab{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#6ee7b7}
-.cp-hdr-right{display:flex;align-items:center;gap:12px}
+.cp-hdr-right{display:flex;align-items:center;gap:12px;margin-left:auto}
 .cp-back-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;transition:background .2s}
 .cp-back-btn:hover{background:rgba(255,255,255,.22)}
 .cp-nav{background:linear-gradient(90deg,#064e3b,#047857);display:flex;align-items:center;padding:0 28px;height:56px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
@@ -190,7 +190,7 @@ const css = `
 .cp-modal-confirm:hover{transform:translateY(-1px)}
 
 @media(max-width:768px){
-  .cp-hdr{padding:0 14px}
+  .cp-hdr{padding:8px 14px;min-height:56px}
   .cp-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
   .cp-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
   .cp-nav-toggle svg{width:18px;height:18px}
@@ -310,7 +310,7 @@ export default function CabsPage() {
       <style>{css}</style>
       <div className="cp-wrap">
         <header className="cp-hdr">
-          <div style={{display:"flex",alignItems:"baseline",gap:2}}>
+          <div style={{display:"flex",alignItems:"center",gap:2}}>
             <span className="cp-logo-v">Voyage</span>
             <span className="cp-logo-cab">Cabs</span>
           </div>
@@ -319,29 +319,6 @@ export default function CabsPage() {
           </div>
         </header>
 
-        <nav className="cp-nav">
-          <button
-            type="button"
-            className="cp-nav-toggle"
-            onClick={() => setMobileNavOpen((v) => !v)}
-            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
-              {mobileNavOpen ? <path d="M6 6l12 12M18 6l-12 12" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
-            </svg>
-            {mobileNavOpen ? "Close Menu" : "Menu"}
-          </button>
-          <div className={`cp-nav-menu${mobileNavOpen ? " open" : ""}`}>
-            {navItems.map(n => (
-              <div key={n.id} className={`cp-ni${n.id === "cabs" ? " act" : ""}`} onClick={() => { setMobileNavOpen(false); navigate(`/${n.id}`); }}>
-                <span style={{fontSize:"1.1rem"}}>
-                  {n.id === "flights" ? "✈️" : n.id === "hotels" ? "🏨" : n.id === "cabs" ? "🚕" : "🚗"}
-                </span>
-                {n.label}
-              </div>
-            ))}
-          </div>
-        </nav>
 
         <div className="cp-content">
           {error && <div className="cp-err"><span className="cp-err-txt">⚠ {error}</span><button className="cp-err-x" onClick={() => setError(null)}>✕</button></div>}

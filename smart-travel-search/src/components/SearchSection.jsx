@@ -68,6 +68,26 @@ const css = `
     font-family: 'DM Sans', sans-serif;
   }
   .mobile-nav-item:hover { background: #fff5f0; color: #ff6600; border-color: #ffd8bf; }
+  .mobile-products-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .mobile-products-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mobile-products-dropdown {
+    border: 1px solid #f0f0f0;
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mobile-products-dropdown .product-item {
+    background: #fff;
+    border: 1px solid #ededed;
+    border-radius: 12px;
+  }
 
   /* Logo */
   .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; padding-left: 60px; }
@@ -1429,6 +1449,7 @@ export default function TBOHomepage() {
   const [productsOpen, setProductsOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const productsRef = useRef(null);
   const solutionsRef = useRef(null);
@@ -1467,7 +1488,10 @@ export default function TBOHomepage() {
       }
       if (productsRef.current && !productsRef.current.contains(e.target)) setProductsOpen(false);
       if (solutionsRef.current && !solutionsRef.current.contains(e.target)) setSolutionsOpen(false);
-      if (!e.target.closest(".mobile-nav-toggle") && !e.target.closest(".mobile-nav-menu")) setMobileNavOpen(false);
+      if (!e.target.closest(".mobile-nav-toggle") && !e.target.closest(".mobile-nav-menu")) {
+        setMobileNavOpen(false);
+        setMobileProductsOpen(false);
+      }
     }
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
@@ -2084,7 +2108,13 @@ export default function TBOHomepage() {
             <button
               type="button"
               className="mobile-nav-toggle"
-              onClick={() => setMobileNavOpen((v) => !v)}
+              onClick={() => {
+                setMobileNavOpen((v) => {
+                  const next = !v;
+                  if (!next) setMobileProductsOpen(false);
+                  return next;
+                });
+              }}
               aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -2094,10 +2124,45 @@ export default function TBOHomepage() {
           </div>
           <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Search</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/flights"); }}>Flights</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/hotels"); }}>Hotels</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/cabs"); }}>Cabs</button>
+            <div className="mobile-products-wrap">
+              <button
+                className="mobile-nav-item mobile-products-toggle"
+                onClick={() => setMobileProductsOpen((v) => !v)}
+              >
+                <span>Products</span>
+                <span>{mobileProductsOpen ? "▲" : "▼"}</span>
+              </button>
+              {mobileProductsOpen && (
+                <div className="mobile-products-dropdown">
+                  {PRODUCTS.map((p) => {
+                    const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
+                    return (
+                      <div
+                        key={p.id}
+                        className="product-item"
+                        role="button"
+                        onClick={() => {
+                          setMobileProductsOpen(false);
+                          setMobileNavOpen(false);
+                          navigate(routeMap[p.id]);
+                        }}
+                      >
+                        <div className={`product-item-icon ${p.colorClass}`}>{p.icon}</div>
+                        <div className="product-item-text">
+                          <div className="product-item-name">{p.name}</div>
+                          <div className="product-item-desc">{p.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Solutions</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>TBO Cares</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Careers</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>About Us</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Help</button>
             {isLoggedIn ? (
               <>
                 <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); handleBookNow(); }}>Book Now</button>
@@ -2666,4 +2731,3 @@ export default function TBOHomepage() {
     </>
   );
 }
-

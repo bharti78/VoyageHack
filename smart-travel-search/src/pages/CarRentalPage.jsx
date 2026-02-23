@@ -48,10 +48,10 @@ const css = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 .cr-wrap{font-family:'Plus Jakarta Sans',sans-serif;background:#fdf4ff;min-height:100vh;display:flex;flex-direction:column}
-.cr-hdr{background:linear-gradient(135deg,#3b0764 0%,#6d28d9 55%,#7c3aed 100%);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
+.cr-hdr{background:linear-gradient(135deg,#3b0764 0%,#6d28d9 55%,#7c3aed 100%);display:flex;align-items:center;justify-content:space-between;padding:8px 28px;min-height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
 .cr-logo-v{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;color:#fff}
 .cr-logo-car{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#ddd6fe}
-.cr-hdr-right{display:flex;align-items:center;gap:12px}
+.cr-hdr-right{display:flex;align-items:center;gap:12px;margin-left:auto}
 .cr-back-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;transition:background .2s}
 .cr-back-btn:hover{background:rgba(255,255,255,.22)}
 .cr-nav{background:linear-gradient(90deg,#3b0764,#6d28d9);display:flex;align-items:center;padding:0 28px;height:56px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
@@ -144,7 +144,7 @@ const css = `
 .cr-modal-confirm{flex:1;background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.82rem;box-shadow:0 4px 14px rgba(109,40,217,.35);transition:all .2s}
 
 @media(max-width:768px){
-  .cr-hdr{padding:0 14px}
+  .cr-hdr{padding:8px 14px;min-height:56px}
   .cr-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
   .cr-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
   .cr-nav-toggle svg{width:18px;height:18px}
@@ -219,7 +219,7 @@ export default function CarRentalPage() {
       <style>{css}</style>
       <div className="cr-wrap">
         <header className="cr-hdr">
-          <div style={{display:"flex",alignItems:"baseline",gap:2}}>
+          <div style={{display:"flex",alignItems:"center",gap:2}}>
             <span className="cr-logo-v">Voyage</span>
             <span className="cr-logo-car">Drive</span>
           </div>
@@ -228,29 +228,7 @@ export default function CarRentalPage() {
           </div>
         </header>
 
-        <nav className="cr-nav">
-          <button
-            type="button"
-            className="cr-nav-toggle"
-            onClick={() => setMobileNavOpen((v) => !v)}
-            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
-              {mobileNavOpen ? <path d="M6 6l12 12M18 6l-12 12" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
-            </svg>
-            {mobileNavOpen ? "Close Menu" : "Menu"}
-          </button>
-          <div className={`cr-nav-menu${mobileNavOpen ? " open" : ""}`}>
-            {navItems.map(n => (
-              <div key={n.id} className={`cr-ni${n.id === "carrental" ? " act" : ""}`} onClick={() => { setMobileNavOpen(false); navigate(`/${n.id}`); }}>
-                <span style={{fontSize:"1.1rem"}}>
-                  {n.id === "flights" ? "✈️" : n.id === "hotels" ? "🏨" : n.id === "cabs" ? "🚕" : "🚗"}
-                </span>
-                {n.label}
-              </div>
-            ))}
-          </div>
-        </nav>
+        
 
         <div className="cr-content">
           {error && <div className="cr-err"><span className="cr-err-txt">⚠ {error}</span><button className="cr-err-x" onClick={() => setError(null)}>✕</button></div>}
