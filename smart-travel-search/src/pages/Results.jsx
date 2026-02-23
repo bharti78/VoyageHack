@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/HomepageNavbar";
 import { buildAndStore, readUnified } from "../utils/unifiedSearch";
@@ -352,7 +352,7 @@ export default function Results() {
     carrental:{ items:[], meta:{} },
   });
 
-  const search = useMemo(resolveSearch, []); // eslint-disable-line
+  const [search, setSearch] = useState(() => resolveSearch());
 
   const activeBudget = filterBudgetIdx !== null
     ? (BUDGET_OPTIONS[filterBudgetIdx].max || 999999)
@@ -521,24 +521,25 @@ export default function Results() {
     setLoadingMap(p=>({...p,carrental:false}));
   },[search]);
 
-  /* initial parallel fetch */
-  useEffect(()=>{
-    Promise.all([fetchFlights(),fetchHotels(),fetchCabs(),fetchCars()]).catch(()=>{});
-  },[]); // eslint-disable-line
+  /* fetch/re-fetch whenever active search inputs change */
+  useEffect(() => {
+    Promise.all([fetchFlights(), fetchHotels(), fetchCabs(), fetchCars()]).catch(() => {});
+  }, [fetchFlights, fetchHotels, fetchCabs, fetchCars]);
 
   /* ── Apply filters → re-fetch ────────────────────────────────── */
   function applyFilters() {
     /* collapse all sections back to preview when re-fetching */
     setExpandedSections({ flights:false, hotels:false, cabs:false, carrental:false });
-    buildAndStore({
+    const nextSearch = {
       ...search,
       budget:{ selectedBudget: filterBudgetIdx!==null ? BUDGET_OPTIONS[filterBudgetIdx].label : null, maxValue: activeBudget },
       guests:{ ...search.guests, adults: activeAdults },
       intentService: filterService,
-    });
+    };
+    buildAndStore(nextSearch);
+    setSearch(nextSearch);
     setSidebarOpen(false);
     setActiveTab(filterService==="all"?"all":filterService);
-    Promise.all([fetchFlights(),fetchHotels(),fetchCabs(),fetchCars()]).catch(()=>{});
   }
 
   /* ── Derived ─────────────────────────────────────────────────── */

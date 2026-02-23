@@ -21,6 +21,24 @@ const ALLOWED_IMAGE_HOSTS = new Set([
   "static-sources.s3-eu-west-1.amazonaws.com",
 ]);
 
+function resolveTboBaseUrl(rawBase) {
+  const trimmed = String(rawBase || "").trim().replace(/\/+$/, "");
+  if (!trimmed) return "";
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.hostname.endsWith("tbotechnology.in") && parsed.protocol === "http:") {
+      parsed.protocol = "https:";
+    }
+    return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    if (/^api\.tbotechnology\.in/i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  }
+}
+const TBO_BASE_URL = resolveTboBaseUrl(TBO_BASE);
+
 function isAllowedImageHost(hostname) {
   const host = String(hostname || "").toLowerCase();
   if (!host) return false;
@@ -54,7 +72,7 @@ async function tboFetch(endpoint, payload = {}, options = {}) {
     );
   }
 
-  const resp = await fetch(`${TBO_BASE}/${endpoint}`, requestOptions);
+  const resp = await fetch(`${TBO_BASE_URL}/${endpoint}`, requestOptions);
   const text = await resp.text();
   console.log(`TBO API Response: ${text.slice(0, 500)}`);
   let data;
