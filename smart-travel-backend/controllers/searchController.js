@@ -30,14 +30,38 @@ function parseBudget(query) {
 
 function parseDestination(query) {
   if (!query) return "";
-  const text = String(query);
-  const toMatch = text.match(/\bto\s+([a-zA-Z ]{2,40})/i);
+  const text = String(query).replace(/\s+/g, " ").trim();
+  const toMatch = text.match(/\bto\s+([a-zA-Z ]{2,40}?)(?=\s+(?:for|under|below|budget|in|on|from|with)\b|[,.!?]|$)/i);
   if (toMatch) return toMatch[1].trim();
 
   const inMatch = text.match(/\bin\s+([a-zA-Z ]{2,40})/i);
   if (inMatch) return inMatch[1].trim();
 
   return "";
+}
+
+function parseSource(query) {
+  if (!query) return "";
+  const text = String(query).replace(/\s+/g, " ").trim();
+  const fromMatch = text.match(/\bfrom\s+([a-zA-Z ]{2,40}?)(?=\s+(?:to|for|under|below|budget|in|on|with)\b|[,.!?]|$)/i);
+  if (!fromMatch) return "";
+  return fromMatch[1].trim();
+}
+
+function parseDurationDays(query) {
+  if (!query) return null;
+  const text = String(query).toLowerCase();
+  const dayMatch = text.match(/(\d+)\s*(?:day|days)\b/);
+  if (dayMatch) {
+    const days = Number(dayMatch[1]);
+    return Number.isFinite(days) && days > 0 ? days : null;
+  }
+  const nightMatch = text.match(/(\d+)\s*(?:night|nights)\b/);
+  if (nightMatch) {
+    const nights = Number(nightMatch[1]);
+    return Number.isFinite(nights) && nights > 0 ? nights + 1 : null;
+  }
+  return null;
 }
 
 function parseNights(query) {
@@ -147,8 +171,10 @@ exports.smartPlan = async (req, res) => {
     } = req.body || {};
 
     const parsedBudget = Number(budget || parseBudget(query) || 0);
+    const source = parseSource(query) || "Mumbai";
     const destination = city || parseDestination(query) || "Any Destination";
-    const nights = parseNights(query) || 2;
+    const durationDays = parseDurationDays(query) || 3;
+    const nights = Math.max(1, durationDays - 1);
     const allocation = buildBudgetAllocation(parsedBudget);
 
     const hotelCandidates = await Hotel.find({
@@ -166,8 +192,10 @@ exports.smartPlan = async (req, res) => {
     res.json({
       success: true,
       intent: {
+        source,
         destination,
         budget: parsedBudget,
+        durationDays,
         nights,
         tripType: tripType || persona || "solo",
       },

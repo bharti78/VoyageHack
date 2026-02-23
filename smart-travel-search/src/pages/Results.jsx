@@ -488,7 +488,7 @@ export default function Results() {
     carrental:{ items:[], meta:{} },
   });
 
-  const search = useMemo(resolveSearch, []); // eslint-disable-line
+  const [search, setSearch] = useState(() => resolveSearch());
 
   const activeBudget = filterBudgetIdx !== null
     ? (BUDGET_OPTIONS[filterBudgetIdx].max || 999999)

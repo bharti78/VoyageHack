@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import ServiceNav from "../components/ServiceNav";
 
 const SMART_SEARCH_API = "http://localhost:5000/api/search";
 
@@ -239,20 +240,24 @@ export default function CabsPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
+    let shouldAutoSearch = false;
     try {
       const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
       if (smart.destination && !pickup) {
         setPickup(smart.destination);
         setDrop(`${smart.destination} City Center`);
+        shouldAutoSearch = true;
       }
       const cabPrefill = JSON.parse(localStorage.getItem("voyagehack.cab.prefill") || "{}");
       if (cabPrefill.city && !pickup) {
         setPickup(cabPrefill.city);
         setDrop(`${cabPrefill.city} City Center`);
+        shouldAutoSearch = true;
       }
     } catch {
       // ignore malformed storage
     }
+    if (shouldAutoSearch) setTimeout(() => handleSearch(), 0);
   }, [pickup]);
 
   function handleSearch() {
@@ -320,6 +325,9 @@ export default function CabsPage() {
         </header>
 
 
+        <ServiceNav />
+
+        
         <div className="cp-content">
           {error && <div className="cp-err"><span className="cp-err-txt">⚠ {error}</span><button className="cp-err-x" onClick={() => setError(null)}>✕</button></div>}
 
@@ -479,4 +487,3 @@ export default function CabsPage() {
     </>
   );
 }
-

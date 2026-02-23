@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useNavigate } from "react-router-dom";
+import ServiceNav from "../components/ServiceNav";
 
 /* ═══════════════════════════════════════════════
    BACKEND PROXY  ─  all TBO calls go through here
@@ -659,6 +661,7 @@ function MiniCal({value, onChange, onClose, minDate}){
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 export default function HotelsPage({onBack}){
+  const navigate = useNavigate();
   const persistedForm = loadPersistedHotelForm() || {};
 
   /* ── search form state ── */
@@ -694,6 +697,7 @@ export default function HotelsPage({onBack}){
   const [detailHotel,setDetailHotel] = useState(null);
   const [detailImageIdx,setDetailImageIdx] = useState(0);
   const [detailLoading,setDetailLoading] = useState(false);
+  const [autoSearchPending,setAutoSearchPending] = useState(false);
 
   /* ── prebook / booking ── */
   const [selHotel,setSelHotel]   = useState(null);
@@ -735,6 +739,7 @@ export default function HotelsPage({onBack}){
       const prefill = JSON.parse(localStorage.getItem("voyagehack.hotel.prefill") || "{}");
       if (prefill.destination && !cityQuery) {
         setCityQuery(prefill.destination);
+        setAutoSearchPending(true);
       }
       if (prefill.budget && !budget) {
         setBudget(String(prefill.budget));
@@ -758,6 +763,12 @@ export default function HotelsPage({onBack}){
       // ignore malformed storage payloads
     }
   }, []);
+
+  useEffect(() => {
+    if (!autoSearchPending || !cityId || !checkIn || !checkOut) return;
+    setAutoSearchPending(false);
+    doSearch();
+  }, [autoSearchPending, cityId, checkIn, checkOut]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!cityId && cityQuery && allCities.length > 0) {
@@ -1076,6 +1087,9 @@ export default function HotelsPage({onBack}){
             <button className="hp-logout">Logout</button>
           </div>
         </header>
+
+
+        <ServiceNav />
 
         
 

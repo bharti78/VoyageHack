@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ServiceNav from "../components/ServiceNav";
 
 const CITIES = ["New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Goa", "Jaipur", "Chandigarh"];
 
@@ -186,6 +187,30 @@ export default function CarRentalPage() {
   const [booked, setBooked] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  useEffect(() => {
+    let shouldAutoSearch = false;
+    try {
+      const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+      const prefill = JSON.parse(localStorage.getItem("voyagehack.carrental.prefill") || "{}");
+      const cityVal = prefill.city || smart.destination || "";
+      if (cityVal) {
+        setCity(cityVal);
+        shouldAutoSearch = true;
+      }
+      if (prefill.pickupDate) {
+        const d = new Date(prefill.pickupDate);
+        if (!Number.isNaN(d.getTime())) setPickup(d.toISOString().split("T")[0]);
+      }
+      if (prefill.returnDate) {
+        const d = new Date(prefill.returnDate);
+        if (!Number.isNaN(d.getTime())) setReturnDate(d.toISOString().split("T")[0]);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+    if (shouldAutoSearch) setTimeout(() => handleSearch(), 0);
+  }, []);
+
   function handleSearch() {
     if (!city) { setError("Please enter a city for car rental."); return; }
     if (new Date(returnDate) <= new Date(pickup)) { setError("Return date must be after pickup date."); return; }
@@ -227,6 +252,9 @@ export default function CarRentalPage() {
             <button className="cr-back-btn" onClick={() => navigate("/results")}>← Home</button>
           </div>
         </header>
+
+
+        <ServiceNav />
 
         
 

@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { buildAndStore } from "../utils/unifiedSearch";
+import { storeSearchContext, storeUnifiedResults, executeUnifiedSearch } from "../utils/searchContext";
+
+const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700&display=swap');
@@ -314,10 +317,20 @@ const css = `
     gap: 6px;
     padding: 0 8px 0 4px;
     flex-shrink: 0;
-    margin-left: 40px;
+    margin-left: auto;
     position: relative;
     z-index: 560;
     pointer-events: auto;
+  }
+
+  .filter-section { display: none !important; }
+  .mobile-filter-trigger { display: none !important; }
+  .type-dropdown,
+  .where-dropdown,
+  .when-dropdown,
+  .who-dropdown,
+  .budget-dropdown {
+    display: none !important;
   }
 
   .pill-icon-btn {
@@ -1737,6 +1750,7 @@ export default function TBOHomepage() {
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const imageSearchRef = useRef(false);
 
   // Search
   const [openPanel, setOpenPanel] = useState(null);
@@ -2130,6 +2144,7 @@ export default function TBOHomepage() {
     const suggested = inferDestination(name, matched);
     if (suggested) setDestination(suggested);
     setSearchQuery(file.name.replace(/\.[^/.]+$/, ""));
+    imageSearchRef.current = true;
     handleRedirectClick(file.name);
   }
 
@@ -2207,7 +2222,7 @@ export default function TBOHomepage() {
     });
   }, [openPanel, calMonth.y, calMonth.m, nextM.y, nextM.m, destination, flexDays]);
 
-  function handleRedirectClick(spokenInput = "", isTextSearch = false) {
+  async function handleRedirectClick(spokenInput = "", isTextSearch = false) {
     // When used directly as an event handler, React passes the click event.
     // Ignore it so it does not get serialized into query payloads.
     if (spokenInput && typeof spokenInput === "object" && typeof spokenInput.preventDefault === "function") {
@@ -2241,6 +2256,10 @@ export default function TBOHomepage() {
       applyNaturalLanguageQuery(effectiveQuery || searchQuery);
     }
 
+    const inputType = imageSearchRef.current
+      ? "image"
+      : ((spokenInput && !isTextSearch) ? "voice" : (isTextSearch || searchExpanded ? "text" : "filter"));
+
     const payload = {
       source: spokenInput && !isTextSearch ? "voice" : "manual",
       query: effectiveQuery || searchQuery || "",
@@ -2256,61 +2275,136 @@ export default function TBOHomepage() {
         maxValue: Math.round(budgetSlider * 5000),
       },
     };
-    safeSetItem("voyagehack.smartQuery", JSON.stringify(payload));
+    const fallbackStart = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d;
+    })();
+    const startDt = payload.startDate ? new Date(payload.startDate) : fallbackStart;
+
+    const userData = (() => {
+      try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
+    })();
+    let smartResponse = null;
+    try {
+      const smartReq = await fetch(SMART_SEARCH_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: payload.query || `Plan a trip to ${effectiveDestination || "Goa"}`,
+          userGender: userData?.gender || "",
+          persona: localStorage.getItem("persona") || "",
+          tripType: localStorage.getItem("persona") || "solo",
+          city: effectiveDestination || "",
+          budget: payload.budget.maxValue || 0,
+          travelTime: "10:00",
+        }),
+      });
+      smartResponse = await smartReq.json().catch(() => null);
+    } catch {
+      // continue with client-side fallback parsing
+    }
+
+    const intent = smartResponse?.intent || {};
+    const parsedDestination = intent.destination && intent.destination !== "Any Destination"
+      ? intent.destination
+      : effectiveDestination;
+    const parsedSource = intent.source || fromCity || "";
+    const parsedBudget = Number(intent.budget || payload.budget.maxValue || 0);
+    const parsedDurationDays = Number(intent.durationDays || (intent.nights ? intent.nights + 1 : 0) || 0);
+
+    const endDt = payload.endDate
+      ? new Date(payload.endDate)
+      : (() => {
+          const d = new Date(startDt);
+          d.setDate(d.getDate() + Math.max(1, (parsedDurationDays || 3) - 1));
+          return d;
+        })();
+
+    const matchEntity = WHERE_ENTITIES.find((item) =>
+      normalizeText(item.city || item.name) === normalizeText(parsedDestination)
+    );
+    const finalDestinationObj = matchEntity
+      ? {
+          name: matchEntity.name,
+          code: matchEntity.code || "",
+          type: matchEntity.type,
+          country: matchEntity.country || "",
+          city: matchEntity.city || matchEntity.name,
+          key: matchEntity.key,
+        }
+      : effectiveDestinationObj;
+
+    safeSetItem("voyagehack.smartQuery", JSON.stringify({ ...payload, destination: parsedDestination, fromCity: parsedSource }));
+    if (smartResponse) safeSetItem("voyagehack.smartResults", JSON.stringify(smartResponse));
     safeSetItem("homepageSearch", JSON.stringify({
-      destination: effectiveDestination || "Anywhere",
-      destinationObject: effectiveDestinationObj,
-      startDate: payload.startDate,
-      endDate: payload.endDate,
+      destination: parsedDestination || "Anywhere",
+      destinationObject: finalDestinationObj,
+      startDate: startDt.toISOString(),
+      endDate: endDt.toISOString(),
       adults: nextGuests.adults,
       children: nextGuests.children,
       infants: nextGuests.infants,
-      budgetMax: payload.budget.maxValue,
+      budgetMax: parsedBudget,
       selectedTypes,
     }));
 
     safeSetItem("voyagehack.hotel.prefill", JSON.stringify({
-      destination: effectiveDestination || "",
-      budget: payload.budget.maxValue || "",
-      startDate: payload.startDate,
-      endDate: payload.endDate,
+      destination: parsedDestination || "",
+      budget: parsedBudget || "",
+      startDate: startDt.toISOString(),
+      endDate: endDt.toISOString(),
       adults: nextGuests.adults,
       children: nextGuests.children,
     }));
     safeSetItem("voyagehack.cab.prefill", JSON.stringify({
-      city: effectiveDestination || "",
-      budget: payload.budget.maxValue || "",
+      city: parsedDestination || "",
+      budget: parsedBudget || "",
+      travelTime: "10:00",
+    }));
+    safeSetItem("voyagehack.carrental.prefill", JSON.stringify({
+      city: parsedDestination || "",
+      pickupDate: startDt.toISOString(),
+      returnDate: endDt.toISOString(),
+      budget: parsedBudget || "",
     }));
 
-    if (effectiveDestination) {
-      setDestination(effectiveDestination);
-      if (effectiveDestinationObj) {
-        setSelectedDestinationObj(effectiveDestinationObj);
-        const nextRecent = [effectiveDestinationObj.key, ...recentWhereKeys.filter((k) => k !== effectiveDestinationObj.key)].slice(0, 8);
+    if (parsedDestination) {
+      setDestination(parsedDestination);
+      if (finalDestinationObj) {
+        setSelectedDestinationObj(finalDestinationObj);
+        const nextRecent = [finalDestinationObj.key, ...recentWhereKeys.filter((k) => k !== finalDestinationObj.key)].slice(0, 8);
         setRecentWhereKeys(nextRecent);
         try {
           localStorage.setItem("voyagehack.where.recent", JSON.stringify(nextRecent));
-          localStorage.setItem("voyagehack.where.selected", JSON.stringify(effectiveDestinationObj));
+          localStorage.setItem("voyagehack.where.selected", JSON.stringify(finalDestinationObj));
         } catch {
           // ignore
         }
       }
     }
 
-    const destinationKey = normalizeText(effectiveDestination).split(" ")[0];
-    const fromKey = normalizeText(fromCity || "").split(" ")[0];
+    const destinationKey = normalizeText(parsedDestination).split(" ")[0];
+    const fromKey = normalizeText(parsedSource || fromCity || "").split(" ")[0];
     const flightRouteByDest = FLIGHT_ROUTES[destinationKey];
     const flightRouteByFrom = fromKey ? FLIGHT_ROUTES[fromKey] : null;
     const flightRoute = flightRouteByDest || flightRouteByFrom;
-    const resolvedFrom = fromObj ? { code: fromObj.code || "", city: fromObj.city || fromObj.name || fromCity } : (flightRoute ? flightRoute.from : null);
-    const resolvedTo = effectiveDestinationObj ? { code: effectiveDestinationObj.code || "", city: effectiveDestinationObj.city || effectiveDestination } : (flightRoute ? flightRoute.to : null);
+    const sourceEntity = WHERE_ENTITIES.find((item) =>
+      normalizeText(item.city || item.name) === normalizeText(parsedSource)
+    );
+    const resolvedFrom = sourceEntity
+      ? { code: sourceEntity.code || "", city: sourceEntity.city || sourceEntity.name }
+      : (fromObj ? { code: fromObj.code || "", city: fromObj.city || fromObj.name || parsedSource } : (flightRoute ? flightRoute.from : null));
+    const resolvedTo = finalDestinationObj
+      ? { code: finalDestinationObj.code || "", city: finalDestinationObj.city || parsedDestination }
+      : (flightRoute ? flightRoute.to : null);
     if (resolvedFrom && resolvedTo) {
       safeSetItem("voyagehack.flight.prefill", JSON.stringify({
         from: resolvedFrom,
         to: resolvedTo,
-        depDate: startDate ? startDate.toISOString() : null,
-        retDate: endDate ? endDate.toISOString() : null,
-        tripType: endDate ? "roundtrip" : "oneway",
+        depDate: startDt.toISOString(),
+        retDate: endDt.toISOString(),
+        tripType: "roundtrip",
         cabin: "Economy",
         pax: {
           adults: nextGuests.adults,
@@ -2331,23 +2425,57 @@ export default function TBOHomepage() {
     try {
       buildAndStore({
         source: payload.source,
-        inputType: (spokenInput && !isTextSearch) ? "voice" : (isTextSearch || searchExpanded ? "text" : "filter"),
+        inputType,
         query: payload.query,
-        destination: effectiveDestination,
-        destinationObject: effectiveDestinationObj,
-        startDate: payload.startDate,
-        endDate: payload.endDate,
+        destination: parsedDestination,
+        destinationObject: finalDestinationObj || {},
+        startDate: startDt.toISOString(),
+        endDate: endDt.toISOString(),
         selectedTypes,
         guests: nextGuests,
-        budget: payload.budget,
+        budget: { selectedBudget, maxValue: parsedBudget },
         intentService: service || "all",
-        fromCity: fromCity || "",
-        fromObj: fromObj || null,
+        intent,
+        fromCity: parsedSource || fromCity || "",
+        fromObj: resolvedFrom || fromObj || null,
       });
     } catch {
       // ignore localStorage failures
     }
-    navigate("/results");
+    imageSearchRef.current = false;
+
+    // Store unified search context for all result pages to read
+    const searchCtx = {
+      query: payload.query,
+      fromCity: parsedSource,
+      destination: parsedDestination,
+      startDate: startDt.toISOString(),
+      endDate: endDt.toISOString(),
+      guests: nextGuests,
+      budget: { selectedBudget, maxValue: parsedBudget },
+      selectedTypes,
+      fromObj: resolvedFrom,
+      toObj: resolvedTo,
+      intent,
+    };
+    storeSearchContext(searchCtx);
+
+    // Kick off background unified search so result pages can use cached data
+    executeUnifiedSearch({
+      query: payload.query || `Trip from ${parsedSource || "Mumbai"} to ${parsedDestination || "Goa"}`,
+      fromCity: parsedSource || "",
+      toCity: parsedDestination || "",
+      startDate: startDt.toISOString(),
+      endDate: endDt.toISOString(),
+      adults: nextGuests.adults,
+      children: nextGuests.children,
+      infants: nextGuests.infants,
+      budget: parsedBudget,
+    }).then(data => {
+      storeUnifiedResults(data);
+    }).catch(() => { /* silent – result pages handle missing cache */ });
+
+    navigate("/flights");
   }
   function handleBookNow() {
     if (!requireAuth()) return;

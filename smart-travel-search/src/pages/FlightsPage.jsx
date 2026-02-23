@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import ServiceNav from "../components/ServiceNav";
 
 const API_BASE = "http://localhost:5000/api/flights";
 
@@ -477,6 +478,7 @@ export default function FlightsPage() {
   const [calendarFares, setCalendarFares] = useState([]);
   const [cheapestMonths, setCheapestMonths] = useState([]);
   const [calendarFlexDays, setCalendarFlexDays] = useState(3);
+  const [autoSearchPending, setAutoSearchPending] = useState(false);
   const [priceAlertEnabled, setPriceAlertEnabled] = useState(() => {
     try { return localStorage.getItem("voyagehack.flightPriceAlert") === "1"; } catch { return false; }
   });
@@ -498,6 +500,7 @@ export default function FlightsPage() {
       if (saved.from?.code && saved.to?.code) {
         setFrom(saved.from);
         setTo(saved.to);
+        setAutoSearchPending(true);
       }
       if (saved.depDate) {
         const dep = new Date(saved.depDate);
@@ -518,6 +521,12 @@ export default function FlightsPage() {
       // Ignore malformed local storage payloads.
     }
   }, []);
+
+  useEffect(() => {
+    if (!autoSearchPending) return;
+    setAutoSearchPending(false);
+    handleSearch();
+  }, [autoSearchPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredFrom = (fromQuery
     ? AIRPORTS.filter(a => a.code.toLowerCase().includes(fromQuery.toLowerCase()) || a.city.toLowerCase().includes(fromQuery.toLowerCase()))
@@ -665,6 +674,8 @@ export default function FlightsPage() {
             </button>
           </div>
         </header>
+
+        <ServiceNav />
 
 
         {/* Content */}
