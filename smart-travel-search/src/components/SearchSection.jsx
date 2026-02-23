@@ -180,6 +180,8 @@ const css = `
     width: 50%;
     margin: 0 auto;
     animation: expandIn .28s cubic-bezier(.34,1.3,.64,1) both;
+    position: relative;
+    z-index: 550;
   }
   @keyframes expandIn {
     from { opacity: 0; transform: scaleX(0.95); }
@@ -250,6 +252,7 @@ const css = `
     box-shadow: 0 2px 12px rgba(0,0,0,0.09);
     overflow: visible;
     position: relative;
+    z-index: 550;
     width: 100%;
     height: 60px;
     max-width: 1000px;
@@ -312,6 +315,9 @@ const css = `
     padding: 0 8px 0 4px;
     flex-shrink: 0;
     margin-left: 40px;
+    position: relative;
+    z-index: 560;
+    pointer-events: auto;
   }
 
   .pill-icon-btn {
@@ -344,6 +350,7 @@ const css = `
     font-family: 'DM Sans', sans-serif;
     transition: background 0.2s, transform 0.15s;
     flex-shrink: 0;
+    pointer-events: auto;
   }
   .pill-search-btn:hover { background: #e05500; transform: scale(1.03); }
 
@@ -1490,6 +1497,7 @@ function WhereFromToPanel({
   fromCity, setFromCity, fromObj, setFromObj,
   destination, setDestination, selectedDestinationObj, setSelectedDestinationObj,
   fromQuery, setFromQuery, destQuery, setDestQuery,
+  selectedTypes,
   whereEntityType, setWhereEntityType,
   recentWhereKeys, setRecentWhereKeys,
   setOpenPanel,
@@ -1500,11 +1508,39 @@ function WhereFromToPanel({
 }) {
   const activeQuery = whereStep === "from" ? fromQuery : destQuery;
   const setActiveQuery = whereStep === "from" ? setFromQuery : setDestQuery;
+  const isFromStep = whereStep === "from";
+  const visibleEntityTypeOptions = isFromStep
+    ? WHERE_ENTITY_TYPES.filter((t) => t.id === "all" || t.id === "city" || t.id === "airport")
+    : WHERE_ENTITY_TYPES;
+
+  function applyManualFromValue() {
+    const manualFrom = String(fromQuery || "").trim();
+    if (!manualFrom) return false;
+    setFromCity(manualFrom);
+    setFromObj(null);
+    setFromQuery("");
+    setWhereStep("to");
+    return true;
+  }
+
+  function applyManualDestinationValue(closePanel = true) {
+    const manualTo = String(destQuery || "").trim();
+    if (!manualTo) return false;
+    setDestination(manualTo);
+    setSelectedDestinationObj(null);
+    setDestQuery("");
+    if (closePanel) setOpenPanel(null);
+    return true;
+  }
 
   function scoreEntities(query) {
     const nq = normalizeText(query);
-    return WHERE_ENTITIES
-      .filter(item => whereEntityType === "all" || item.type === whereEntityType)
+    const typeScopedEntities = WHERE_ENTITIES
+      .filter((item) => whereEntityType === "all" || item.type === whereEntityType);
+    const scopedEntities = (!isFromStep && selectedTypes.length)
+      ? typeScopedEntities.filter((item) => Array.isArray(item.tags) && selectedTypes.some((t) => item.tags.includes(t)))
+      : typeScopedEntities;
+    return scopedEntities
       .map(item => {
         if (!nq) return { item, score: item.popularity || 0 };
         const name = normalizeText(item.name), city = normalizeText(item.city || ""), code = normalizeText(item.code || "");
@@ -1525,9 +1561,11 @@ function WhereFromToPanel({
   const recentItems = recentWhereKeys
     .map(k => WHERE_ENTITIES.find(i => i.key === k))
     .filter(Boolean)
-    .filter(i => whereEntityType === "all" || i.type === whereEntityType);
+    .filter(i => whereEntityType === "all" || i.type === whereEntityType)
+    .filter((item) => isFromStep || !selectedTypes.length || (Array.isArray(item.tags) && selectedTypes.some((t) => item.tags.includes(t))));
   const popular = WHERE_ENTITIES
     .filter(i => whereEntityType === "all" || i.type === whereEntityType)
+    .filter((item) => isFromStep || !selectedTypes.length || (Array.isArray(item.tags) && selectedTypes.some((t) => item.tags.includes(t))))
     .filter(i => !recentItems.some(r => r.key === i.key))
     .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
     .slice(0, 5);
@@ -1592,6 +1630,14 @@ function WhereFromToPanel({
           placeholder={whereStep === "from" ? "Search origin city or airport..." : "Search destination..."}
           value={activeQuery}
           onChange={e => setActiveQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            if (whereStep === "from") {
+              applyManualFromValue();
+            } else {
+              applyManualDestinationValue(true);
+            }
+          }}
           autoFocus
         />
 
@@ -1603,16 +1649,22 @@ function WhereFromToPanel({
         )}
 
         {/* Entity type chips */}
+        {!isFromStep && (
         <div className="where-type-row">
-          {WHERE_ENTITY_TYPES.map(t => (
+          {visibleEntityTypeOptions.map(t => (
             <button key={t.id} type="button"
               className={`where-type-chip ${whereEntityType === t.id ? "active" : ""}`}
               onClick={() => setWhereEntityType(t.id)}>{t.label}</button>
           ))}
         </div>
+        )}
 
         {/* Results list */}
         <div className="dest-list">
+          {isFromStep ? (
+            <div className="dest-empty">Enter the origin city manually and press Enter.</div>
+          ) : (
+            <>
           {showRecent && (
             <>
               <div className="dest-section-label">Recent</div>
@@ -1655,12 +1707,21 @@ function WhereFromToPanel({
           {activeQuery && ranked.length === 0 && (
             <div className="dest-empty">No results found. Try a city name or airport code.</div>
           )}
+            </>
+          )}
         </div>
       </div>
 
       <div className="dropdown-footer">
         <button className="btn-clear" onClick={() => { setFromCity(""); setFromObj(null); setDestination(""); setSelectedDestinationObj(null); setFromQuery(""); setDestQuery(""); setWhereStep("from"); }}>Clear</button>
-        <button className="btn-apply" onClick={() => setOpenPanel(null)}>Done</button>
+        <button className="btn-apply" onClick={() => {
+          if (whereStep === "from") {
+            applyManualFromValue();
+            return;
+          }
+          if (applyManualDestinationValue(true)) return;
+          setOpenPanel(null);
+        }}>Done</button>
       </div>
     </div>
   );
@@ -2111,6 +2172,13 @@ export default function TBOHomepage() {
   }
   function toggleType(id) { setSelectedTypes(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]); }
   function toggleMonth(key) { setSelectedMonths(p => p.includes(key) ? p.filter(k => k !== key) : [...p, key]); }
+  function safeSetItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // ignore storage failures so search can still continue
+    }
+  }
 
   const nextM = { y: calMonth.m === 11 ? calMonth.y + 1 : calMonth.y, m: (calMonth.m + 1) % 12 };
   const futureMonths = Array.from({ length: 12 }, (_, i) => {
@@ -2140,7 +2208,11 @@ export default function TBOHomepage() {
   }, [openPanel, calMonth.y, calMonth.m, nextM.y, nextM.m, destination, flexDays]);
 
   function handleRedirectClick(spokenInput = "", isTextSearch = false) {
-    if (!requireAuth()) return;
+    // When used directly as an event handler, React passes the click event.
+    // Ignore it so it does not get serialized into query payloads.
+    if (spokenInput && typeof spokenInput === "object" && typeof spokenInput.preventDefault === "function") {
+      spokenInput = "";
+    }
 
     const effectiveQuery = isTextSearch ? (spokenInput || searchQuery) : (spokenInput || "");
     const normalizedSpoken = normalizeText(effectiveQuery || searchQuery);
@@ -2184,8 +2256,8 @@ export default function TBOHomepage() {
         maxValue: Math.round(budgetSlider * 5000),
       },
     };
-    localStorage.setItem("voyagehack.smartQuery", JSON.stringify(payload));
-    localStorage.setItem("homepageSearch", JSON.stringify({
+    safeSetItem("voyagehack.smartQuery", JSON.stringify(payload));
+    safeSetItem("homepageSearch", JSON.stringify({
       destination: effectiveDestination || "Anywhere",
       destinationObject: effectiveDestinationObj,
       startDate: payload.startDate,
@@ -2197,7 +2269,7 @@ export default function TBOHomepage() {
       selectedTypes,
     }));
 
-    localStorage.setItem("voyagehack.hotel.prefill", JSON.stringify({
+    safeSetItem("voyagehack.hotel.prefill", JSON.stringify({
       destination: effectiveDestination || "",
       budget: payload.budget.maxValue || "",
       startDate: payload.startDate,
@@ -2205,7 +2277,7 @@ export default function TBOHomepage() {
       adults: nextGuests.adults,
       children: nextGuests.children,
     }));
-    localStorage.setItem("voyagehack.cab.prefill", JSON.stringify({
+    safeSetItem("voyagehack.cab.prefill", JSON.stringify({
       city: effectiveDestination || "",
       budget: payload.budget.maxValue || "",
     }));
@@ -2233,7 +2305,7 @@ export default function TBOHomepage() {
     const resolvedFrom = fromObj ? { code: fromObj.code || "", city: fromObj.city || fromObj.name || fromCity } : (flightRoute ? flightRoute.from : null);
     const resolvedTo = effectiveDestinationObj ? { code: effectiveDestinationObj.code || "", city: effectiveDestinationObj.city || effectiveDestination } : (flightRoute ? flightRoute.to : null);
     if (resolvedFrom && resolvedTo) {
-      localStorage.setItem("voyagehack.flight.prefill", JSON.stringify({
+      safeSetItem("voyagehack.flight.prefill", JSON.stringify({
         from: resolvedFrom,
         to: resolvedTo,
         depDate: startDate ? startDate.toISOString() : null,
@@ -2549,7 +2621,7 @@ export default function TBOHomepage() {
                       <polyline points="21,15 16,10 5,21"/>
                     </svg>
                   </button>
-                  <button type="button" className="mobile-search-go" onClick={handleRedirectClick}>Search</button>
+                  <button type="button" className="mobile-search-go" onClick={() => handleRedirectClick()}>Search</button>
                 </div>
                 {/* TYPE */}
                 <div className={`pill-section filter-section ${openPanel === "type" ? "open" : ""}`} style={{maxWidth:140}}
@@ -2597,7 +2669,7 @@ export default function TBOHomepage() {
                     </svg>
                   </button>
                   {/* Orange Search button — triggers filter search */}
-                  <button className="pill-search-btn" onClick={handleRedirectClick}>Search</button>
+                  <button type="button" className="pill-search-btn" onClick={() => handleRedirectClick()}>Search</button>
                 </div>
 
                 {/* Dropdowns */}
@@ -2634,6 +2706,7 @@ export default function TBOHomepage() {
                     setFromQuery={setFromQuery}
                     destQuery={destQuery}
                     setDestQuery={setDestQuery}
+                    selectedTypes={selectedTypes}
                     whereEntityType={whereEntityType}
                     setWhereEntityType={setWhereEntityType}
                     recentWhereKeys={recentWhereKeys}

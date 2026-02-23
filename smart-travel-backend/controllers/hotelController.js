@@ -92,14 +92,24 @@ async function getHotelCodesForCity(cityCode) {
   const key = String(cityCode || "").trim();
   if (!key) return "";
 
-  if (cityHotelCodeCache[key]) {
+  if (Object.prototype.hasOwnProperty.call(cityHotelCodeCache, key)) {
     return cityHotelCodeCache[key];
   }
 
-  const data = await tboFetch("TBOHotelCodeList", {
-    CityCode: key,
-    IsDetailedResponse: true,
-  });
+  let data;
+  try {
+    data = await tboFetch("TBOHotelCodeList", {
+      CityCode: key,
+      IsDetailedResponse: true,
+    });
+  } catch (err) {
+    const msg = String(err?.message || "");
+    if (/no\s+hotels?\s+found/i.test(msg)) {
+      cityHotelCodeCache[key] = "";
+      return "";
+    }
+    throw err;
+  }
 
   const codes = (data.Hotels || [])
     .map(h => String(h.HotelCode || "").trim())
@@ -142,6 +152,14 @@ function sanitizeImageUrl(value) {
   if (raw.startsWith("//")) return `https:${raw}`;
   if (/^https?:\/\//i.test(raw)) return raw;
   return "";
+}
+
+function formatYmd(dateValue) {
+  const d = new Date(dateValue);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function parseImageList(value) {
@@ -357,6 +375,15 @@ exports.hotelSearch = async (req, res) => {
 
     const payload = { ...req.body };
     payload.HotelCodes = normalizeHotelCodes(payload.HotelCodes);
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    let checkInDate = new Date(payload.CheckIn || Date.now());
+    if (Number.isNaN(checkInDate.getTime())) checkInDate = new Date();
+    let checkOutDate = new Date(payload.CheckOut || (checkInDate.getTime() + DAY_MS));
+    if (Number.isNaN(checkOutDate.getTime()) || checkOutDate.getTime() <= checkInDate.getTime()) {
+      checkOutDate = new Date(checkInDate.getTime() + DAY_MS);
+    }
+    payload.CheckIn = formatYmd(checkInDate);
+    payload.CheckOut = formatYmd(checkOutDate);
 
     // If HotelCodes are missing, derive them from city using TBOHotelCodeList.
     if (!payload.HotelCodes && payload.CityId) {
@@ -364,8 +391,9 @@ exports.hotelSearch = async (req, res) => {
     }
 
     if (!payload.HotelCodes) {
-      return res.status(400).json({
-        error: "Unable to search hotels. No HotelCodes were provided and no hotel codes were found for the selected city.",
+      return res.json({
+        Status: { Code: 200, Description: "No Hotels Found" },
+        HotelResult: [],
       });
     }
 

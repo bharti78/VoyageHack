@@ -372,10 +372,6 @@ export default function Results() {
     }
   }
 
-  useEffect(()=>{
-    if (!localStorage.getItem("token")) navigate("/");
-  },[navigate]);
-
   /* ── Fetch helpers ───────────────────────────────────────────── */
   const fetchFlights = useCallback(async () => {
     setLoadingMap(p=>({...p,flights:true}));
@@ -421,6 +417,14 @@ export default function Results() {
     setLoadingMap(p=>({...p,hotels:true}));
     setErrorMap(p=>({...p,hotels:""}));
     try {
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      let checkInDate = new Date(search.startDate || Date.now());
+      if (Number.isNaN(checkInDate.getTime())) checkInDate = new Date();
+      let checkOutDate = new Date(search.endDate || (checkInDate.getTime() + DAY_MS));
+      if (Number.isNaN(checkOutDate.getTime()) || checkOutDate.getTime() <= checkInDate.getTime()) {
+        checkOutDate = new Date(checkInDate.getTime() + DAY_MS);
+      }
+
       const countryName = norm(search.destinationObject?.country||"india");
       const countryCode = COUNTRY_CODE_MAP[countryName]||"IN";
       const cityRes = await postJson(`${HOTELS_API}/cities`,{countryCode});
@@ -428,7 +432,7 @@ export default function Results() {
       const match = cities.find(c=>norm(c.CityName).includes(norm(search.destination)));
       if (!match) throw new Error("City not found in hotel database");
       const hotelRes = await postJson(`${HOTELS_API}/search`,{
-        CheckIn:toYmd(search.startDate), CheckOut:toYmd(search.endDate),
+        CheckIn:toYmd(checkInDate), CheckOut:toYmd(checkOutDate),
         HotelCodes:"", GuestNationality:countryCode,
         PaxRooms:[{
           Adults:activeAdults, Children:search.guests.children,
@@ -447,6 +451,8 @@ export default function Results() {
       }));
       setResults(p=>({...p,hotels:{items,meta:{cityId:match.CityId,countryCode}}}));
     } catch(e) {
+      const hotelMsg = String(e?.message || "");
+      const isNoHotelsCase = /no\s+hotels?\s+found/i.test(hotelMsg);
       const fallback = Array.isArray(search.smartResults?.realtime?.hotels?.items)
         ? search.smartResults.realtime.hotels.items.slice(0,20).map((h,idx)=>({
             id:h._id||idx, name:h.name||"Hotel", city:h.city||search.destination,
@@ -454,7 +460,10 @@ export default function Results() {
           }))
         : [];
       setResults(p=>({...p,hotels:{items:fallback,meta:{}}}));
-      if (!fallback.length) setErrorMap(p=>({...p,hotels:e.message||"Hotels unavailable"}));
+      // "No Hotels Found" should behave like an empty result, not a hard error banner.
+      if (!fallback.length && !isNoHotelsCase) {
+        setErrorMap(p=>({...p,hotels:hotelMsg||"Hotels unavailable"}));
+      }
     } finally {
       setLoadingMap(p=>({...p,hotels:false}));
     }

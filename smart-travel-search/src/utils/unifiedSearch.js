@@ -34,6 +34,8 @@ export function detectIntentService(query = "") {
  * @param {string}  params.uploadedImage    - base64 for image searches
  * @param {Object}  params.intent           - parsed AI intent object
  * @param {string}  params.source           - originating page/component
+ * @param {string}  params.fromCity         - origin city for route-based searches
+ * @param {Object|null} params.fromObj      - origin object (e.g. { code, city, ... })
  * @returns {Object} the unified search object
  */
 export function buildAndStore(params = {}) {
@@ -51,6 +53,8 @@ export function buildAndStore(params = {}) {
     uploadedImage = "",
     intent = {},
     source = "unknown",
+    fromCity = "",
+    fromObj = null,
   } = params;
 
   const unified = {
@@ -74,6 +78,8 @@ export function buildAndStore(params = {}) {
     intentService: intentService ?? detectIntentService(query),
     uploadedImage,
     intent,
+    fromCity: String(fromCity || ""),
+    fromObj: fromObj || null,
     createdAt: Date.now(),
   };
 
