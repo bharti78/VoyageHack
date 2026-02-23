@@ -70,7 +70,7 @@ async function postJson(url, payload) {
   });
   const text = await res.text();
   let json={};
-  try { json=JSON.parse(text); } catch {}
+  try { json=JSON.parse(text); } catch { /* non-json response */ }
   if (!res.ok) throw new Error(json?.error||`HTTP ${res.status}`);
   if (json?.error) throw new Error(json.error);
   return json;
@@ -105,6 +105,114 @@ function parseHotelPrice(h) {
     const n=Number(v); if(Number.isFinite(n)&&n>0) return n;
   }
   return 0;
+}
+function parseHotelRating(value) {
+  if (value === null || value === undefined) return 0;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) return numeric;
+  const map = { onestar: 1, twostar: 2, threestar: 3, fourstar: 4, fivestar: 5 };
+  return map[String(value).toLowerCase()] || 0;
+}
+function normalizeImageUrl(url) {
+  if (!url) return "";
+  const clean = String(url).replace(/[\r\n\t]/g, "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("//")) return `https:${clean}`;
+  try {
+    return encodeURI(clean);
+  } catch {
+    return clean;
+  }
+}
+function parseImageList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((entry) => {
+        if (!entry) return [];
+        if (typeof entry === "string") return [entry];
+        if (typeof entry === "object") {
+          return [entry.ImageUrl, entry.ImageURL, entry.imageURL, entry.Url, entry.URL, entry.url].filter(Boolean);
+        }
+        return [];
+      })
+      .map(normalizeImageUrl)
+      .filter(Boolean);
+  }
+  if (typeof value !== "string") return [];
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map(normalizeImageUrl).filter(Boolean);
+    } catch {
+      // fall through
+    }
+  }
+  return trimmed.split(/[,\s]+/).map(normalizeImageUrl).filter(Boolean);
+}
+function firstHotelImage(hotel) {
+  const urls = [
+    hotel?.HotelPicture,
+    hotel?.ImagePath,
+    ...parseImageList(hotel?.Images),
+    ...parseImageList(hotel?.ImageUrls),
+    ...parseImageList(hotel?.imageURL),
+  ].map(normalizeImageUrl).filter(Boolean);
+  return urls[0] || "";
+}
+function textPreview(value, max = 100) {
+  if (!value) return "";
+  const plain = String(value).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  if (plain.length <= max) return plain;
+  return `${plain.slice(0, max - 1)}...`;
+}
+function normalizeFacilities(facilities) {
+  if (Array.isArray(facilities)) return facilities.filter(Boolean);
+  if (typeof facilities !== "string") return [];
+  return facilities.split(/[,|]/).map((item) => item.trim()).filter(Boolean);
+}
+function facilityHighlights(facilities) {
+  const list = normalizeFacilities(facilities).map((item) => item.toLowerCase());
+  const hasWifi = list.some((item) => /wifi|internet/.test(item));
+  const hasDining = list.some((item) => /restaurant|dining|breakfast|meal|buffet|cafe/.test(item));
+  const hasWellness = list.some((item) => /spa|gym|fitness|pool|wellness/.test(item));
+  return [
+    hasWifi ? "Free WiFi" : null,
+    hasDining ? "Dining" : null,
+    hasWellness ? "Wellness" : null,
+  ].filter(Boolean);
+}
+function selectCityMatch(cities, destination) {
+  const destinationNorm = norm(destination);
+  if (!destinationNorm || !Array.isArray(cities) || !cities.length) return null;
+  const exact = cities.find((city) => norm(city.CityName) === destinationNorm);
+  if (exact) return exact;
+  const startsWith = cities.find((city) => {
+    const cityNorm = norm(city.CityName);
+    return cityNorm.startsWith(destinationNorm) || destinationNorm.startsWith(cityNorm);
+  });
+  if (startsWith) return startsWith;
+  const firstToken = destinationNorm.split(" ")[0];
+  return cities.find((city) => norm(city.CityName).includes(firstToken)) || null;
+}
+function toHotelItem(hotel, idx, destination) {
+  return {
+    id: hotel?.HotelCode || idx,
+    name: hotel?.HotelName || "Hotel",
+    city: hotel?.CityName || destination,
+    address: textPreview(hotel?.Address || hotel?.HotelAddress || "", 90),
+    description: textPreview(hotel?.Description || "", 120),
+    rating: parseHotelRating(hotel?.HotelRating ?? hotel?.StarRating),
+    price: parseHotelPrice(hotel),
+    imageUrl: firstHotelImage(hotel),
+    highlights: facilityHighlights(hotel?.HotelFacilities),
+  };
+}
+function proxyHotelImage(url) {
+  if (!url) return "";
+  return `${HOTELS_API}/image?url=${encodeURIComponent(url)}`;
 }
 
 /* ── Build canonical search object (reads from storage) ────────── */
@@ -236,23 +344,51 @@ function FlightCard({ f }) {
 
 function HotelCard({ h }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-pink-50/30 p-4 hover:shadow-md hover:border-pink-200 transition-all">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-pink-50/30 p-3 hover:shadow-md hover:border-pink-200 transition-all">
+      <div className="flex items-start gap-3">
+        <div className="w-28 h-24 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+          {h.imageUrl ? (
+            <img
+              src={proxyHotelImage(h.imageUrl)}
+              alt={h.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-slate-500">No Image</div>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 truncate leading-tight">{h.name}</p>
-          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-            <span>📍</span>{h.city}
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-semibold text-slate-900 truncate leading-tight">{h.name}</p>
+            <div className="text-right shrink-0">
+              <p className="font-bold text-slate-900 text-base">{asINR(h.price)}</p>
+              <p className="text-xs text-slate-400">per night</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1 truncate">
+            <span>Map</span>{h.city}
           </p>
+          {h.address && <p className="text-xs text-slate-500 mt-1 truncate">{h.address}</p>}
+          {h.description && <p className="text-xs text-slate-500 mt-1 max-h-8 overflow-hidden">{h.description}</p>}
           {h.rating > 0 && (
             <div className="mt-1.5 flex items-center gap-1.5">
               <Stars n={h.rating} />
               <span className="text-xs text-slate-500">{h.rating.toFixed(1)}</span>
             </div>
           )}
-        </div>
-        <div className="text-right shrink-0">
-          <p className="font-bold text-slate-900 text-base">{asINR(h.price)}</p>
-          <p className="text-xs text-slate-400">per night</p>
+          {h.highlights?.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {h.highlights.slice(0,3).map((item) => (
+                <span
+                  key={item}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -352,7 +488,7 @@ export default function Results() {
     carrental:{ items:[], meta:{} },
   });
 
-  const [search, setSearch] = useState(() => resolveSearch());
+  const search = useMemo(resolveSearch, []); // eslint-disable-line
 
   const activeBudget = filterBudgetIdx !== null
     ? (BUDGET_OPTIONS[filterBudgetIdx].max || 999999)
@@ -429,7 +565,7 @@ export default function Results() {
       const countryCode = COUNTRY_CODE_MAP[countryName]||"IN";
       const cityRes = await postJson(`${HOTELS_API}/cities`,{countryCode});
       const cities = Array.isArray(cityRes?.cities)?cityRes.cities:[];
-      const match = cities.find(c=>norm(c.CityName).includes(norm(search.destination)));
+      const match = selectCityMatch(cities, search.destination);
       if (!match) throw new Error("City not found in hotel database");
       const hotelRes = await postJson(`${HOTELS_API}/search`,{
         CheckIn:toYmd(checkInDate), CheckOut:toYmd(checkOutDate),
@@ -444,24 +580,14 @@ export default function Results() {
       });
       const list = Array.isArray(hotelRes?.HotelResult)?hotelRes.HotelResult:[];
       /* fetch ALL hotels (up to 50) — we'll slice client-side for the preview */
-      const items = list.slice(0,50).map((h,idx)=>({
-        id:h.HotelCode||idx, name:h.HotelName||"Hotel",
-        city:h.CityName||search.destination,
-        rating:Number(h.StarRating||0), price:parseHotelPrice(h),
-      }));
+      const items = list.slice(0,50).map((h,idx)=>toHotelItem(h, idx, search.destination));
       setResults(p=>({...p,hotels:{items,meta:{cityId:match.CityId,countryCode}}}));
     } catch(e) {
       const hotelMsg = String(e?.message || "");
       const isNoHotelsCase = /no\s+hotels?\s+found/i.test(hotelMsg);
-      const fallback = Array.isArray(search.smartResults?.realtime?.hotels?.items)
-        ? search.smartResults.realtime.hotels.items.slice(0,20).map((h,idx)=>({
-            id:h._id||idx, name:h.name||"Hotel", city:h.city||search.destination,
-            rating:Number(h.rating||0), price:Number(h.price||0),
-          }))
-        : [];
-      setResults(p=>({...p,hotels:{items:fallback,meta:{}}}));
+      setResults(p=>({...p,hotels:{items:[],meta:{}}}));
       // "No Hotels Found" should behave like an empty result, not a hard error banner.
-      if (!fallback.length && !isNoHotelsCase) {
+      if (!isNoHotelsCase) {
         setErrorMap(p=>({...p,hotels:hotelMsg||"Hotels unavailable"}));
       }
     } finally {
