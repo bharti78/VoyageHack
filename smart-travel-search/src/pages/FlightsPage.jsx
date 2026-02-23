@@ -660,7 +660,7 @@ export default function FlightsPage() {
             <span className="fp-logo-fly">Fly</span>
           </div>
           <div className="fp-hdr-right">
-            <button className="fp-back-btn" onClick={() => navigate("/home")}>
+            <button className="fp-back-btn" onClick={() => navigate("/results")}>
               ← Home
             </button>
           </div>

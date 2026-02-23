@@ -315,7 +315,7 @@ export default function CabsPage() {
             <span className="cp-logo-cab">Cabs</span>
           </div>
           <div className="cp-hdr-right">
-            <button className="cp-back-btn" onClick={() => navigate("/home")}>← Home</button>
+            <button className="cp-back-btn" onClick={() => navigate("/results")}>← Home</button>
           </div>
         </header>
 

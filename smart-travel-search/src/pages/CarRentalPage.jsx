@@ -224,7 +224,7 @@ export default function CarRentalPage() {
             <span className="cr-logo-car">Drive</span>
           </div>
           <div className="cr-hdr-right">
-            <button className="cr-back-btn" onClick={() => navigate("/home")}>← Home</button>
+            <button className="cr-back-btn" onClick={() => navigate("/results")}>← Home</button>
           </div>
         </header>
 

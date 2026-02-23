@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildAndStore } from '../utils/unifiedSearch';
 
 const HomepageSearch = () => {
   const navigate = useNavigate();
@@ -84,21 +85,27 @@ const HomepageSearch = () => {
   };
 
   const handleSearch = () => {
-    const searchData = {
-      destination: destination || 'Anywhere',
+    const dest = selectedDestination
+      ? { city: selectedDestination.city, country: selectedDestination.country }
+      : destination
+        ? { city: destination.split(',')[0].trim(), country: (destination.split(',')[1] || '').trim() }
+        : {};
+
+    buildAndStore({
+      source: 'homepage-filter',
+      inputType: 'filter',
+      query: destination || 'Anywhere',
+      destination: dest.city || destination || 'Goa',
+      destinationObject: dest,
       startDate,
       endDate,
-      flexibility,
-      adults,
-      children,
-      infants,
-      pets,
-      flexibleDuration,
-      selectedMonths
-    };
-    
-    localStorage.setItem('homepageSearch', JSON.stringify(searchData));
-    navigate('/search');
+      guests: { adults, children, infants },
+      budget: { selectedBudget: null, maxValue: 0 },
+      selectedTypes: [],
+      intentService: 'all',
+    });
+
+    navigate('/results');
   };
 
   const getWhenDisplay = () => {

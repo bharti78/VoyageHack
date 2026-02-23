@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { buildAndStore } from "../utils/unifiedSearch";
 import ChatAssistant from "../components/ChatAssistant";
 import Navbar from "../components/HomepageNavbar";
 
@@ -13,6 +14,7 @@ function Search() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const recognitionRef = useRef(null);
+  const listeningRef = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -62,20 +64,20 @@ function Search() {
       localStorage.setItem("searchQuery", input);
       localStorage.setItem("voyagehack.smartQuery", JSON.stringify(data.intent || {}));
       localStorage.setItem("voyagehack.smartResults", JSON.stringify(data));
-      localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
+      buildAndStore({
         source: "search-page",
-        inputType: "text",
+        inputType: listeningRef.current ? "voice" : "text",
         query: input,
-        destination: data?.intent?.destination || "",
+        destination: data?.intent?.destination || input,
+        destinationObject: {},
         startDate: null,
         endDate: null,
-        whenTab: "Dates",
-        selectedTypes: [],
         guests: { adults: 1, children: 0, infants: 0 },
         budget: { selectedBudget: null, maxValue: Number(data?.intent?.budget || 0) },
+        selectedTypes: [],
         intentService: "all",
         intent: data?.intent || {},
-      }));
+      });
       navigate("/results", { state: { back: true } });
     } catch (e) {
       setError(e.message || "Search failed.");
@@ -99,6 +101,7 @@ function Search() {
     recognition.maxAlternatives = 1;
     recognition.continuous = false;
 
+    listeningRef.current = true;
     setListening(true);
     recognition.start();
 
@@ -109,8 +112,8 @@ function Search() {
       await handleSearch(speechResult);
     };
 
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
+    recognition.onerror = () => { listeningRef.current = false; setListening(false); };
+    recognition.onend = () => { listeningRef.current = false; setListening(false); };
   }
 
   function handleImageUpload(event) {
@@ -120,19 +123,16 @@ function Search() {
     reader.onloadend = () => {
       localStorage.setItem("uploadedImage", reader.result);
       localStorage.setItem("searchType", "image");
-      localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
+      buildAndStore({
         source: "search-page",
         inputType: "image",
         query: file.name || "Image search",
         destination: "",
-        startDate: null,
-        endDate: null,
-        whenTab: "Dates",
-        selectedTypes: [],
         guests: { adults: 1, children: 0, infants: 0 },
         budget: { selectedBudget: null, maxValue: 0 },
         intentService: "all",
-      }));
+        uploadedImage: reader.result,
+      });
       navigate("/results", { state: { back: true } });
     };
     reader.readAsDataURL(file);
