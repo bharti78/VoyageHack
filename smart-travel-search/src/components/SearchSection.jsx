@@ -11,7 +11,14 @@ const css = `
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; overflow-x: hidden; }
-  .tbo-wrap { font-family: 'DM Sans', sans-serif; color: #333; background: #fff; width: 100%; overflow-x: hidden; }
+  .tbo-wrap {
+    font-family: 'DM Sans', sans-serif;
+    color: #333;
+    background: #fff;
+    width: 100%;
+    overflow-x: hidden;
+    padding-top: 80px;
+  }
 
   /* ── TOP NAVBAR ── */
   .tbo-nav {
@@ -21,9 +28,11 @@ const css = `
     padding: 0 clamp(20px, 3%, 60px);
     background: #fff;
     border-bottom: 1px solid #f0f0f0;
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 500;
+    left: 0;
+    right: 0;
+    z-index: 1000;
     min-height: 80px;
     gap: 12px;
   }
@@ -185,6 +194,7 @@ const css = `
     animation: expandIn .28s cubic-bezier(.34,1.3,.64,1) both;
     position: relative;
     z-index: 550;
+    margin-top: 20px;
   }
   @keyframes expandIn {
     from { opacity: 0; transform: scaleX(0.95); }
@@ -908,6 +918,7 @@ const css = `
 
   /* RESPONSIVE */
   @media (max-width: 1100px) {
+    .tbo-wrap { padding-top: 72px; }
     .tbo-logo-wrap { padding-left: 0; }
     .tbo-logo-img { height: 76px; }
     .tbo-nav { min-height: 72px; }
@@ -1090,11 +1101,12 @@ const css = `
     }
   }
   @media (max-width: 640px) {
+    .tbo-wrap { padding-top: 64px; }
     .tbo-nav {
       min-height: 64px;
       padding: 6px 10px;
       gap: 8px;
-      position: sticky;
+      position: fixed;
     }
     .tbo-logo-img { height: 58px; }
     .tbo-nav-right { align-items: flex-end; gap: 2px; }
@@ -1142,6 +1154,8 @@ const destinations = [
   { city: "Tokyo", country: "Japan", emoji: "\u26E9\uFE0F", tags: ["city", "heritage"] },
   { city: "London", country: "UK", emoji: "\uD83C\uDFA1", tags: ["city", "heritage"] },
   { city: "Bangkok", country: "Thailand", emoji: "\uD83C\uDFEF", tags: ["city", "wellness"] },
+  { city: "Mumbai", country: "India", emoji: "\uD83C\uDF06", tags: ["city", "shopping"] },
+  { city: "Bangalore", country: "India", emoji: "\uD83C\uDF07", tags: ["city", "tech"] },
   { city: "Singapore", country: "Singapore", emoji: "\uD83E\uDD81", tags: ["city", "family"] },
   { city: "Sydney", country: "Australia", emoji: "\uD83E\uDD98", tags: ["city", "beach"] },
   { city: "Maldives", country: "Maldives", emoji: "\uD83C\uDFDD\uFE0F", tags: ["beach", "luxury"] },
@@ -1244,6 +1258,13 @@ const LOCALE_COUNTRY_MAP = {
   JP: "Japan",
   FR: "France",
   AU: "Australia",
+};
+const PLACE_ALIASES = {
+  bangalore: "bengaluru",
+  bengaluru: "bengaluru",
+  bombay: "mumbai",
+  newdelhi: "delhi",
+  new_delhi: "delhi",
 };
 
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
@@ -1745,7 +1766,7 @@ export default function TBOHomepage() {
   const navigate = useNavigate();
 
   // Search expanded
-  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef(null);
@@ -1817,11 +1838,7 @@ export default function TBOHomepage() {
     function handle(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setOpenPanel(null);
-        if (searchExpanded) {
-          setSearchExpanded(false);
-          setSearchQuery("");
-          stopVoiceSearch();
-        }
+        if (searchExpanded) stopVoiceSearch();
       }
       if (productsRef.current && !productsRef.current.contains(e.target)) setProductsOpen(false);
       if (solutionsRef.current && !solutionsRef.current.contains(e.target)) setSolutionsOpen(false);
@@ -2026,6 +2043,113 @@ export default function TBOHomepage() {
     return "";
   }
 
+  function aliasPlaceToken(value) {
+    const token = normalizeText(value).replace(/\s+/g, "");
+    return PLACE_ALIASES[token] || normalizeText(value);
+  }
+
+  function resolveWhereEntityFromText(value) {
+    const normalizedValue = normalizeText(value);
+    if (!normalizedValue) return null;
+    const aliased = aliasPlaceToken(value);
+
+    const exact = WHERE_ENTITIES.find((item) =>
+      normalizeText(item.city || "") === aliased ||
+      normalizeText(item.name || "") === aliased ||
+      normalizeText(item.code || "") === aliased
+    );
+    if (exact) return exact;
+
+    const inclusive = WHERE_ENTITIES.find((item) => {
+      const city = normalizeText(item.city || "");
+      const name = normalizeText(item.name || "");
+      const code = normalizeText(item.code || "");
+      return (
+        (city && (city.includes(aliased) || aliased.includes(city))) ||
+        (name && (name.includes(aliased) || aliased.includes(name))) ||
+        (code && code === aliased)
+      );
+    });
+    return inclusive || null;
+  }
+
+  function parseRouteFromText(text) {
+    const normalized = normalizeText(text);
+    if (!normalized) return { source: "", destination: "", sourceEntity: null, destinationEntity: null };
+
+    const stopWords = "(?:for|under|below|max|budget|with|within|in|on|starting|start|by|after|before|days?|nights?|night|day|flight|flights|hotel|hotels|trip|travel|vacation|holiday|please|now)";
+    const fromIdx = normalized.search(/\bfrom\b/);
+    const toIdx = normalized.search(/\bto\b/);
+
+    function cleanChunk(chunk) {
+      return normalizeText(String(chunk || "").replace(/^(plan|a|an|the|trip|travel|book|me|my)\s+/g, "").trim());
+    }
+    function resolveCityFromChunk(chunk) {
+      const cleaned = cleanChunk(chunk);
+      if (!cleaned) return { value: "", entity: null };
+      const directEntity = resolveWhereEntityFromText(cleaned);
+      if (directEntity) return { value: directEntity.city || directEntity.name, entity: directEntity };
+
+      const allKeys = WHERE_ENTITIES.flatMap((item) => [item.city, item.name, item.code].filter(Boolean))
+        .map((v) => normalizeText(v))
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length);
+      const matched = allKeys.find((key) => cleaned.includes(key));
+      if (matched) {
+        const matchedEntity = resolveWhereEntityFromText(matched);
+        if (matchedEntity) return { value: matchedEntity.city || matchedEntity.name, entity: matchedEntity };
+        return { value: matched, entity: null };
+      }
+      return { value: cleaned.split(" ").slice(0, 3).join(" "), entity: null };
+    }
+
+    let rawSource = "";
+    let rawDestination = "";
+
+    if (fromIdx >= 0 && toIdx >= 0) {
+      // Rule 1 + 2 (from X to Y) and Rule 3 (to X from Y)
+      if (fromIdx < toIdx) {
+        const sourceMatch = normalized.match(new RegExp(`\\bfrom\\s+(.+?)\\s+to\\b`));
+        const destinationMatch = normalized.match(new RegExp(`\\bto\\s+(.+?)(?=\\s+${stopWords}\\b|$)`));
+        rawSource = sourceMatch?.[1] || "";
+        rawDestination = destinationMatch?.[1] || "";
+      } else {
+        const destinationMatch = normalized.match(new RegExp(`\\bto\\s+(.+?)\\s+from\\b`));
+        const sourceMatch = normalized.match(new RegExp(`\\bfrom\\s+(.+?)(?=\\s+${stopWords}\\b|$)`));
+        rawDestination = destinationMatch?.[1] || "";
+        rawSource = sourceMatch?.[1] || "";
+      }
+    } else if (toIdx >= 0) {
+      // Rule 4 (X to Y), also handles "to Y"
+      const destinationMatch = normalized.match(new RegExp(`\\bto\\s+(.+?)(?=\\s+${stopWords}\\b|$)`));
+      rawDestination = destinationMatch?.[1] || "";
+      const beforeTo = normalized.split(/\bto\b/)[0] || "";
+      const beforeToCity = resolveCityFromChunk(beforeTo);
+      rawSource = beforeToCity.value || "";
+    } else if (fromIdx >= 0) {
+      const sourceMatch = normalized.match(new RegExp(`\\bfrom\\s+(.+?)(?=\\s+${stopWords}\\b|$)`));
+      rawSource = sourceMatch?.[1] || "";
+    } else {
+      // Rule 6 fallback: only one city -> destination
+      const inferredOnly = resolveCityFromChunk(normalized);
+      rawDestination = inferredOnly.value || "";
+    }
+
+    const sourceResolved = resolveCityFromChunk(rawSource);
+    const destinationResolved = resolveCityFromChunk(rawDestination);
+    const sourceEntity = sourceResolved.entity;
+    const destinationEntity = destinationResolved.entity;
+    const resolvedSource = sourceResolved.value || "";
+    const resolvedDestination = destinationResolved.value || "";
+
+    return {
+      source: resolvedSource,
+      destination: resolvedDestination,
+      sourceEntity,
+      destinationEntity,
+    };
+  }
+
   function inferGuestsFromText(text) {
     const normalized = normalizeText(text);
     const totalMatch = normalized.match(/(\d+)\s*(guest|people|person|traveller|traveler)/);
@@ -2043,15 +2167,28 @@ export default function TBOHomepage() {
     };
   }
 
-  function applyBudgetFromText(text) {
+  function inferDurationDaysFromText(text) {
+    const normalized = normalizeText(text);
+    const dayMatch = normalized.match(/(\d+)\s*(day|days|d)\b/);
+    if (dayMatch) return Math.max(1, Number(dayMatch[1]));
+    const nightMatch = normalized.match(/(\d+)\s*(night|nights)\b/);
+    if (nightMatch) return Math.max(1, Number(nightMatch[1]) + 1);
+    return 0;
+  }
+
+  function extractBudgetValueFromText(text) {
     const normalized = normalizeText(text);
     const lakhMatch = normalized.match(/(\d+(\.\d+)?)\s*lakh/);
     const kMatch = normalized.match(/(\d+)\s*k/);
     const plainMatch = normalized.match(/(?:under|below|max|budget)\s*(\d{4,7})/);
-    let value = null;
-    if (lakhMatch) value = Number(lakhMatch[1]) * 100000;
-    else if (kMatch) value = Number(kMatch[1]) * 1000;
-    else if (plainMatch) value = Number(plainMatch[1]);
+    if (lakhMatch) return Number(lakhMatch[1]) * 100000;
+    if (kMatch) return Number(kMatch[1]) * 1000;
+    if (plainMatch) return Number(plainMatch[1]);
+    return 0;
+  }
+
+  function applyBudgetFromText(text) {
+    const value = extractBudgetValueFromText(text);
     if (!value) return;
 
     const slider = Math.max(0, Math.min(100, Math.round(value / 5000)));
@@ -2065,10 +2202,24 @@ export default function TBOHomepage() {
   function applyNaturalLanguageQuery(text) {
     const normalized = normalizeText(text);
     const theme = inferTheme(normalized);
-    const inferredDestination = inferDestination(normalized, theme);
+    const route = parseRouteFromText(normalized);
+    const inferredDestination = route.destination || inferDestination(normalized, theme);
+    if (route.source) {
+      setFromCity(route.source);
+      if (route.sourceEntity) {
+        setFromObj({
+          name: route.sourceEntity.name,
+          code: route.sourceEntity.code || "",
+          type: route.sourceEntity.type,
+          country: route.sourceEntity.country || "",
+          city: route.sourceEntity.city || route.sourceEntity.name,
+          key: route.sourceEntity.key,
+        });
+      }
+    }
     if (inferredDestination) {
       setDestination(inferredDestination);
-      const matchedEntity = WHERE_ENTITIES.find((item) =>
+      const matchedEntity = route.destinationEntity || WHERE_ENTITIES.find((item) =>
         normalizeText(item.name) === normalizeText(inferredDestination) ||
         normalizeText(item.city) === normalizeText(inferredDestination)
       );
@@ -2231,14 +2382,15 @@ export default function TBOHomepage() {
 
     const effectiveQuery = isTextSearch ? (spokenInput || searchQuery) : (spokenInput || "");
     const normalizedSpoken = normalizeText(effectiveQuery || searchQuery);
+    const routeFromQuery = parseRouteFromText(effectiveQuery || searchQuery);
     const spokenTheme = inferTheme(normalizedSpoken);
-    const spokenDestination = inferDestination(normalizedSpoken, spokenTheme);
+    const spokenDestination = routeFromQuery.destination || inferDestination(normalizedSpoken, spokenTheme);
     const effectiveDestination = spokenDestination || destination || (selectedTypes.includes("beach") ? "Goa" : "");
     const matchedWhereEntity = WHERE_ENTITIES.find((item) =>
       normalizeText(item.name) === normalizeText(effectiveDestination) ||
       normalizeText(item.city) === normalizeText(effectiveDestination)
     );
-    const effectiveDestinationObj = matchedWhereEntity
+    const effectiveDestinationObj = routeFromQuery.destinationEntity || (matchedWhereEntity
       ? {
           name: matchedWhereEntity.name,
           code: matchedWhereEntity.code || "",
@@ -2247,7 +2399,7 @@ export default function TBOHomepage() {
           city: matchedWhereEntity.city || matchedWhereEntity.name,
           key: matchedWhereEntity.key,
         }
-      : (selectedDestinationObj || null);
+      : (selectedDestinationObj || null));
     const nextGuests = (spokenInput && !isTextSearch) ? inferGuestsFromText(normalizedSpoken) : (isTextSearch ? inferGuestsFromText(normalizedSpoken) : guests);
 
     if (spokenInput && !isTextSearch) {
@@ -2309,9 +2461,11 @@ export default function TBOHomepage() {
     const parsedDestination = intent.destination && intent.destination !== "Any Destination"
       ? intent.destination
       : effectiveDestination;
-    const parsedSource = intent.source || fromCity || "";
-    const parsedBudget = Number(intent.budget || payload.budget.maxValue || 0);
-    const parsedDurationDays = Number(intent.durationDays || (intent.nights ? intent.nights + 1 : 0) || 0);
+    const parsedSource = intent.source || routeFromQuery.source || fromCity || "";
+    const queryBudget = extractBudgetValueFromText(effectiveQuery || searchQuery);
+    const parsedBudget = Number(intent.budget || queryBudget || payload.budget.maxValue || 0);
+    const queryDurationDays = inferDurationDaysFromText(effectiveQuery || searchQuery);
+    const parsedDurationDays = Number(intent.durationDays || (intent.nights ? intent.nights + 1 : 0) || queryDurationDays || 0);
 
     const endDt = payload.endDate
       ? new Date(payload.endDate)
@@ -2392,12 +2546,34 @@ export default function TBOHomepage() {
     const sourceEntity = WHERE_ENTITIES.find((item) =>
       normalizeText(item.city || item.name) === normalizeText(parsedSource)
     );
-    const resolvedFrom = sourceEntity
+    if (parsedSource) {
+      setFromCity(parsedSource);
+      if (sourceEntity) {
+        setFromObj({
+          name: sourceEntity.name,
+          code: sourceEntity.code || "",
+          type: sourceEntity.type,
+          country: sourceEntity.country || "",
+          city: sourceEntity.city || sourceEntity.name,
+          key: sourceEntity.key,
+        });
+      }
+    }
+    const sourceFromEntity = sourceEntity
       ? { code: sourceEntity.code || "", city: sourceEntity.city || sourceEntity.name }
-      : (fromObj ? { code: fromObj.code || "", city: fromObj.city || fromObj.name || parsedSource } : (flightRoute ? flightRoute.from : null));
-    const resolvedTo = finalDestinationObj
+      : null;
+    const sourceFromState = fromObj
+      ? { code: fromObj.code || "", city: fromObj.city || fromObj.name || parsedSource }
+      : null;
+    const toFromDestinationObj = finalDestinationObj
       ? { code: finalDestinationObj.code || "", city: finalDestinationObj.city || parsedDestination }
-      : (flightRoute ? flightRoute.to : null);
+      : null;
+    const resolvedFrom = sourceFromEntity
+      || sourceFromState
+      || (flightRoute ? flightRoute.from : null);
+    const resolvedTo = (toFromDestinationObj && toFromDestinationObj.code ? toFromDestinationObj : null)
+      || (flightRoute ? flightRoute.to : null)
+      || toFromDestinationObj;
     if (resolvedFrom && resolvedTo) {
       safeSetItem("voyagehack.flight.prefill", JSON.stringify({
         from: resolvedFrom,
@@ -2697,7 +2873,7 @@ export default function TBOHomepage() {
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
                 </button>
-                <button className="exp-close-btn" onClick={() => { setSearchExpanded(false); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">✕</button>
+                {/* <button className="exp-close-btn" onClick={() => { setSearchExpanded(true); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">✕</button> */}
               </div>
             ) : (
               /* ── PILL SEARCH BAR ── */

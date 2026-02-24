@@ -260,6 +260,48 @@ function formatDateStr(d) {
 
 function pad(n) { return String(n).padStart(2, "0"); }
 
+function normalizePlace(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+const CITY_ALIASES = {
+  bangalore: "bangalore",
+  bengaluru: "bangalore",
+  bombay: "mumbai",
+  delhi: "new delhi",
+  newdelhi: "new delhi",
+  new_delhi: "new delhi",
+  kochin: "kochi",
+};
+
+function canonicalPlace(value) {
+  const normalized = normalizePlace(value);
+  const compact = normalized.replace(/\s+/g, "");
+  return CITY_ALIASES[compact] || CITY_ALIASES[normalized] || normalized;
+}
+
+function resolveAirportCandidate(candidate, fallback) {
+  if (!candidate) return fallback || null;
+
+  const byCode = String(candidate?.code || "").toUpperCase();
+  if (byCode) {
+    const exactCode = AIRPORTS.find((a) => a.code === byCode);
+    if (exactCode) return exactCode;
+  }
+
+  const rawPlace = candidate?.city || candidate?.name || candidate?.destination || candidate?.source || candidate;
+  const place = canonicalPlace(rawPlace);
+  if (!place) return fallback || null;
+
+  const exactCity = AIRPORTS.find((a) => canonicalPlace(a.city) === place);
+  if (exactCity) return exactCity;
+
+  const byName = AIRPORTS.find((a) => normalizePlace(a.name).includes(place) || place.includes(normalizePlace(a.name)));
+  if (byName) return byName;
+
+  return fallback || null;
+}
+
 function FlightCalendar({ value, onChange, onClose }) {
   const today = new Date(); today.setHours(0,0,0,0);
   const [view, setView] = useState({ y: today.getFullYear(), m: today.getMonth() });
@@ -497,25 +539,47 @@ export default function FlightsPage() {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("voyagehack.flight.prefill") || "{}");
-      if (saved.from?.code && saved.to?.code) {
-        setFrom(saved.from);
-        setTo(saved.to);
+      const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
+      const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+
+      const fromCandidate = saved.from
+        || unified.fromObj
+        || (saved.fromCity ? { city: saved.fromCity } : null)
+        || (unified.fromCity ? { city: unified.fromCity } : null)
+        || (smart.fromCity ? { city: smart.fromCity } : null)
+        || (smart.source ? { city: smart.source } : null);
+      const toCandidate = saved.to
+        || unified.destinationObject
+        || (saved.toCity ? { city: saved.toCity } : null)
+        || (unified.destination ? { city: unified.destination } : null)
+        || (smart.destination ? { city: smart.destination } : null);
+
+      const resolvedFrom = resolveAirportCandidate(fromCandidate, from);
+      const resolvedTo = resolveAirportCandidate(toCandidate, to);
+      const hasRouteContext = Boolean(fromCandidate || toCandidate);
+
+      if (hasRouteContext && resolvedFrom?.code && resolvedTo?.code && resolvedFrom.code !== resolvedTo.code) {
+        setFrom(resolvedFrom);
+        setTo(resolvedTo);
         setAutoSearchPending(true);
       }
-      if (saved.depDate) {
-        const dep = new Date(saved.depDate);
+      const depRaw = saved.depDate || unified.startDate;
+      const retRaw = saved.retDate || unified.endDate;
+      if (depRaw) {
+        const dep = new Date(depRaw);
         if (!Number.isNaN(dep.getTime())) setDepDate(dep);
       }
-      if (saved.retDate) {
-        const ret = new Date(saved.retDate);
+      if (retRaw) {
+        const ret = new Date(retRaw);
         if (!Number.isNaN(ret.getTime())) setRetDate(ret);
       }
       if (saved.tripType) setTripType(saved.tripType);
       if (saved.cabin) setCabin(saved.cabin);
-      if (saved.pax) setPax({
-        adults: Number(saved.pax.adults || 1),
-        children: Number(saved.pax.children || 0),
-        infants: Number(saved.pax.infants || 0),
+      const paxSource = saved.pax || unified.guests;
+      if (paxSource) setPax({
+        adults: Number(paxSource.adults || 1),
+        children: Number(paxSource.children || 0),
+        infants: Number(paxSource.infants || 0),
       });
     } catch {
       // Ignore malformed local storage payloads.

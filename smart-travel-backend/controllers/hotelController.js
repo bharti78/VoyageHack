@@ -11,6 +11,8 @@ if (!TBO_USER || !TBO_PASS || !TBO_BASE) {
 
 const AUTH = "Basic " + Buffer.from(`${TBO_USER}:${TBO_PASS}`).toString("base64");
 const MAX_SEARCH_HOTEL_CODES = 100;
+const MAX_TBO_RETRIES = 2;
+const TBO_RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const SUCCESS_CODES = new Set([200, "200", "01", 201, "201"]);
 const ALLOWED_IMAGE_HOSTS = new Set([
   "api.tbotechnology.in",
@@ -72,22 +74,65 @@ async function tboFetch(endpoint, payload = {}, options = {}) {
     );
   }
 
-  const resp = await fetch(`${TBO_BASE_URL}/${endpoint}`, requestOptions);
-  const text = await resp.text();
-  console.log(`TBO API Response: ${text.slice(0, 500)}`);
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(`Non-JSON response from TBO: ${text.slice(0, 200)}`);
+  const retryable = options.retryable !== false;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= MAX_TBO_RETRIES; attempt += 1) {
+    try {
+      const resp = await fetch(`${TBO_BASE_URL}/${endpoint}`, requestOptions);
+      const text = await resp.text();
+      const contentType = String(resp.headers.get("content-type") || "").toLowerCase();
+      console.log(`TBO API Response [attempt ${attempt + 1}]: ${text.slice(0, 500)}`);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        const retryThis = retryable && TBO_RETRY_STATUS.has(resp.status) && attempt < MAX_TBO_RETRIES;
+        if (retryThis) {
+          await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(
+          `TBO upstream returned non-JSON (status ${resp.status || "unknown"}, content-type ${contentType || "unknown"})`
+        );
+      }
+
+      if (!resp.ok) {
+        const upstreamMessage =
+          data?.Status?.Description ||
+          data?.error ||
+          data?.message ||
+          `TBO upstream HTTP ${resp.status}`;
+        const retryThis = retryable && TBO_RETRY_STATUS.has(resp.status) && attempt < MAX_TBO_RETRIES;
+        if (retryThis) {
+          await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(upstreamMessage);
+      }
+
+      // Check if TBO API returned a business-level error
+      if (data.Status && !SUCCESS_CODES.has(data.Status.Code)) {
+        throw new Error(`TBO API Error: ${data.Status.Description || "Unknown error"}`);
+      }
+
+      return data;
+    } catch (err) {
+      lastError = err;
+      const msg = String(err?.message || "");
+      const retryThis = retryable
+        && attempt < MAX_TBO_RETRIES
+        && (/fetch failed|network|timeout|ECONN|ENOTFOUND|EAI_AGAIN|upstream/i.test(msg));
+      if (retryThis) {
+        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+        continue;
+      }
+      break;
+    }
   }
-  
-  // Check if TBO API returned an error
-  if (data.Status && !SUCCESS_CODES.has(data.Status.Code)) {
-    throw new Error(`TBO API Error: ${data.Status.Description || 'Unknown error'}`);
-  }
-  
-  return data;
+
+  throw lastError || new Error("TBO request failed");
 }
 
 const cityCache = {};
@@ -122,6 +167,11 @@ async function getHotelCodesForCity(cityCode) {
     });
   } catch (err) {
     const msg = String(err?.message || "");
+    if (/upstream|non-json|502|503|504|timeout|network/i.test(msg)) {
+      // Upstream instability should not break search flow.
+      cityHotelCodeCache[key] = "";
+      return "";
+    }
     if (/no\s+hotels?\s+found/i.test(msg)) {
       cityHotelCodeCache[key] = "";
       return "";
@@ -420,7 +470,13 @@ exports.hotelSearch = async (req, res) => {
     delete payload.CountryCode;
 
     const data = await tboFetch("Search", payload);
-    const detailedHotels = cityId ? await getCityHotelDetails(cityId) : [];
+    let detailedHotels = [];
+    try {
+      detailedHotels = cityId ? await getCityHotelDetails(cityId) : [];
+    } catch {
+      // Detail enrichment is optional; keep base search results available.
+      detailedHotels = [];
+    }
     const resultHotelCodes = Array.isArray(data?.HotelResult)
       ? data.HotelResult.map(h => h?.HotelCode).filter(Boolean)
       : [];
