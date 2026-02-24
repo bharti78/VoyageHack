@@ -15,6 +15,36 @@ const TBO_CREDS = {
   EndUserIp: process.env.TBO_FLIGHT_END_USER_IP || "122.160.30.1",
 };
 
+const AIRPORT_MASTER = [
+  { code: "DEL", city: "New Delhi", name: "Indira Gandhi Intl", country: "India" },
+  { code: "BOM", city: "Mumbai", name: "Chhatrapati Shivaji Intl", country: "India" },
+  { code: "BLR", city: "Bangalore", name: "Kempegowda Intl", country: "India" },
+  { code: "MAA", city: "Chennai", name: "Chennai Intl", country: "India" },
+  { code: "CCU", city: "Kolkata", name: "Netaji Subhas Chandra Bose Intl", country: "India" },
+  { code: "HYD", city: "Hyderabad", name: "Rajiv Gandhi Intl", country: "India" },
+  { code: "COK", city: "Kochi", name: "Cochin Intl", country: "India" },
+  { code: "PNQ", city: "Pune", name: "Pune Airport", country: "India" },
+  { code: "JAI", city: "Jaipur", name: "Jaipur Intl", country: "India" },
+  { code: "AMD", city: "Ahmedabad", name: "Sardar Vallabhbhai Patel Intl", country: "India" },
+  { code: "LKO", city: "Lucknow", name: "Chaudhary Charan Singh Intl", country: "India" },
+  { code: "VNS", city: "Varanasi", name: "Lal Bahadur Shastri Intl", country: "India" },
+  { code: "ATQ", city: "Amritsar", name: "Sri Guru Ram Dass Jee Intl", country: "India" },
+  { code: "SXR", city: "Srinagar", name: "Sheikh ul-Alam Intl", country: "India" },
+  { code: "IXL", city: "Leh", name: "Kushok Bakula Rimpochee Airport", country: "India" },
+  { code: "KUU", city: "Kullu", name: "Kullu-Manali Airport", country: "India" },
+  { code: "GOI", city: "Goa", name: "Dabolim Airport", country: "India" },
+  { code: "DXB", city: "Dubai", name: "Dubai Intl", country: "UAE" },
+  { code: "LHR", city: "London", name: "Heathrow", country: "UK" },
+  { code: "JFK", city: "New York", name: "John F. Kennedy Intl", country: "USA" },
+  { code: "SIN", city: "Singapore", name: "Changi Airport", country: "Singapore" },
+  { code: "BKK", city: "Bangkok", name: "Suvarnabhumi", country: "Thailand" },
+  { code: "KUL", city: "Kuala Lumpur", name: "KLIA", country: "Malaysia" },
+  { code: "CDG", city: "Paris", name: "Charles de Gaulle", country: "France" },
+  { code: "DPS", city: "Bali", name: "Ngurah Rai Intl", country: "Indonesia" },
+  { code: "NRT", city: "Tokyo", name: "Narita Intl", country: "Japan" },
+  { code: "SYD", city: "Sydney", name: "Sydney Airport", country: "Australia" },
+];
+
 // Cache token
 let cachedToken = null;
 let tokenExpiry = null;
@@ -163,6 +193,10 @@ exports.authenticate = async (req, res) => {
     console.error("Flight auth error:", msg);
     res.status(500).json({ error: msg });
   }
+};
+
+exports.airports = async (_req, res) => {
+  res.json({ airports: AIRPORT_MASTER });
 };
 
 exports.searchFlights = async (req, res) => {

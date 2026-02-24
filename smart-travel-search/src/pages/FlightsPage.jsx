@@ -17,6 +17,15 @@ async function apiPost(endpoint, payload) {
   return json;
 }
 
+async function apiGet(endpoint) {
+  const res = await fetch(`${API_BASE}/${endpoint}`);
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch { throw new Error(`Non-JSON: ${text.slice(0, 200)}`); }
+  if (json.error) throw new Error(json.error);
+  return json;
+}
+
 /* ── CSS ── */
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
@@ -80,6 +89,7 @@ const css = `
 /* dropdown */
 .fp-drop{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14);z-index:400;animation:fdDown .18s ease both;overflow:hidden;min-width:250px;max-width:min(92vw,340px)}
 .fp-drop.right{left:auto;right:0}
+.fp-drop-list{max-height:320px;overflow-y:auto}
 @keyframes fdDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .fp-drop-item{padding:10px 14px;font-size:.82rem;color:#334155;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f8fafc}
 .fp-drop-item:last-child{border-bottom:none}
@@ -274,18 +284,38 @@ const CITY_ALIASES = {
   kochin: "kochi",
 };
 
+const STATE_BY_CITY = {
+  "ahmedabad": "gujarat",
+  "surat": "gujarat",
+  "rajkot": "gujarat",
+  "vadodara": "gujarat",
+  "bhavnagar": "gujarat",
+  "bhuj": "gujarat",
+  "jamnagar": "gujarat",
+  "kandla": "gujarat",
+  "porbandar": "gujarat",
+  "keshod": "gujarat",
+};
+
 function canonicalPlace(value) {
   const normalized = normalizePlace(value);
   const compact = normalized.replace(/\s+/g, "");
   return CITY_ALIASES[compact] || CITY_ALIASES[normalized] || normalized;
 }
 
-function resolveAirportCandidate(candidate, fallback) {
+function airportStateToken(airport) {
+  const explicit = normalizePlace(airport?.state || "");
+  if (explicit) return explicit;
+  const city = normalizePlace(airport?.city || "");
+  return STATE_BY_CITY[city] || "";
+}
+
+function resolveAirportCandidate(candidate, fallback, airportList = AIRPORTS) {
   if (!candidate) return fallback || null;
 
   const byCode = String(candidate?.code || "").toUpperCase();
   if (byCode) {
-    const exactCode = AIRPORTS.find((a) => a.code === byCode);
+    const exactCode = airportList.find((a) => a.code === byCode);
     if (exactCode) return exactCode;
   }
 
@@ -293,10 +323,10 @@ function resolveAirportCandidate(candidate, fallback) {
   const place = canonicalPlace(rawPlace);
   if (!place) return fallback || null;
 
-  const exactCity = AIRPORTS.find((a) => canonicalPlace(a.city) === place);
+  const exactCity = airportList.find((a) => canonicalPlace(a.city) === place);
   if (exactCity) return exactCity;
 
-  const byName = AIRPORTS.find((a) => normalizePlace(a.name).includes(place) || place.includes(normalizePlace(a.name)));
+  const byName = airportList.find((a) => normalizePlace(a.name).includes(place) || place.includes(normalizePlace(a.name)));
   if (byName) return byName;
 
   return fallback || null;
@@ -511,6 +541,8 @@ export default function FlightsPage() {
   const [fromQuery, setFromQuery] = useState("");
   const [toQuery, setToQuery] = useState("");
   const [sortBy, setSortBy] = useState("price");
+  const [airportList, setAirportList] = useState(AIRPORTS);
+  const [airportsReady, setAirportsReady] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
@@ -537,6 +569,29 @@ export default function FlightsPage() {
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await apiGet("airports");
+        const incoming = Array.isArray(data?.airports) ? data.airports : [];
+        if (alive && incoming.length > 0) {
+          const merged = [
+            ...incoming,
+            ...AIRPORTS.filter((base) => !incoming.some((a) => String(a.code || "").toUpperCase() === String(base.code || "").toUpperCase())),
+          ];
+          setAirportList(merged);
+        }
+      } catch {
+        // Keep static list fallback.
+      } finally {
+        if (alive) setAirportsReady(true);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!airportsReady) return;
     try {
       const saved = JSON.parse(localStorage.getItem("voyagehack.flight.prefill") || "{}");
       const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
@@ -554,8 +609,8 @@ export default function FlightsPage() {
         || (unified.destination ? { city: unified.destination } : null)
         || (smart.destination ? { city: smart.destination } : null);
 
-      const resolvedFrom = resolveAirportCandidate(fromCandidate, from);
-      const resolvedTo = resolveAirportCandidate(toCandidate, to);
+      const resolvedFrom = resolveAirportCandidate(fromCandidate, from, airportList);
+      const resolvedTo = resolveAirportCandidate(toCandidate, to, airportList);
       const hasRouteContext = Boolean(fromCandidate || toCandidate);
 
       if (hasRouteContext && resolvedFrom?.code && resolvedTo?.code && resolvedFrom.code !== resolvedTo.code) {
@@ -584,7 +639,7 @@ export default function FlightsPage() {
     } catch {
       // Ignore malformed local storage payloads.
     }
-  }, []);
+  }, [airportsReady, airportList]);
 
   useEffect(() => {
     if (!autoSearchPending) return;
@@ -593,12 +648,22 @@ export default function FlightsPage() {
   }, [autoSearchPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredFrom = (fromQuery
-    ? AIRPORTS.filter(a => a.code.toLowerCase().includes(fromQuery.toLowerCase()) || a.city.toLowerCase().includes(fromQuery.toLowerCase()))
-    : AIRPORTS).slice(0, 8);
+    ? airportList.filter(a =>
+        a.code.toLowerCase().includes(fromQuery.toLowerCase()) ||
+        a.city.toLowerCase().includes(fromQuery.toLowerCase()) ||
+        a.name.toLowerCase().includes(fromQuery.toLowerCase()) ||
+        airportStateToken(a).includes(normalizePlace(fromQuery))
+      )
+    : airportList);
 
   const filteredTo = (toQuery
-    ? AIRPORTS.filter(a => a.code.toLowerCase().includes(toQuery.toLowerCase()) || a.city.toLowerCase().includes(toQuery.toLowerCase()))
-    : AIRPORTS).slice(0, 8);
+    ? airportList.filter(a =>
+        a.code.toLowerCase().includes(toQuery.toLowerCase()) ||
+        a.city.toLowerCase().includes(toQuery.toLowerCase()) ||
+        a.name.toLowerCase().includes(toQuery.toLowerCase()) ||
+        airportStateToken(a).includes(normalizePlace(toQuery))
+      )
+    : airportList);
 
   function swapCities() {
     setFrom(to);
@@ -780,15 +845,17 @@ export default function FlightsPage() {
                       <input style={{width:"100%",border:"1.5px solid #d4a0ff",borderRadius:8,padding:"7px 10px",fontSize:".82rem",fontFamily:"inherit",outline:"none"}}
                         placeholder="Search city or airport..." value={fromQuery} onChange={e => setFromQuery(e.target.value)} autoFocus />
                     </div>
-                    {filteredFrom.map(a => (
-                      <div key={a.code} className="fp-drop-item" onClick={() => { setFrom({code:a.code,city:a.city}); setOpenPanel(null); setFromQuery(""); }}>
-                        <span className="fp-drop-code">{a.code}</span>
-                        <div className="fp-drop-name">
-                          <div style={{fontWeight:600,fontSize:".8rem"}}>{a.city}</div>
-                          <div style={{fontSize:".66rem",color:"#94a3b8"}}>{a.name} · {a.country}</div>
+                    <div className="fp-drop-list">
+                      {filteredFrom.map(a => (
+                        <div key={a.code} className="fp-drop-item" onClick={() => { setFrom({code:a.code,city:a.city}); setOpenPanel(null); setFromQuery(""); }}>
+                          <span className="fp-drop-code">{a.code}</span>
+                          <div className="fp-drop-name">
+                            <div style={{fontWeight:600,fontSize:".8rem"}}>{a.city}</div>
+                            <div style={{fontSize:".66rem",color:"#94a3b8"}}>{a.name} · {a.country}</div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -812,15 +879,17 @@ export default function FlightsPage() {
                       <input style={{width:"100%",border:"1.5px solid #d4a0ff",borderRadius:8,padding:"7px 10px",fontSize:".82rem",fontFamily:"inherit",outline:"none"}}
                         placeholder="Search city or airport..." value={toQuery} onChange={e => setToQuery(e.target.value)} autoFocus />
                     </div>
-                    {filteredTo.map(a => (
-                      <div key={a.code} className="fp-drop-item" onClick={() => { setTo({code:a.code,city:a.city}); setOpenPanel(null); setToQuery(""); }}>
-                        <span className="fp-drop-code">{a.code}</span>
-                        <div className="fp-drop-name">
-                          <div style={{fontWeight:600,fontSize:".8rem"}}>{a.city}</div>
-                          <div style={{fontSize:".66rem",color:"#94a3b8"}}>{a.name} · {a.country}</div>
+                    <div className="fp-drop-list">
+                      {filteredTo.map(a => (
+                        <div key={a.code} className="fp-drop-item" onClick={() => { setTo({code:a.code,city:a.city}); setOpenPanel(null); setToQuery(""); }}>
+                          <span className="fp-drop-code">{a.code}</span>
+                          <div className="fp-drop-name">
+                            <div style={{fontWeight:600,fontSize:".8rem"}}>{a.city}</div>
+                            <div style={{fontSize:".66rem",color:"#94a3b8"}}>{a.name} · {a.country}</div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1037,3 +1106,6 @@ export default function FlightsPage() {
     </>
   );
 }
+
+
+

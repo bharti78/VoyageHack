@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   authenticate,
+  airports,
   searchFlights,
   fareQuote,
   fareRule,
@@ -11,6 +12,7 @@ const {
 } = require("../controllers/flightController");
 
 router.post("/authenticate", authenticate);
+router.get("/airports", airports);
 router.post("/search", searchFlights);
 router.post("/calendar-fares", calendarFares);
 router.post("/farequote", fareQuote);
