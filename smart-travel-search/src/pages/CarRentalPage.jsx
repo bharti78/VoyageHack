@@ -177,6 +177,7 @@ export default function CarRentalPage() {
   const [pickup, setPickup] = useState(today);
   const [returnDate, setReturnDate] = useState(tomorrow);
   const [category, setCategory] = useState("All");
+  const [budgetLimit, setBudgetLimit] = useState(0);
   const [sortBy, setSortBy] = useState("price");
 
   const [loading, setLoading] = useState(false);
@@ -191,7 +192,10 @@ export default function CarRentalPage() {
     let shouldAutoSearch = false;
     try {
       const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+      const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
       const prefill = JSON.parse(localStorage.getItem("voyagehack.carrental.prefill") || "{}");
+      const prefBudget = Number(prefill.budget || unified?.budget?.maxValue || smart.budget || 0);
+      if (prefBudget > 0) setBudgetLimit(prefBudget);
       const cityVal = prefill.city || smart.destination || "";
       if (cityVal) {
         setCity(cityVal);
@@ -232,7 +236,7 @@ export default function CarRentalPage() {
   }
 
   const displayed = rentals
-    .filter(r => category === "All" || r.car.category === category)
+    .filter(r => (category === "All" || r.car.category === category) && (!budgetLimit || r.finalPrice <= budgetLimit))
     .sort((a, b) => {
       if (sortBy === "price") return a.finalPrice - b.finalPrice;
       if (sortBy === "rating") return b.car.rating - a.car.rating;

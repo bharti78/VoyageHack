@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/HomepageNavbar";
 import { buildAndStore, detectIntentService } from "../utils/unifiedSearch";
 import { useAuth } from "../context/AuthContext";
 
 const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
+const SUGGEST_API = "http://localhost:5000/api/search/suggestions";
+
 const AIRPORT_BY_CITY = {
   mumbai: { code: "BOM", city: "Mumbai" },
   delhi: { code: "DEL", city: "New Delhi" },
@@ -18,6 +20,7 @@ const AIRPORT_BY_CITY = {
   hyderabad: { code: "HYD", city: "Hyderabad" },
   jaipur: { code: "JAI", city: "Jaipur" },
 };
+
 const TYPE_OPTIONS = [
   { id: "flights", label: "Flights", icon: "✈" },
   { id: "hotels", label: "Hotels", icon: "🏨" },
@@ -33,13 +36,62 @@ function resolveAirport(city, fallback) {
   return AIRPORT_BY_CITY[norm(city)] || fallback;
 }
 
-const Home = () => {
+function toValidDate(value) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export default function Home() {
   const { user, requireAuth } = useAuth();
   const navigate = useNavigate();
+
   const [query, setQuery] = useState("");
   const [selectedType, setSelectedType] = useState("flights");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const boxRef = useRef(null);
+
+  useEffect(() => {
+    function onDocClick(event) {
+      if (boxRef.current && !boxRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      setSuggestionsLoading(true);
+      try {
+        const res = await fetch(`${SUGGEST_API}?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+        const data = await res.json().catch(() => ({}));
+        setSuggestions(Array.isArray(data?.suggestions) ? data.suggestions : []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [query]);
 
   async function handleSearch() {
     if (!requireAuth()) return;
@@ -48,6 +100,7 @@ const Home = () => {
 
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch(SMART_SEARCH_API, {
         method: "POST",
@@ -64,16 +117,24 @@ const Home = () => {
 
       const sourceText = data?.intent?.source || "Mumbai";
       const destinationText = data?.intent?.destination || "Goa";
-      const durationDays = Math.max(1, Number(data?.intent?.durationDays || 3));
+      const durationDays = Math.max(1, Number(data?.intent?.durationDays || data?.intent?.duration || 3));
       const budget = Number(data?.intent?.budget || 0);
 
       const from = resolveAirport(sourceText, { code: "BOM", city: "Mumbai" });
       const to = resolveAirport(destinationText, { code: "GOI", city: destinationText || "Goa" });
 
-      const depDate = new Date();
-      depDate.setDate(depDate.getDate() + 7);
-      const retDate = new Date(depDate);
-      retDate.setDate(retDate.getDate() + Math.max(1, durationDays - 1));
+      const parsedStart = data?.intent?.startDate ? toValidDate(`${data.intent.startDate}T00:00:00`) : null;
+      const parsedEnd = data?.intent?.endDate ? toValidDate(`${data.intent.endDate}T00:00:00`) : null;
+      const depDate = parsedStart || (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d;
+      })();
+      const retDate = parsedEnd || (() => {
+        const d = new Date(depDate);
+        d.setDate(d.getDate() + Math.max(1, durationDays - 1));
+        return d;
+      })();
 
       localStorage.setItem("voyagehack.smartQuery", JSON.stringify({ query: q, ...data.intent }));
       localStorage.setItem("voyagehack.smartResults", JSON.stringify(data));
@@ -85,6 +146,7 @@ const Home = () => {
         tripType: "roundtrip",
         cabin: "Economy",
         pax: { adults: 1, children: 0, infants: 0 },
+        budget,
       }));
       localStorage.setItem("voyagehack.hotel.prefill", JSON.stringify({
         destination: destinationText,
@@ -118,6 +180,8 @@ const Home = () => {
         intentService: selectedType || detectIntentService(q),
         intent: data?.intent || {},
       });
+
+      setShowSuggestions(false);
       const routeMap = {
         flights: "/flights",
         hotels: "/hotels",
@@ -136,7 +200,6 @@ const Home = () => {
     <div className="min-h-screen bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url(/travel.jpeg)" }}>
       <div className="min-h-screen bg-black bg-opacity-40">
         <Navbar user={user} />
-
         <div className="max-w-7xl mx-auto px-4 pt-24">
           <div className="mb-4 flex flex-wrap gap-2">
             {TYPE_OPTIONS.map((option) => (
@@ -155,28 +218,57 @@ const Home = () => {
             ))}
           </div>
 
-          <div className="bg-white/95 rounded-full shadow-xl border border-gray-200 p-2 flex items-center gap-2">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Plan a trip from Mumbai to Goa for 5 days under 10k"
-              className="flex-1 bg-transparent outline-none px-4 py-3 text-gray-800 placeholder-gray-400"
-            />
-            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xl">⌕</div>
-            <button
-              onClick={handleSearch}
-              disabled={loading}
-              className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-8 py-3 font-semibold disabled:opacity-60"
-            >
-              {loading ? "Searching..." : "Search"}
-            </button>
+          <div className="relative" ref={boxRef}>
+            <div className="bg-white/95 rounded-full shadow-xl border border-gray-200 p-2 flex items-center gap-2">
+              <input
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Plan a trip from Mumbai to Goa for 5 days under 10k"
+                className="flex-1 bg-transparent outline-none px-4 py-3 text-gray-800 placeholder-gray-400"
+              />
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xl">⌕</div>
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-8 py-3 font-semibold disabled:opacity-60"
+              >
+                {loading ? "Searching..." : "Search"}
+              </button>
+            </div>
+
+            {showSuggestions && query.trim().length >= 2 && (
+              <div className="absolute mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden z-20">
+                {suggestionsLoading && (
+                  <div className="px-4 py-3 text-sm text-gray-500">Loading suggestions...</div>
+                )}
+                {!suggestionsLoading && suggestions.length === 0 && (
+                  <div className="px-4 py-3 text-sm text-gray-500">No results found</div>
+                )}
+                {!suggestionsLoading && suggestions.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    onClick={() => {
+                      setQuery(item.text);
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50"
+                  >
+                    {item.text}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
           {error && <p className="text-red-200 mt-3 text-sm">{error}</p>}
         </div>
       </div>
     </div>
   );
-};
-
-export default Home;
+}

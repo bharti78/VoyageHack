@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { buildAndStore } from "../utils/unifiedSearch";
 import { storeSearchContext, storeUnifiedResults, executeUnifiedSearch } from "../utils/searchContext";
+import SmartSearchBar from "./SmartSearchBar";
 
 const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
 
@@ -2833,6 +2834,25 @@ export default function TBOHomepage() {
 
         {/* ── SEARCH BAR — full width below nav ── */}
         <div className="tbo-search-section">
+
+          {/* ── NATURAL LANGUAGE SMART SEARCH ── */}
+          <div style={{
+            background: "linear-gradient(135deg,#1a0050 0%,#3d0099 55%,#6600cc 100%)",
+            padding: "28px 20px 24px",
+            textAlign: "center",
+          }}>
+            <p style={{color:"rgba(255,255,255,.75)",fontSize:".78rem",fontWeight:600,marginBottom:10,letterSpacing:".5px"}}>
+              ✨ AI-POWERED NATURAL LANGUAGE SEARCH
+            </p>
+            <SmartSearchBar
+              placeholder='Try "trip from Jaipur to Goa for 4 days under 40000"'
+              style={{ maxWidth: 680, margin: "0 auto" }}
+            />
+            <p style={{color:"rgba(255,255,255,.5)",fontSize:".68rem",marginTop:10}}>
+              Type your trip in plain English — we'll extract destination, dates &amp; budget automatically
+            </p>
+          </div>
+
           <div ref={searchRef}>
             {openPanel && !searchExpanded && (
               <div className="dropdown-overlay" onClick={() => setOpenPanel(null)} />

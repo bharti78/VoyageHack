@@ -227,6 +227,7 @@ export default function CabsPage() {
   const [date, setDate] = useState(() => { const d = new Date(); return d.toISOString().split("T")[0]; });
   const [time, setTime] = useState("10:00");
   const [cabType, setCabType] = useState("");
+  const [budgetLimit, setBudgetLimit] = useState(0);
   const [travelerGender, setTravelerGender] = useState((storedUser.gender || "").toLowerCase() === "female" ? "female" : "male");
 
   const [loading, setLoading] = useState(false);
@@ -243,12 +244,15 @@ export default function CabsPage() {
     let shouldAutoSearch = false;
     try {
       const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+      const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
       if (smart.destination && !pickup) {
         setPickup(smart.destination);
         setDrop(`${smart.destination} City Center`);
         shouldAutoSearch = true;
       }
       const cabPrefill = JSON.parse(localStorage.getItem("voyagehack.cab.prefill") || "{}");
+      const prefBudget = Number(cabPrefill.budget || unified?.budget?.maxValue || smart.budget || 0);
+      if (prefBudget > 0) setBudgetLimit(prefBudget);
       if (cabPrefill.city && !pickup) {
         setPickup(cabPrefill.city);
         setDrop(`${cabPrefill.city} City Center`);
@@ -272,7 +276,7 @@ export default function CabsPage() {
       try {
         const drivers = await fetchDriverSuggestions({
           city: pickup,
-          budget: 999999,
+          budget: budgetLimit > 0 ? budgetLimit : 999999,
           persona,
           userGender: travelerGender,
           travelTime: time,
@@ -292,6 +296,9 @@ export default function CabsPage() {
       } catch {
         // keep generated fallback
       }
+      if (budgetLimit > 0) {
+        results = results.filter((cab) => Number(cab.fare || 0) <= budgetLimit);
+      }
       setCabs(results);
       const safety = applyCabSafetyRules(results, { persona, travelerGender, time });
       setDisplayedCabs(safety.list);
@@ -309,6 +316,10 @@ export default function CabsPage() {
     setBooked(true);
     setTimeout(() => setBooked(false), 4000);
   }
+
+  const visibleCabs = displayedCabs
+    .filter((c) => (!cabType || c.type.id === cabType) && (!budgetLimit || c.fare <= budgetLimit))
+    .sort((a, b) => a.fare - b.fare);
 
   return (
     <>
@@ -413,12 +424,12 @@ export default function CabsPage() {
             <div>
               <div className="cp-results-hdr">
                 <div>
-                  <div className="cp-results-title">{displayedCabs.filter(c => !cabType || c.type.id === cabType).length} cabs available</div>
+                  <div className="cp-results-title">{visibleCabs.length} cabs available</div>
                   <div className="cp-results-sub">{pickup} → {drop} · {date} at {time}</div>
                 </div>
               </div>
 
-              {displayedCabs.filter(c => !cabType || c.type.id === cabType).sort((a,b) => a.fare - b.fare).map(cab => (
+              {visibleCabs.map(cab => (
                 <div key={cab.id} className="cp-card">
                   <div className="cp-card-main">
                     <div className="cp-cab-icon">{cab.type.icon}</div>

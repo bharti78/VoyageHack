@@ -737,26 +737,51 @@ export default function HotelsPage({onBack}){
   useEffect(() => {
     try {
       const prefill = JSON.parse(localStorage.getItem("voyagehack.hotel.prefill") || "{}");
-      if (prefill.destination && !cityQuery) {
-        setCityQuery(prefill.destination);
-        setAutoSearchPending(true);
+      const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
+      const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+      const prefBudget = Number(prefill.budget || unified?.budget?.maxValue || smart.budget || 0);
+
+      // Destination: prefer explicit prefill, then smart query destination
+      const smartDest = smart.destination || unified.destination || "";
+      if (!cityQuery) {
+        if (prefill.destination) {
+          setCityQuery(prefill.destination);
+          setAutoSearchPending(true);
+        } else if (smartDest) {
+          setCityQuery(smartDest);
+          setAutoSearchPending(true);
+        }
       }
-      if (prefill.budget && !budget) {
-        setBudget(String(prefill.budget));
+
+      if (prefBudget > 0 && !budget) {
+        setBudget(String(prefBudget));
       }
-      if (prefill.startDate && !checkIn) {
-        const d = new Date(prefill.startDate);
+
+      // Dates: prefer prefill, then smart query
+      const startDateSrc = prefill.startDate || smart.startDate || unified.startDate;
+      const endDateSrc = prefill.endDate || smart.endDate || unified.endDate;
+      if (startDateSrc && !checkIn) {
+        const d = new Date(startDateSrc);
         if (!Number.isNaN(d.getTime())) setCI(d);
       }
-      if (prefill.endDate && !checkOut) {
-        const d = new Date(prefill.endDate);
+      if (endDateSrc && !checkOut) {
+        const d = new Date(endDateSrc);
         if (!Number.isNaN(d.getTime())) setCO(d);
       }
+
+      // Guests from unified search
+      const guestsSrc = prefill.adults || unified?.guests?.adults;
       if (prefill.adults || prefill.children) {
         setRC((prev) => ({
           ...prev,
           adults: Math.max(1, Number(prefill.adults || prev.adults || 1)),
           children: Math.max(0, Number(prefill.children || prev.children || 0)),
+        }));
+      } else if (unified?.guests) {
+        setRC((prev) => ({
+          ...prev,
+          adults: Math.max(1, Number(unified.guests.adults || prev.adults || 1)),
+          children: Math.max(0, Number(unified.guests.children || prev.children || 0)),
         }));
       }
     } catch {

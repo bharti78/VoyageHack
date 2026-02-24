@@ -230,21 +230,32 @@ const css = `
 `;
 
 const AIRPORTS = [
-  { code: "DEL", city: "New Delhi", name: "Indira Gandhi Intl", country: "India" },
-  { code: "BOM", city: "Mumbai", name: "Chhatrapati Shivaji Intl", country: "India" },
-  { code: "BLR", city: "Bangalore", name: "Kempegowda Intl", country: "India" },
-  { code: "MAA", city: "Chennai", name: "Chennai Intl", country: "India" },
-  { code: "CCU", city: "Kolkata", name: "Netaji Subhas Chandra Bose Intl", country: "India" },
-  { code: "HYD", city: "Hyderabad", name: "Rajiv Gandhi Intl", country: "India" },
-  { code: "COK", city: "Kochi", name: "Cochin Intl", country: "India" },
-  { code: "PNQ", city: "Pune", name: "Pune Airport", country: "India" },
-  { code: "DXB", city: "Dubai", name: "Dubai Intl", country: "UAE" },
-  { code: "LHR", city: "London", name: "Heathrow", country: "UK" },
-  { code: "JFK", city: "New York", name: "John F. Kennedy Intl", country: "USA" },
-  { code: "SIN", city: "Singapore", name: "Changi Airport", country: "Singapore" },
-  { code: "BKK", city: "Bangkok", name: "Suvarnabhumi", country: "Thailand" },
-  { code: "KUL", city: "Kuala Lumpur", name: "KLIA", country: "Malaysia" },
-  { code: "CDG", city: "Paris", name: "Charles de Gaulle", country: "France" },
+  { code: "DEL", city: "New Delhi",    name: "Indira Gandhi Intl",              country: "India" },
+  { code: "BOM", city: "Mumbai",       name: "Chhatrapati Shivaji Intl",        country: "India" },
+  { code: "BLR", city: "Bangalore",    name: "Kempegowda Intl",                 country: "India" },
+  { code: "MAA", city: "Chennai",      name: "Chennai Intl",                    country: "India" },
+  { code: "CCU", city: "Kolkata",      name: "Netaji Subhas Chandra Bose Intl", country: "India" },
+  { code: "HYD", city: "Hyderabad",   name: "Rajiv Gandhi Intl",               country: "India" },
+  { code: "COK", city: "Kochi",        name: "Cochin Intl",                     country: "India" },
+  { code: "PNQ", city: "Pune",         name: "Pune Airport",                    country: "India" },
+  { code: "JAI", city: "Jaipur",       name: "Jaipur Intl",                     country: "India" },
+  { code: "GOI", city: "Goa",          name: "Goa Intl (Dabolim)",              country: "India" },
+  { code: "AMD", city: "Ahmedabad",    name: "Sardar Vallabhbhai Patel Intl",   country: "India" },
+  { code: "LKO", city: "Lucknow",      name: "Chaudhary Charan Singh Intl",     country: "India" },
+  { code: "ATQ", city: "Amritsar",     name: "Sri Guru Ram Dass Jee Intl",      country: "India" },
+  { code: "VNS", city: "Varanasi",     name: "Lal Bahadur Shastri Intl",        country: "India" },
+  { code: "SXR", city: "Srinagar",     name: "Sheikh ul-Alam Intl",             country: "India" },
+  { code: "IXL", city: "Leh",          name: "Kushok Bakula Rimpochee Airport", country: "India" },
+  { code: "DXB", city: "Dubai",        name: "Dubai Intl",                      country: "UAE" },
+  { code: "LHR", city: "London",       name: "Heathrow",                        country: "UK" },
+  { code: "JFK", city: "New York",     name: "John F. Kennedy Intl",            country: "USA" },
+  { code: "SIN", city: "Singapore",    name: "Changi Airport",                  country: "Singapore" },
+  { code: "BKK", city: "Bangkok",      name: "Suvarnabhumi",                    country: "Thailand" },
+  { code: "KUL", city: "Kuala Lumpur", name: "KLIA",                            country: "Malaysia" },
+  { code: "CDG", city: "Paris",        name: "Charles de Gaulle",               country: "France" },
+  { code: "DPS", city: "Bali",         name: "Ngurah Rai Intl",                 country: "Indonesia" },
+  { code: "NRT", city: "Tokyo",        name: "Narita Intl",                     country: "Japan" },
+  { code: "SYD", city: "Sydney",       name: "Kingsford Smith Intl",            country: "Australia" },
 ];
 
 const AIRLINES = {
@@ -275,13 +286,22 @@ function normalizePlace(value) {
 }
 
 const CITY_ALIASES = {
-  bangalore: "bangalore",
-  bengaluru: "bangalore",
-  bombay: "mumbai",
-  delhi: "new delhi",
-  newdelhi: "new delhi",
-  new_delhi: "new delhi",
-  kochin: "kochi",
+  bangalore:  "bangalore",
+  bengaluru:  "bangalore",
+  bengalore:  "bangalore",
+  bombay:     "mumbai",
+  delhi:      "new delhi",
+  newdelhi:   "new delhi",
+  new_delhi:  "new delhi",
+  kochin:     "kochi",
+  cochin:     "kochi",
+  goa:        "goa",
+  jaipur:     "jaipur",
+  calcutta:   "kolkata",
+  madras:     "chennai",
+  hyderabad:  "hyderabad",
+  bali:       "bali",
+  tokyo:      "tokyo",
 };
 
 const STATE_BY_CITY = {
@@ -552,6 +572,7 @@ export default function FlightsPage() {
   const [calendarFares, setCalendarFares] = useState([]);
   const [cheapestMonths, setCheapestMonths] = useState([]);
   const [calendarFlexDays, setCalendarFlexDays] = useState(3);
+  const [budgetLimit, setBudgetLimit] = useState(0);
   const [autoSearchPending, setAutoSearchPending] = useState(false);
   const [priceAlertEnabled, setPriceAlertEnabled] = useState(() => {
     try { return localStorage.getItem("voyagehack.flightPriceAlert") === "1"; } catch { return false; }
@@ -596,6 +617,8 @@ export default function FlightsPage() {
       const saved = JSON.parse(localStorage.getItem("voyagehack.flight.prefill") || "{}");
       const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
       const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
+      const prefBudget = Number(saved.budget || unified?.budget?.maxValue || smart.budget || 0);
+      if (prefBudget > 0) setBudgetLimit(prefBudget);
 
       const fromCandidate = saved.from
         || unified.fromObj
@@ -613,9 +636,14 @@ export default function FlightsPage() {
       const resolvedTo = resolveAirportCandidate(toCandidate, to, airportList);
       const hasRouteContext = Boolean(fromCandidate || toCandidate);
 
-      if (hasRouteContext && resolvedFrom?.code && resolvedTo?.code && resolvedFrom.code !== resolvedTo.code) {
-        setFrom(resolvedFrom);
-        setTo(resolvedTo);
+      // Use Mumbai (BOM) as default origin when user only specifies destination
+      const DEFAULT_FROM = airportList.find(a => a.code === "BOM") || airportList[0];
+      const effectiveFrom = (resolvedFrom?.code) ? resolvedFrom : DEFAULT_FROM;
+      const effectiveTo   = (resolvedTo?.code)   ? resolvedTo   : null;
+
+      if (hasRouteContext && effectiveTo?.code && effectiveFrom?.code && effectiveFrom.code !== effectiveTo.code) {
+        setFrom(effectiveFrom);
+        setTo(effectiveTo);
         setAutoSearchPending(true);
       }
       const depRaw = saved.depDate || unified.startDate;
@@ -725,7 +753,10 @@ export default function FlightsPage() {
       if (results.length === 0) {
         throw new Error(providerError || "No flights found for this route and date. Try different dates or airports.");
       }
-      setFlights(results);
+      const budgetFiltered = budgetLimit > 0
+        ? results.filter((flight) => Number(getFlightInfo(flight).fare || 0) <= budgetLimit)
+        : results;
+      setFlights(budgetFiltered);
     } catch (e) {
       setError(e.message || "Failed to search flights. Please try again.");
       setFlights([]);
