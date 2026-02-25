@@ -419,11 +419,22 @@ exports.searchCities = async (req, res) => {
         throw new Error(`TBO API Error: ${data.Status.Description || 'Unknown error'}`);
       }
       
-      // Transform TBO response to match frontend expectations
-      const cities = (data.CityList || []).map(city => ({
-        CityId: city.Code,
-        CityName: city.Name
-      }));
+      // Transform TBO response to match frontend expectations.
+      // TBO returns city.Name in "CityName, StateName" format (e.g. "Delhi, Delhi").
+      // We preserve the full name for the API but also extract a ShortName (bare city)
+      // so the frontend can match user input like "Delhi" → "Delhi, Delhi".
+      const cities = (data.CityList || []).map(city => {
+        const fullName = city.Name || "";
+        // Short name = everything before the first comma, trimmed
+        const shortName = fullName.includes(",")
+          ? fullName.split(",")[0].trim()
+          : fullName;
+        return {
+          CityId:    city.Code,
+          CityName:  fullName,   // full "City, State" — sent to TBO API
+          ShortName: shortName,  // bare city name — used for UI matching
+        };
+      });
       
       cityCache[key] = cities;
       console.log(`Cached ${cities.length} cities for ${key}`);

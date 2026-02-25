@@ -9,6 +9,93 @@ import ServiceNav from "../components/ServiceNav";
 const API_BASE = "http://localhost:5000/api/hotels";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 
+// ==========================================================
+// CITY_STATE_MAP
+// TBO CityList returns names like "Goa, Goa" / "Delhi, Delhi".
+// When user types a bare city ("Goa"), we look it up here to
+// get the full string before trying to match against allCities.
+// ==========================================================
+const CITY_STATE_MAP = {
+  "goa":"Goa, Goa","delhi":"Delhi, Delhi","new delhi":"Delhi, Delhi",
+  "chandigarh":"Chandigarh, Chandigarh","puducherry":"Puducherry, Puducherry",
+  "pondicherry":"Puducherry, Puducherry","port blair":"Port Blair, Andaman and Nicobar Islands",
+  "mumbai":"Mumbai, Maharashtra","bombay":"Mumbai, Maharashtra",
+  "pune":"Pune, Maharashtra","nagpur":"Nagpur, Maharashtra",
+  "nashik":"Nashik, Maharashtra","aurangabad":"Aurangabad, Maharashtra",
+  "shirdi":"Shirdi, Maharashtra","lonavala":"Lonavala, Maharashtra",
+  "mahabaleshwar":"Mahabaleshwar, Maharashtra","kolhapur":"Kolhapur, Maharashtra",
+  "bangalore":"Bangalore, Karnataka","bengaluru":"Bangalore, Karnataka",
+  "mysore":"Mysore, Karnataka","mysuru":"Mysore, Karnataka",
+  "mangalore":"Mangalore, Karnataka","coorg":"Coorg, Karnataka","hampi":"Hampi, Karnataka",
+  "chennai":"Chennai, Tamil Nadu","madras":"Chennai, Tamil Nadu",
+  "coimbatore":"Coimbatore, Tamil Nadu","madurai":"Madurai, Tamil Nadu",
+  "ooty":"Ooty, Tamil Nadu","kodaikanal":"Kodaikanal, Tamil Nadu",
+  "kanyakumari":"Kanyakumari, Tamil Nadu","mahabalipuram":"Mahabalipuram, Tamil Nadu",
+  "kochi":"Kochi, Kerala","cochin":"Kochi, Kerala",
+  "thiruvananthapuram":"Thiruvananthapuram, Kerala","trivandrum":"Thiruvananthapuram, Kerala",
+  "kozhikode":"Kozhikode, Kerala","calicut":"Kozhikode, Kerala",
+  "thrissur":"Thrissur, Kerala","munnar":"Munnar, Kerala",
+  "alleppey":"Alleppey, Kerala","alappuzha":"Alleppey, Kerala",
+  "thekkady":"Thekkady, Kerala","wayanad":"Wayanad, Kerala","varkala":"Varkala, Kerala",
+  "hyderabad":"Hyderabad, Telangana","visakhapatnam":"Visakhapatnam, Andhra Pradesh",
+  "vizag":"Visakhapatnam, Andhra Pradesh","vijayawada":"Vijayawada, Andhra Pradesh",
+  "tirupati":"Tirupati, Andhra Pradesh","warangal":"Warangal, Telangana",
+  "kolkata":"Kolkata, West Bengal","calcutta":"Kolkata, West Bengal",
+  "darjeeling":"Darjeeling, West Bengal","siliguri":"Siliguri, West Bengal",
+  "jaipur":"Jaipur, Rajasthan","jodhpur":"Jodhpur, Rajasthan",
+  "udaipur":"Udaipur, Rajasthan","ajmer":"Ajmer, Rajasthan",
+  "pushkar":"Pushkar, Rajasthan","jaisalmer":"Jaisalmer, Rajasthan",
+  "bikaner":"Bikaner, Rajasthan","mount abu":"Mount Abu, Rajasthan",
+  "ahmedabad":"Ahmedabad, Gujarat","surat":"Surat, Gujarat",
+  "vadodara":"Vadodara, Gujarat","baroda":"Vadodara, Gujarat",
+  "rajkot":"Rajkot, Gujarat","dwarka":"Dwarka, Gujarat","bhuj":"Bhuj, Gujarat",
+  "bhopal":"Bhopal, Madhya Pradesh","indore":"Indore, Madhya Pradesh",
+  "ujjain":"Ujjain, Madhya Pradesh","khajuraho":"Khajuraho, Madhya Pradesh",
+  "gwalior":"Gwalior, Madhya Pradesh","jabalpur":"Jabalpur, Madhya Pradesh",
+  "lucknow":"Lucknow, Uttar Pradesh","varanasi":"Varanasi, Uttar Pradesh",
+  "agra":"Agra, Uttar Pradesh","mathura":"Mathura, Uttar Pradesh",
+  "prayagraj":"Prayagraj, Uttar Pradesh","allahabad":"Prayagraj, Uttar Pradesh",
+  "kanpur":"Kanpur, Uttar Pradesh","ayodhya":"Ayodhya, Uttar Pradesh",
+  "amritsar":"Amritsar, Punjab","ludhiana":"Ludhiana, Punjab",
+  "gurugram":"Gurugram, Haryana","gurgaon":"Gurugram, Haryana",
+  "shimla":"Shimla, Himachal Pradesh","manali":"Manali, Himachal Pradesh",
+  "dharamshala":"Dharamshala, Himachal Pradesh","kullu":"Kullu, Himachal Pradesh",
+  "dalhousie":"Dalhousie, Himachal Pradesh","kasauli":"Kasauli, Himachal Pradesh",
+  "dehradun":"Dehradun, Uttarakhand","haridwar":"Haridwar, Uttarakhand",
+  "rishikesh":"Rishikesh, Uttarakhand","nainital":"Nainital, Uttarakhand",
+  "mussoorie":"Mussoorie, Uttarakhand",
+  "srinagar":"Srinagar, Jammu and Kashmir","jammu":"Jammu, Jammu and Kashmir",
+  "gulmarg":"Gulmarg, Jammu and Kashmir","pahalgam":"Pahalgam, Jammu and Kashmir",
+  "leh":"Leh, Ladakh","kargil":"Kargil, Ladakh",
+  "patna":"Patna, Bihar","ranchi":"Ranchi, Jharkhand",
+  "bhubaneswar":"Bhubaneswar, Odisha","puri":"Puri, Odisha","konark":"Konark, Odisha",
+  "guwahati":"Guwahati, Assam","shillong":"Shillong, Meghalaya",
+  "gangtok":"Gangtok, Sikkim",
+};
+
+// Given a bare city name, return the full "City, State" TBO expects.
+function resolveCityToFullName(cityInput) {
+  if (!cityInput) return cityInput;
+  return CITY_STATE_MAP[cityInput.trim().toLowerCase()] || cityInput;
+}
+
+// Find the best matching city object from allCities for a user-entered city string.
+// Tries exact, ShortName, CITY_STATE_MAP lookup, startsWith, then broad includes.
+function findBestCityMatch(cityInput, allCities) {
+  if (!cityInput || !allCities.length) return null;
+  const q = cityInput.trim().toLowerCase();
+  const fullGuess = resolveCityToFullName(cityInput).toLowerCase();
+  return (
+    allCities.find(c => (c.CityName||"").toLowerCase() === q) ||
+    allCities.find(c => (c.ShortName||"").toLowerCase() === q) ||
+    allCities.find(c => (c.CityName||"").toLowerCase() === fullGuess) ||
+    allCities.find(c => (c.CityName||"").toLowerCase().startsWith(q + ",") || (c.CityName||"").toLowerCase().startsWith(q + " ")) ||
+    allCities.find(c => (c.ShortName||"").toLowerCase().startsWith(q)) ||
+    allCities.find(c => (c.CityName||"").toLowerCase().includes(q)) ||
+    null
+  );
+}
+
 async function apiPost(endpoint, payload) {
   const res = await fetch(`${API_BASE}/${endpoint}`, {
     method : "POST",
@@ -741,14 +828,28 @@ export default function HotelsPage({onBack}){
       const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
       const prefBudget = Number(prefill.budget || unified?.budget?.maxValue || smart.budget || 0);
 
-      // Destination: prefer explicit prefill, then smart query destination
+      // Destination: prefer explicit prefill, then smart query destination.
+      // Resolve bare city names (e.g. "Goa") to full TBO format ("Goa, Goa")
+      // using CITY_STATE_MAP so the auto-resolve useEffect can match them.
       const smartDest = smart.destination || unified.destination || "";
       if (!cityQuery) {
-        if (prefill.destination) {
-          setCityQuery(prefill.destination);
-          setAutoSearchPending(true);
-        } else if (smartDest) {
-          setCityQuery(smartDest);
+        const rawDest = prefill.destination || smartDest || "";
+        if (rawDest) {
+          // Try to get the full "City, State" name right away.
+          // If allCities is already loaded, do a live match; otherwise
+          // use the static map as a best-effort pre-fill.
+          const fullDest = allCities.length > 0
+            ? (findBestCityMatch(rawDest, allCities)?.CityName || resolveCityToFullName(rawDest))
+            : resolveCityToFullName(rawDest);
+          setCityQuery(fullDest);
+          // If allCities is loaded we can also set cityId immediately
+          if (allCities.length > 0) {
+            const match = findBestCityMatch(rawDest, allCities);
+            if (match) {
+              setCityId(match.CityId);
+              setCityName(match.CityName);
+            }
+          }
           setAutoSearchPending(true);
         }
       }
@@ -795,12 +896,17 @@ export default function HotelsPage({onBack}){
     doSearch();
   }, [autoSearchPending, cityId, checkIn, checkOut]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-resolve cityQuery to a full city object when allCities loads.
+  // Uses findBestCityMatch() which handles "Goa" → "Goa, Goa" etc.
   useEffect(() => {
     if (!cityId && cityQuery && allCities.length > 0) {
-      const exact = allCities.find((c) => String(c.CityName || "").toLowerCase() === cityQuery.toLowerCase());
-      if (exact) {
-        setCityId(exact.CityId);
-        setCityName(exact.CityName);
+      const match = findBestCityMatch(cityQuery, allCities);
+      if (match) {
+        setCityId(match.CityId);
+        setCityName(match.CityName);
+        // Also update the visible input to the full "City, State" name
+        // so the user sees what was matched and the input stays consistent.
+        setCityQuery(match.CityName);
       }
     }
   }, [allCities, cityId, cityQuery]);
@@ -842,8 +948,16 @@ export default function HotelsPage({onBack}){
   const tog = name => setDrop(o=>o===name?null:name);
 
   /* client-side city filtering */
+  // Filter cities for dropdown: match on CityName OR ShortName so that
+  // typing "Goa" surfaces "Goa, Goa" and typing "Delhi" surfaces "Delhi, Delhi".
   const filteredCities = cityQuery.trim()
-    ? allCities.filter(c=>c.CityName?.toLowerCase().includes(cityQuery.toLowerCase())).slice(0,20)
+    ? allCities.filter(c => {
+        const q = cityQuery.toLowerCase();
+        return (
+          (c.CityName  || "").toLowerCase().includes(q) ||
+          (c.ShortName || "").toLowerCase().includes(q)
+        );
+      }).slice(0, 20)
     : [];
 
   /* ── derived ── */
@@ -1169,7 +1283,20 @@ export default function HotelsPage({onBack}){
                       value={cityQuery}
                       onChange={e=>{setCityQuery(e.target.value);setCityId("");setCityName("");setShowCityDD(true);}}
                       onFocus={()=>cityQuery.trim()&&filteredCities.length>0&&setShowCityDD(true)}
-                      onKeyDown={e=>e.key==="Enter"&&(cityId?doSearch():filteredCities.length===1&&(setCityId(filteredCities[0].CityId),setCityName(filteredCities[0].CityName),setCityQuery(filteredCities[0].CityName),setShowCityDD(false)))}
+                      onKeyDown={e => {
+                        if (e.key !== "Enter") return;
+                        if (cityId) { doSearch(); return; }
+                        // Try to auto-resolve the typed text using findBestCityMatch
+                        const bestMatch = filteredCities.length === 1
+                          ? filteredCities[0]
+                          : findBestCityMatch(cityQuery, filteredCities.length > 0 ? filteredCities : allCities);
+                        if (bestMatch) {
+                          setCityId(bestMatch.CityId);
+                          setCityName(bestMatch.CityName);
+                          setCityQuery(bestMatch.CityName);
+                          setShowCityDD(false);
+                        }
+                      }}
                     />
                     {cityId && <span className="hp-city-sel">✓ {cityName}</span>}
                   </div>
@@ -1182,8 +1309,10 @@ export default function HotelsPage({onBack}){
                           setCityQuery(c.CityName);
                           setShowCityDD(false);
                         }}>
-                          <span className="name">{c.CityName}</span>
-                          <span className="code">ID: {c.CityId}</span>
+                          <span className="name">{c.ShortName || c.CityName}</span>
+                          <span className="code" style={{color:"#94a3b8",fontSize:"0.75rem"}}>
+                            {c.ShortName ? c.CityName : `ID: ${c.CityId}`}
+                          </span>
                         </div>
                       )) : (
                         <div className="hp-city-loading">
