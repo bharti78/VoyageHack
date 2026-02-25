@@ -240,6 +240,7 @@ const AIRPORTS = [
   { code: "PNQ", city: "Pune",         name: "Pune Airport",                    country: "India" },
   { code: "JAI", city: "Jaipur",       name: "Jaipur Intl",                     country: "India" },
   { code: "GOI", city: "Goa",          name: "Goa Intl (Dabolim)",              country: "India" },
+  { code: "GOX", city: "Goa",          name: "Manohar Intl (Mopa)",            country: "India" },
   { code: "AMD", city: "Ahmedabad",    name: "Sardar Vallabhbhai Patel Intl",   country: "India" },
   { code: "LKO", city: "Lucknow",      name: "Chaudhary Charan Singh Intl",     country: "India" },
   { code: "ATQ", city: "Amritsar",     name: "Sri Guru Ram Dass Jee Intl",      country: "India" },
@@ -1137,6 +1138,4 @@ export default function FlightsPage() {
     </>
   );
 }
-
-
 

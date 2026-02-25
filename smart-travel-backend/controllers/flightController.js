@@ -33,6 +33,7 @@ const AIRPORT_MASTER = [
   { code: "IXL", city: "Leh", name: "Kushok Bakula Rimpochee Airport", country: "India" },
   { code: "KUU", city: "Kullu", name: "Kullu-Manali Airport", country: "India" },
   { code: "GOI", city: "Goa", name: "Dabolim Airport", country: "India" },
+  { code: "GOX", city: "Goa", name: "Manohar Intl (Mopa)", country: "India" },
   { code: "DXB", city: "Dubai", name: "Dubai Intl", country: "UAE" },
   { code: "LHR", city: "London", name: "Heathrow", country: "UK" },
   { code: "JFK", city: "New York", name: "John F. Kennedy Intl", country: "USA" },
@@ -45,6 +46,65 @@ const AIRPORT_MASTER = [
   { code: "SYD", city: "Sydney", name: "Sydney Airport", country: "Australia" },
 ];
 
+const AIRPORT_ALTERNATES = {
+  GOI: ["GOX"],
+  GOX: ["GOI"],
+};
+
+function getAlternateAirportCodes(code) {
+  const normalized = String(code || "").toUpperCase();
+  return AIRPORT_ALTERNATES[normalized] || [];
+}
+
+function isNoResultResponse(data) {
+  const status = Number(data?.Response?.ResponseStatus ?? data?.Status ?? -1);
+  const msg = String(data?.Response?.Error?.ErrorMessage || "").toLowerCase();
+  return status === 2 || msg.includes("no result");
+}
+
+function hasFlightOptions(data) {
+  return extractItineraries(data).length > 0;
+}
+
+function buildFallbackSearchPayloads(payload) {
+  if (!Array.isArray(payload?.Segments) || payload.Segments.length !== 1) return [];
+
+  const firstSeg = payload.Segments[0] || {};
+  const origin = String(firstSeg.Origin || "").toUpperCase();
+  const destination = String(firstSeg.Destination || "").toUpperCase();
+  if (!origin || !destination) return [];
+
+  const originAlts = getAlternateAirportCodes(origin);
+  const destinationAlts = getAlternateAirportCodes(destination);
+  const seen = new Set();
+  const variants = [];
+
+  const tryAdd = (o, d) => {
+    const key = `${o}-${d}`;
+    if (seen.has(key) || (o === origin && d === destination)) return;
+    seen.add(key);
+    variants.push({
+      ...payload,
+      Segments: [
+        {
+          ...firstSeg,
+          Origin: o,
+          Destination: d,
+        },
+      ],
+    });
+  };
+
+  for (const dAlt of destinationAlts) tryAdd(origin, dAlt);
+  for (const oAlt of originAlts) tryAdd(oAlt, destination);
+  for (const oAlt of originAlts) {
+    for (const dAlt of destinationAlts) {
+      tryAdd(oAlt, dAlt);
+    }
+  }
+
+  return variants;
+}
 // Cache token
 let cachedToken = null;
 let tokenExpiry = null;
@@ -222,14 +282,39 @@ exports.searchFlights = async (req, res) => {
     const token = await getToken();
     const payload = buildSearchPayload(req.body, token);
     const response = await callFlightSearch(payload);
-    res.json(response.data);
+    let bestData = response.data;
+
+    if (!hasFlightOptions(bestData) && isNoResultResponse(bestData)) {
+      const fallbackPayloads = buildFallbackSearchPayloads(payload);
+
+      for (const fallbackPayload of fallbackPayloads) {
+        try {
+          const fallbackResponse = await callFlightSearch(fallbackPayload);
+          const fallbackData = fallbackResponse.data;
+          if (!hasFlightOptions(fallbackData)) continue;
+
+          bestData = {
+            ...fallbackData,
+            SearchFallback: {
+              applied: true,
+              originalSegments: payload.Segments,
+              usedSegments: fallbackPayload.Segments,
+            },
+          };
+          break;
+        } catch {
+          // Ignore fallback leg failures and keep trying alternates.
+        }
+      }
+    }
+
+    res.json(bestData);
   } catch (err) {
     const msg = extractFlightError(err, "Flight search failed");
     console.error("Flight search error:", msg);
     res.status(502).json({ error: msg });
   }
 };
-
 exports.calendarFares = async (req, res) => {
   try {
     const {
@@ -488,3 +573,4 @@ exports.bookFlight = async (req, res) => {
     res.status(502).json({ error: extractFlightError(err, "Book failed") });
   }
 };
+
