@@ -346,6 +346,18 @@ export default function SmartSearchBar({
       });
       const data = res.ok ? await res.json() : {};
       const parsed = data?.data || {};
+      const defaultStartDate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d.toISOString();
+      })();
+      const defaultEndDate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 10);
+        return d.toISOString();
+      })();
+      const effectiveStartDate = parsed.startDate || defaultStartDate;
+      const effectiveEndDate = parsed.endDate || defaultEndDate;
 
       // Build the smartQuery object that result pages read
       const smartQuery = {
@@ -354,8 +366,8 @@ export default function SmartSearchBar({
         destination: parsed.destination || '',
         duration: parsed.duration || null,
         budget: parsed.budget || null,
-        startDate: parsed.startDate || null,
-        endDate: parsed.endDate || null,
+        startDate: effectiveStartDate,
+        endDate: effectiveEndDate,
         intentService: detectIntent(q),
         createdAt: Date.now(),
       };
@@ -372,8 +384,8 @@ export default function SmartSearchBar({
           query: q,
           destination: parsed.destination || '',
           destinationObject: parsed.destination ? { city: parsed.destination } : {},
-          startDate: parsed.startDate || null,
-          endDate: parsed.endDate || null,
+          startDate: effectiveStartDate,
+          endDate: effectiveEndDate,
           guests: { adults: 1, children: 0, infants: 0 },
           budget: { selectedBudget: null, maxValue: Number(parsed.budget || 0) },
           selectedTypes: [],
@@ -391,14 +403,8 @@ export default function SmartSearchBar({
         //   saved.toCity   → string fallback
         //   saved.depDate  → ISO date string
         //   saved.budget   → number
-        const depDate = parsed.startDate || (() => {
-          const d = new Date(); d.setDate(d.getDate() + 7);
-          return d.toISOString().slice(0, 10);
-        })();
-        const retDate = parsed.endDate || (() => {
-          const d = new Date(); d.setDate(d.getDate() + 10);
-          return d.toISOString().slice(0, 10);
-        })();
+        const depDate = effectiveStartDate;
+        const retDate = effectiveEndDate;
         const flightPrefill = {
           from:     parsed.source      ? { city: parsed.source }      : undefined,
           to:       parsed.destination ? { city: parsed.destination }  : undefined,
@@ -412,6 +418,15 @@ export default function SmartSearchBar({
           pax:      { adults: 1, children: 0, infants: 0 },
         };
         localStorage.setItem('voyagehack.flight.prefill', JSON.stringify(flightPrefill));
+        const hotelPrefill = {
+          destination: parsed.destination || '',
+          budget: Number(parsed.budget || 0),
+          startDate: effectiveStartDate,
+          endDate: effectiveEndDate,
+          adults: 1,
+          children: 0,
+        };
+        localStorage.setItem('voyagehack.hotel.prefill', JSON.stringify(hotelPrefill));
       } catch { /* storage full – continue */ }
 
       // Notify parent if needed

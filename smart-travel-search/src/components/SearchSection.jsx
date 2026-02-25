@@ -2467,6 +2467,13 @@ export default function TBOHomepage() {
     const parsedBudget = Number(intent.budget || queryBudget || payload.budget.maxValue || 0);
     const queryDurationDays = inferDurationDaysFromText(effectiveQuery || searchQuery);
     const parsedDurationDays = Number(intent.durationDays || (intent.nights ? intent.nights + 1 : 0) || queryDurationDays || 0);
+    const queryForService = normalizeText(payload.query || "");
+    const service =
+      (queryForService.includes("hotel") || queryForService.includes("stay") || queryForService.includes("room")) ? "hotels" :
+      (queryForService.includes("cab") || queryForService.includes("taxi")) ? "cabs" :
+      (queryForService.includes("car rental") || queryForService.includes("self drive") || queryForService.includes("rent a car")) ? "carrental" :
+      (queryForService.includes("flight") || queryForService.includes("air") || routeFromQuery?.source || routeFromQuery?.destination) ? "flights" :
+      "flights";
 
     const endDt = payload.endDate
       ? new Date(payload.endDate)
@@ -2490,7 +2497,17 @@ export default function TBOHomepage() {
         }
       : effectiveDestinationObj;
 
-    safeSetItem("voyagehack.smartQuery", JSON.stringify({ ...payload, destination: parsedDestination, fromCity: parsedSource }));
+    safeSetItem("voyagehack.smartQuery", JSON.stringify({
+      query: payload.query || "",
+      source: parsedSource || "",
+      fromCity: parsedSource || "",
+      destination: parsedDestination || "",
+      budget: parsedBudget || 0,
+      startDate: startDt.toISOString(),
+      endDate: endDt.toISOString(),
+      intentService: service,
+      createdAt: Date.now(),
+    }));
     if (smartResponse) safeSetItem("voyagehack.smartResults", JSON.stringify(smartResponse));
     safeSetItem("homepageSearch", JSON.stringify({
       destination: parsedDestination || "Anywhere",
@@ -2591,14 +2608,6 @@ export default function TBOHomepage() {
       }));
     }
 
-    const queryForService = normalizeText(`${spokenInput || ""} ${searchQuery || ""}`);
-    const service =
-      (queryForService.includes("flight") || queryForService.includes("air")) ? "flights" :
-      (queryForService.includes("hotel") || queryForService.includes("stay")) ? "hotels" :
-      (queryForService.includes("cab")) ? "cabs" :
-      (queryForService.includes("car rental") || queryForService.includes("self drive")) ? "carrental" :
-      (queryForService.includes("trip") || queryForService.includes("plan")) ? "hotels" :
-      null;
     try {
       buildAndStore({
         source: payload.source,
@@ -2611,7 +2620,7 @@ export default function TBOHomepage() {
         selectedTypes,
         guests: nextGuests,
         budget: { selectedBudget, maxValue: parsedBudget },
-        intentService: service || "all",
+        intentService: service,
         intent,
         fromCity: parsedSource || fromCity || "",
         fromObj: resolvedFrom || fromObj || null,
@@ -2652,7 +2661,13 @@ export default function TBOHomepage() {
       storeUnifiedResults(data);
     }).catch(() => { /* silent – result pages handle missing cache */ });
 
-    navigate("/flights");
+    const routeMap = {
+      flights: "/flights",
+      hotels: "/hotels",
+      cabs: "/cabs",
+      carrental: "/carrental",
+    };
+    navigate(routeMap[service] || "/flights");
   }
   function handleBookNow() {
     if (!requireAuth()) return;

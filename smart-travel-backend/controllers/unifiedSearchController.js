@@ -16,10 +16,10 @@ const AUTH_TIMEOUT_MS = 15000;
 const SEARCH_TIMEOUT_MS = 120000;
 
 const TBO_CREDS = {
-  UserName: process.env.TBO_FLIGHT_USER || "Hackathon",
-  Password: process.env.TBO_FLIGHT_PASS || "Hackathon@1234",
-  ClientId: process.env.TBO_FLIGHT_CLIENT_ID || "ApiIntegrationNew",
-  EndUserIp: process.env.TBO_FLIGHT_END_USER_IP || "122.160.30.1",
+  UserName: process.env.TBO_FLIGHT_USER || process.env.TBO_USER || "Hackathon",
+  Password: process.env.TBO_FLIGHT_PASS || process.env.TBO_PASS || "Hackathon@1234",
+  ClientId: process.env.TBO_FLIGHT_CLIENT_ID || process.env.TBO_CLIENT_ID || "ApiIntegrationNew",
+  EndUserIp: process.env.TBO_FLIGHT_END_USER_IP || process.env.TBO_END_USER_IP || "122.160.30.1",
 };
 
 // Token cache
@@ -33,10 +33,24 @@ async function getToken() {
     timeout: AUTH_TIMEOUT_MS,
   });
   const data = res.data;
-  if (data?.Status?.Code && data.Status.Code !== 1 && data.Status.Code !== "1") {
-    throw new Error(data.Status.Description || "Authentication failed");
+  const statusCode = data?.Status?.Code ?? data?.Status;
+  if (statusCode !== undefined && statusCode !== null && statusCode !== 1 && statusCode !== "1") {
+    throw new Error(
+      data?.Status?.Description ||
+      data?.Error?.ErrorMessage ||
+      data?.error ||
+      "Authentication failed"
+    );
   }
-  cachedToken = data.Member?.TokenId ?? data.TokenId;
+  cachedToken = data?.Member?.TokenId ?? data?.TokenId ?? null;
+  if (!cachedToken) {
+    throw new Error(
+      data?.Status?.Description ||
+      data?.Error?.ErrorMessage ||
+      data?.error ||
+      "Authentication failed: token not returned"
+    );
+  }
   tokenExpiry = Date.now() + 20 * 60 * 1000; // 20 min
   return cachedToken;
 }
