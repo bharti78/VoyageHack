@@ -8,6 +8,7 @@ import ServiceNav from "../components/ServiceNav";
    ═══════════════════════════════════════════════ */
 const API_BASE = "http://localhost:5000/api/hotels";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
+const HOTEL_CITIES_CACHE_KEY = "voyagehack.hotels.cities.cache.v1";
 
 // ==========================================================
 // CITY_STATE_MAP
@@ -188,6 +189,32 @@ function loadPersistedHotelForm() {
     return JSON.parse(raw);
   } catch {
     return null;
+  }
+}
+
+function readCitiesCache(countryCode) {
+  try {
+    const raw = localStorage.getItem(HOTEL_CITIES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const key = String(countryCode || "").toUpperCase();
+    const entry = parsed?.[key];
+    if (!entry || !Array.isArray(entry.cities)) return null;
+    return entry.cities;
+  } catch {
+    return null;
+  }
+}
+
+function writeCitiesCache(countryCode, cities) {
+  try {
+    const raw = localStorage.getItem(HOTEL_CITIES_CACHE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const key = String(countryCode || "").toUpperCase();
+    parsed[key] = { cities: Array.isArray(cities) ? cities : [], savedAt: new Date().toISOString() };
+    localStorage.setItem(HOTEL_CITIES_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Ignore cache failures.
   }
 }
 
@@ -811,10 +838,19 @@ export default function HotelsPage({onBack}){
     } else {
       hasFetchedCitiesOnce.current = true;
     }
+    const cachedCities = readCitiesCache(destCountry);
+    if (!cancelled && Array.isArray(cachedCities) && cachedCities.length > 0) {
+      setAllCities(cachedCities);
+      setCityLoading(false);
+    }
     (async ()=>{
       try {
         const data = await apiPost("cities",{countryCode:destCountry});
-        if(!cancelled) setAllCities(data.cities||[]);
+        if(!cancelled) {
+          const cities = Array.isArray(data.cities) ? data.cities : [];
+          setAllCities(cities);
+          writeCitiesCache(destCountry, cities);
+        }
       } catch(e){ console.error("City list fetch failed:",e); }
       finally { if(!cancelled) setCityLoading(false); }
     })();
@@ -829,29 +865,27 @@ export default function HotelsPage({onBack}){
       const prefBudget = Number(prefill.budget || unified?.budget?.maxValue || smart.budget || 0);
 
       // Destination: prefer explicit prefill, then smart query destination.
-      // Resolve bare city names (e.g. "Goa") to full TBO format ("Goa, Goa")
-      // using CITY_STATE_MAP so the auto-resolve useEffect can match them.
+      // Keep the visible field as user-typed city text (e.g. "Jaipur"),
+      // while resolving CityId/CityName in background for API calls.
       const smartDest = smart.destination || unified.destination || "";
-      if (!cityQuery) {
-        const rawDest = prefill.destination || smartDest || "";
-        if (rawDest) {
-          // Try to get the full "City, State" name right away.
-          // If allCities is already loaded, do a live match; otherwise
-          // use the static map as a best-effort pre-fill.
-          const fullDest = allCities.length > 0
-            ? (findBestCityMatch(rawDest, allCities)?.CityName || resolveCityToFullName(rawDest))
-            : resolveCityToFullName(rawDest);
-          setCityQuery(fullDest);
-          // If allCities is loaded we can also set cityId immediately
-          if (allCities.length > 0) {
-            const match = findBestCityMatch(rawDest, allCities);
-            if (match) {
-              setCityId(match.CityId);
-              setCityName(match.CityName);
-            }
-          }
-          setAutoSearchPending(true);
+      const rawDest = prefill.destination || smartDest || "";
+      if (rawDest) {
+        const nextText = String(rawDest).trim();
+        const currentText = String(cityQuery || "").trim();
+        if (!currentText || currentText.toLowerCase() !== nextText.toLowerCase()) {
+          setCityQuery(nextText);
+          setCityId("");
+          setCityName("");
         }
+        // If allCities is loaded we can also set cityId immediately.
+        if (allCities.length > 0) {
+          const match = findBestCityMatch(nextText, allCities);
+          if (match) {
+            setCityId(match.CityId);
+            setCityName(match.CityName);
+          }
+        }
+        setAutoSearchPending(true);
       }
 
       if (prefBudget > 0 && !budget) {
@@ -868,6 +902,13 @@ export default function HotelsPage({onBack}){
       if (endDateSrc && !checkOut) {
         const d = new Date(endDateSrc);
         if (!Number.isNaN(d.getTime())) setCO(d);
+      }
+      if (startDateSrc && !endDateSrc && !checkOut) {
+        const d = new Date(startDateSrc);
+        if (!Number.isNaN(d.getTime())) {
+          d.setDate(d.getDate() + 1);
+          setCO(d);
+        }
       }
 
       // Guests from unified search
@@ -904,9 +945,6 @@ export default function HotelsPage({onBack}){
       if (match) {
         setCityId(match.CityId);
         setCityName(match.CityName);
-        // Also update the visible input to the full "City, State" name
-        // so the user sees what was matched and the input stays consistent.
-        setCityQuery(match.CityName);
       }
     }
   }, [allCities, cityId, cityQuery]);

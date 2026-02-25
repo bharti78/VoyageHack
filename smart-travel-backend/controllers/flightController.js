@@ -202,8 +202,11 @@ function extractFlightError(err, fallback) {
   );
 }
 
-function isRetriableTimeout(err) {
-  return err?.code === "ECONNABORTED" || String(err?.message || "").toLowerCase().includes("timeout");
+function isRetriableNetworkError(err) {
+  const code = String(err?.code || "").toUpperCase();
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") return true;
+  if (code === "ECONNABORTED" || code === "ETIMEDOUT" || code === "ECONNRESET") return true;
+  return String(err?.message || "").toLowerCase().includes("timeout");
 }
 
 function sleep(ms) {
@@ -217,7 +220,7 @@ async function postWithRetry(url, payload, config, retries) {
       return await axios.post(url, payload, config);
     } catch (err) {
       lastErr = err;
-      if (!isRetriableTimeout(err) || attempt === retries) {
+      if (!isRetriableNetworkError(err) || attempt === retries) {
         throw err;
       }
       await sleep(RETRY_DELAY_MS);

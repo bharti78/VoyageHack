@@ -109,6 +109,78 @@ const SERVICES = [
   { id: "carrental", path: "/carrental", label: "Car Rental", icon: "🚗" },
 ];
 
+function safeReadJSON(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function safeWriteJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage write issues.
+  }
+}
+
+function buildIsoDate(value) {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
+function persistContextForRoute(path, ctx) {
+  if (!ctx || typeof ctx !== "object") return;
+
+  const unifiedExisting = safeReadJSON("voyagehack.unifiedSearch");
+  const hotelExisting = safeReadJSON("voyagehack.hotel.prefill");
+
+  const destination = String(ctx.destination || unifiedExisting.destination || "").trim();
+  const fromCity = String(ctx.fromCity || unifiedExisting.fromCity || "").trim();
+  const startDate = buildIsoDate(ctx.startDate || unifiedExisting.startDate);
+  const endDate = buildIsoDate(ctx.endDate || unifiedExisting.endDate);
+  const adults = Number(ctx?.guests?.adults ?? unifiedExisting?.guests?.adults ?? 1);
+  const children = Number(ctx?.guests?.children ?? unifiedExisting?.guests?.children ?? 0);
+  const infants = Number(ctx?.guests?.infants ?? unifiedExisting?.guests?.infants ?? 0);
+  const budgetMax = Number(ctx?.budget?.maxValue ?? unifiedExisting?.budget?.maxValue ?? 0);
+
+  const unifiedNext = {
+    ...unifiedExisting,
+    destination: destination || unifiedExisting.destination || "",
+    fromCity: fromCity || unifiedExisting.fromCity || "",
+    startDate: startDate || unifiedExisting.startDate || "",
+    endDate: endDate || unifiedExisting.endDate || "",
+    guests: {
+      ...(unifiedExisting.guests || {}),
+      adults: Number.isFinite(adults) ? Math.max(1, adults) : 1,
+      children: Number.isFinite(children) ? Math.max(0, children) : 0,
+      infants: Number.isFinite(infants) ? Math.max(0, infants) : 0,
+    },
+    budget: {
+      ...(unifiedExisting.budget || {}),
+      maxValue: Number.isFinite(budgetMax) ? Math.max(0, budgetMax) : 0,
+    },
+  };
+
+  safeWriteJSON("voyagehack.unifiedSearch", unifiedNext);
+
+  if (path === "/hotels" && destination) {
+    const hotelNext = {
+      ...hotelExisting,
+      destination,
+      startDate: startDate || hotelExisting.startDate || "",
+      endDate: endDate || hotelExisting.endDate || "",
+      adults: Number.isFinite(adults) ? Math.max(1, adults) : 1,
+      children: Number.isFinite(children) ? Math.max(0, children) : 0,
+      budget: Number.isFinite(budgetMax) ? Math.max(0, budgetMax) : 0,
+    };
+    safeWriteJSON("voyagehack.hotel.prefill", hotelNext);
+  }
+}
+
 export default function ServiceNav({ searchContext }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -143,8 +215,13 @@ export default function ServiceNav({ searchContext }) {
           return (
             <button
               key={svc.id}
+              type="button"
               className={`service-nav-btn${isActive ? " active" : ""}`}
-              onClick={() => !isActive && navigate(svc.path)}
+              onClick={() => {
+                if (isActive) return;
+                persistContextForRoute(svc.path, ctx);
+                navigate(svc.path);
+              }}
             >
               <span className="sn-icon">{svc.icon}</span>
               {svc.label}
@@ -164,3 +241,4 @@ export default function ServiceNav({ searchContext }) {
     </>
   );
 }
+

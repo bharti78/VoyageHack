@@ -274,6 +274,53 @@ const AIRLINES = {
 
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const FLIGHT_RESULTS_CACHE_KEY = "voyagehack.flights.lastResults.v1";
+
+function toDateKey(value) {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function buildFlightSearchKey({ fromCode, toCode, depDate, retDate, tripType, cabin, adults, children, infants, budgetLimit }) {
+  return [
+    String(fromCode || "").toUpperCase(),
+    String(toCode || "").toUpperCase(),
+    toDateKey(depDate),
+    toDateKey(retDate),
+    String(tripType || "oneway"),
+    String(cabin || "Economy"),
+    String(Number(adults || 0)),
+    String(Number(children || 0)),
+    String(Number(infants || 0)),
+    String(Number(budgetLimit || 0)),
+  ].join("|");
+}
+
+function readFlightResultsCache() {
+  try {
+    const raw = localStorage.getItem(FLIGHT_RESULTS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!Array.isArray(parsed.flights)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeFlightResultsCache(payload) {
+  try {
+    localStorage.setItem(FLIGHT_RESULTS_CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage failures.
+  }
+}
 
 function formatDateStr(d) {
   if (!d) return "";
@@ -645,7 +692,6 @@ export default function FlightsPage() {
       if (hasRouteContext && effectiveTo?.code && effectiveFrom?.code && effectiveFrom.code !== effectiveTo.code) {
         setFrom(effectiveFrom);
         setTo(effectiveTo);
-        setAutoSearchPending(true);
       }
       const depRaw = saved.depDate || unified.startDate;
       const retRaw = saved.retDate || unified.endDate;
@@ -660,11 +706,45 @@ export default function FlightsPage() {
       if (saved.tripType) setTripType(saved.tripType);
       if (saved.cabin) setCabin(saved.cabin);
       const paxSource = saved.pax || unified.guests;
+      const effectivePax = {
+        adults: Number(paxSource?.adults || 1),
+        children: Number(paxSource?.children || 0),
+        infants: Number(paxSource?.infants || 0),
+      };
       if (paxSource) setPax({
-        adults: Number(paxSource.adults || 1),
-        children: Number(paxSource.children || 0),
-        infants: Number(paxSource.infants || 0),
+        adults: effectivePax.adults,
+        children: effectivePax.children,
+        infants: effectivePax.infants,
       });
+
+      const plannedSearchKey = buildFlightSearchKey({
+        fromCode: effectiveFrom?.code,
+        toCode: effectiveTo?.code,
+        depDate: depRaw || depDate,
+        retDate: retRaw || retDate,
+        tripType: saved.tripType || tripType,
+        cabin: saved.cabin || cabin,
+        adults: effectivePax.adults,
+        children: effectivePax.children,
+        infants: effectivePax.infants,
+        budgetLimit: prefBudget > 0 ? prefBudget : budgetLimit,
+      });
+      const cached = readFlightResultsCache();
+      if (
+        hasRouteContext &&
+        effectiveTo?.code &&
+        effectiveFrom?.code &&
+        cached?.searchKey === plannedSearchKey &&
+        Array.isArray(cached.flights) &&
+        cached.flights.length > 0
+      ) {
+        setFlights(cached.flights);
+        setSearched(true);
+        setError(null);
+        setAutoSearchPending(false);
+      } else if (hasRouteContext && effectiveTo?.code && effectiveFrom?.code && effectiveFrom.code !== effectiveTo.code) {
+        setAutoSearchPending(true);
+      }
     } catch {
       // Ignore malformed local storage payloads.
     }
@@ -758,6 +838,44 @@ export default function FlightsPage() {
         ? results.filter((flight) => Number(getFlightInfo(flight).fare || 0) <= budgetLimit)
         : results;
       setFlights(budgetFiltered);
+
+      const searchKey = buildFlightSearchKey({
+        fromCode: from.code,
+        toCode: to.code,
+        depDate,
+        retDate,
+        tripType,
+        cabin,
+        adults: pax.adults,
+        children: pax.children,
+        infants: pax.infants || 0,
+        budgetLimit,
+      });
+      writeFlightResultsCache({
+        searchKey,
+        flights: budgetFiltered,
+        savedAt: new Date().toISOString(),
+      });
+      try {
+        localStorage.setItem("voyagehack.flight.prefill", JSON.stringify({
+          from,
+          to,
+          fromCity: from.city,
+          toCity: to.city,
+          depDate: depDate ? depDate.toISOString() : "",
+          retDate: retDate ? retDate.toISOString() : "",
+          tripType,
+          cabin,
+          pax: {
+            adults: pax.adults,
+            children: pax.children,
+            infants: pax.infants || 0,
+          },
+          budget: budgetLimit || 0,
+        }));
+      } catch {
+        // Ignore storage failures.
+      }
     } catch (e) {
       setError(e.message || "Failed to search flights. Please try again.");
       setFlights([]);
@@ -836,7 +954,20 @@ export default function FlightsPage() {
           </div>
         </header>
 
-        <ServiceNav />
+        <ServiceNav searchContext={{
+          fromCity: from.city,
+          destination: to.city,
+          startDate: depDate ? depDate.toISOString() : "",
+          endDate: retDate ? retDate.toISOString() : "",
+          guests: {
+            adults: pax.adults,
+            children: pax.children,
+            infants: pax.infants || 0,
+          },
+          budget: {
+            maxValue: budgetLimit || 0,
+          },
+        }} />
 
 
         {/* Content */}
