@@ -15,6 +15,7 @@ import CarRentalPage from "./pages/CarRentalPage"
 import RegisterModal from "./components/RegisterModal"
 import PersonaModal from "./components/PersonaModal"
 import LoginModal from "./components/LoginModal"
+import GlobalChatWidget from "./components/GlobalChatWidget"
 
 function AppInner() {
   const { showRegister, showPersona, showLogin } = useAuth();
@@ -37,6 +38,7 @@ function AppInner() {
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>
+      <GlobalChatWidget />
       {/* Global modal overlays rendered outside the router */}
       {showLogin && <LoginModal />}
       {showRegister && <RegisterModal />}

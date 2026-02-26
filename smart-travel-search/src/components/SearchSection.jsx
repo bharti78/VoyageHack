@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { buildAndStore } from "../utils/unifiedSearch";
 import { storeSearchContext, storeUnifiedResults, executeUnifiedSearch } from "../utils/searchContext";
 import SmartSearchBar from "./SmartSearchBar";
-import ChatAssistant from "./ChatAssistant";
 
 const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
 
@@ -1766,7 +1765,6 @@ function WhereFromToPanel({
 export default function TBOHomepage() {
   const { isLoggedIn, user, persona, requireAuth, setShowRegister, setShowLogin, logout } = useAuth();
   const navigate = useNavigate();
-  const [chatOpen, setChatOpen] = useState(false);
 
   // Search expanded
   const [searchExpanded, setSearchExpanded] = useState(true);
@@ -2705,11 +2703,6 @@ export default function TBOHomepage() {
     handleRedirectClick();
   }
 
-  function handleChatOpen() {
-    if (!requireAuth()) return;
-    setChatOpen(true);
-  }
-
   const svWidth = visibleCards * cardW + (visibleCards - 1) * GAP;
   const avWidth = visibleAwards * awardW + (visibleAwards - 1) * AWARD_GAP;
 
@@ -3452,17 +3445,7 @@ export default function TBOHomepage() {
           <div className="footer-copy">© All rights reserved</div>
         </footer>
       </div>
-      {!chatOpen && (
-        <button
-          type="button"
-          onClick={handleChatOpen}
-          className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-pink-500 to-rose-500 text-white w-14 h-14 rounded-full shadow-xl hover:from-pink-600 hover:to-rose-600 transition-all duration-300 flex items-center justify-center text-2xl"
-          aria-label="Open AI chat"
-        >
-          <span aria-hidden="true">🤖</span>
-        </button>
-      )}
-      <ChatAssistant isOpen={chatOpen} onClose={() => setChatOpen(false)} mode="floating" />
     </>
   );
 }
+
