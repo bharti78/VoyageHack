@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 
-function ChatAssistant({ isOpen, onClose }) {
+function ChatAssistant({ isOpen, onClose, mode = "modal" }) {
   const [messages, setMessages] = useState([
     { 
       sender: "bot", 
@@ -10,6 +10,7 @@ function ChatAssistant({ isOpen, onClose }) {
   ])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [showQuickSuggestions, setShowQuickSuggestions] = useState(true)
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -19,6 +20,10 @@ function ChatAssistant({ isOpen, onClose }) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  useEffect(() => {
+    if (isOpen) setShowQuickSuggestions(true)
+  }, [isOpen])
 
   const generateBotResponse = (userMessage) => {
     const responses = [
@@ -32,12 +37,13 @@ function ChatAssistant({ isOpen, onClose }) {
     return responses[Math.floor(Math.random() * responses.length)]
   }
 
-  const sendMessage = async () => {
-    if (!input.trim()) return
+  const sendMessage = async (customText = null) => {
+    const text = String(customText ?? input).trim()
+    if (!text) return
 
     const userMessage = { 
       sender: "user", 
-      text: input,
+      text,
       timestamp: new Date()
     }
 
@@ -49,7 +55,7 @@ function ChatAssistant({ isOpen, onClose }) {
     setTimeout(() => {
       const botReply = {
         sender: "bot",
-        text: generateBotResponse(input),
+        text: generateBotResponse(text),
         timestamp: new Date()
       }
       setMessages(prev => [...prev, botReply])
@@ -73,11 +79,24 @@ function ChatAssistant({ isOpen, onClose }) {
     "Transportation options"
   ]
 
+  const handleSuggestionClick = (suggestion) => {
+    setShowQuickSuggestions(false)
+    sendMessage(suggestion)
+  }
+
   if (!isOpen) return null
 
+  const isFloating = mode === "floating"
+  const wrapperClass = isFloating
+    ? "fixed bottom-6 right-6 z-50"
+    : "fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  const panelClass = isFloating
+    ? "bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl w-[min(92vw,24rem)] h-[70vh] max-h-[36rem] flex flex-col border border-white/20 overflow-hidden"
+    : "bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col border border-white/20 overflow-hidden"
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col border border-white/20 overflow-hidden">
+    <div className={wrapperClass}>
+      <div className={panelClass}>
         
         {/* Header */}
         <div className="bg-gradient-to-r from-pink-500 to-rose-500 p-6 text-white">
@@ -117,6 +136,12 @@ function ChatAssistant({ isOpen, onClose }) {
                     ? "order-1"
                     : "order-2"
                 }`}>
+                  {msg.sender === "bot" && (
+                    <div className="mb-1 text-xs text-pink-600 font-semibold flex items-center gap-1">
+                      <span>🤖</span>
+                      <span>AI Assistant</span>
+                    </div>
+                  )}
                   <div
                     className={`px-4 py-3 rounded-2xl ${
                       msg.sender === "user"
@@ -152,22 +177,32 @@ function ChatAssistant({ isOpen, onClose }) {
         </div>
 
         {/* Quick Suggestions */}
-        <div className="p-4 bg-white border-t border-gray-200">
-          <div className="mb-3">
-            <p className="text-sm text-gray-600 font-medium">Quick suggestions:</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {quickSuggestions.map((suggestion, index) => (
+        {showQuickSuggestions && (
+          <div className="p-4 bg-white border-t border-gray-200">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm text-gray-600 font-medium">Quick suggestions:</p>
               <button
-                key={index}
-                onClick={() => setInput(suggestion)}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-full transition-colors"
+                type="button"
+                onClick={() => setShowQuickSuggestions(false)}
+                className="w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors flex items-center justify-center"
+                aria-label="Hide quick suggestions"
               >
-                {suggestion}
+                X
               </button>
-            ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {quickSuggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-full transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Input */}
         <div className="p-4 bg-white border-t border-gray-200">
