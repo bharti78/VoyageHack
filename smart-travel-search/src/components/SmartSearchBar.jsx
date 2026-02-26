@@ -92,6 +92,24 @@ const S = {
     transition: 'background .2s',
     fontFamily: 'inherit',
   },
+  micBtn: {
+    background: '#f8fafc',
+    color: '#475569',
+    border: 'none',
+    borderLeft: '1px solid #e2e8f0',
+    padding: '0 14px',
+    height: '100%',
+    minHeight: 48,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background .2s, color .2s',
+  },
+  micBtnActive: {
+    background: '#fee2e2',
+    color: '#dc2626',
+  },
   dropdown: {
     position: 'absolute',
     top: 'calc(100% + 6px)',
@@ -237,11 +255,14 @@ export default function SmartSearchBar({
   const [parsedPreview, setParsedPreview] = useState(null); // live parse preview
   const [hoveredIdx, setHoveredIdx] = useState(-1);
   const [submitting, setSubmitting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
 
   const inputRef = useRef(null);
   const wrapRef = useRef(null);
   const debounceRef = useRef(null);
   const parseDebounceRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   /* ── Close dropdown on outside click ─────────────────── */
   useEffect(() => {
@@ -252,6 +273,12 @@ export default function SmartSearchBar({
     }
     document.addEventListener('mousedown', handleOut);
     return () => document.removeEventListener('mousedown', handleOut);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
   }, []);
 
   /* ── Debounced autocomplete fetch (400 ms) ────────────── */
@@ -314,6 +341,58 @@ export default function SmartSearchBar({
     setSuggestions([]);
     setFocused(false);
     fetchParsePreview(text);
+  }
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceError('Voice search is not supported in this browser.');
+      return;
+    }
+
+    setVoiceError('');
+    if (recognitionRef.current) recognitionRef.current.stop();
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'en-IN';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    setIsListening(true);
+    recognition.start();
+
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+      for (let i = 0; i < event.results.length; i += 1) {
+        const segment = event.results[i]?.[0]?.transcript || '';
+        if (event.results[i].isFinal) finalTranscript += segment;
+        else interimTranscript += segment;
+      }
+      const spoken = `${finalTranscript} ${interimTranscript}`.trim();
+      setQuery(spoken);
+      fetchSuggestions(spoken);
+      fetchParsePreview(spoken);
+      setFocused(true);
+    };
+
+    recognition.onerror = (event) => {
+      if (event?.error === 'no-speech') setVoiceError('No speech detected. Please try again.');
+      else if (event?.error === 'not-allowed') setVoiceError('Microphone access is blocked.');
+      else setVoiceError('Voice search failed. Please try again.');
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+  }
+
+  function stopVoiceInput() {
+    if (recognitionRef.current) recognitionRef.current.stop();
+    setIsListening(false);
   }
 
   /* ── Keyboard navigation ─────────────────────────────── */
@@ -501,6 +580,20 @@ export default function SmartSearchBar({
         )}
 
         {/* Submit button */}
+        <button
+          style={{ ...S.micBtn, ...(isListening ? S.micBtnActive : {}) }}
+          onClick={() => (isListening ? stopVoiceInput() : startVoiceInput())}
+          title={isListening ? 'Stop voice input' : 'Start voice input'}
+          aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+          disabled={submitting}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3" />
+            <path d="M5 10a7 7 0 0014 0" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="9" y1="23" x2="15" y2="23" />
+          </svg>
+        </button>
         <button style={S.searchBtn} onClick={handleSubmit} disabled={submitting}>
           {submitting ? (
             <>
@@ -573,6 +666,17 @@ export default function SmartSearchBar({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {isListening && (
+        <div style={{ marginTop: 6, fontSize: '.75rem', color: '#dc2626', fontWeight: 700, textAlign: 'left' }}>
+          Listening...
+        </div>
+      )}
+      {!isListening && voiceError && (
+        <div style={{ marginTop: 6, fontSize: '.75rem', color: '#b91c1c', fontWeight: 600, textAlign: 'left' }}>
+          {voiceError}
         </div>
       )}
 

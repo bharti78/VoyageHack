@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 
+const CHAT_API = "http://localhost:5000/api/chat"
+
 function ChatAssistant({ isOpen, onClose, mode = "modal" }) {
   const [messages, setMessages] = useState([
     { 
@@ -25,18 +27,6 @@ function ChatAssistant({ isOpen, onClose, mode = "modal" }) {
     if (isOpen) setShowQuickSuggestions(true)
   }, [isOpen])
 
-  const generateBotResponse = (userMessage) => {
-    const responses = [
-      "That sounds like an amazing destination! Let me find some great options for you.",
-      "I'd love to help you plan this trip! What's your budget range?",
-      "Excellent choice! Have you considered the best time to visit?",
-      "Great question! Let me search for the best accommodations and activities.",
-      "I can help you create the perfect itinerary. What type of activities interest you most?",
-      "That's a popular destination! Let me find some hidden gems for you."
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
-  }
-
   const sendMessage = async (customText = null) => {
     const text = String(customText ?? input).trim()
     if (!text) return
@@ -51,16 +41,35 @@ function ChatAssistant({ isOpen, onClose, mode = "modal" }) {
     setInput("")
     setIsTyping(true)
 
-    // Simulate bot thinking
-    setTimeout(() => {
+    try {
+      const res = await fetch(CHAT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data?.error || "Chat request failed.")
+      }
+
       const botReply = {
         sender: "bot",
-        text: generateBotResponse(text),
+        text: String(data?.reply || "I couldn't generate a response right now."),
         timestamp: new Date()
       }
       setMessages(prev => [...prev, botReply])
+    } catch (error) {
+      setMessages(prev => [
+        ...prev,
+        {
+          sender: "bot",
+          text: error?.message || "Failed to reach AI service.",
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
       setIsTyping(false)
-    }, 1000 + Math.random() * 1000)
+    }
   }
 
   const handleKeyPress = (e) => {

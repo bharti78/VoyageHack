@@ -1772,6 +1772,7 @@ export default function TBOHomepage() {
   const [searchExpanded, setSearchExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const imageSearchRef = useRef(false);
@@ -2249,32 +2250,44 @@ export default function TBOHomepage() {
   function startVoiceSearch() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in this browser.");
+      setVoiceError("Voice search is not supported in this browser.");
       return;
     }
+    setVoiceError("");
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
     recognition.lang = "en-IN";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
-    recognition.continuous = false;
+    recognition.continuous = true;
     setIsListening(true);
     recognition.start();
     recognition.onresult = (event) => {
-      const spoken = event?.results?.[0]?.[0]?.transcript || "";
+      let finalTranscript = "";
+      let interimTranscript = "";
+      for (let i = 0; i < event.results.length; i += 1) {
+        const segment = event.results[i]?.[0]?.transcript || "";
+        if (event.results[i].isFinal) finalTranscript += segment;
+        else interimTranscript += segment;
+      }
+      const spoken = `${finalTranscript} ${interimTranscript}`.trim();
       setSearchQuery(spoken);
-      applyNaturalLanguageQuery(spoken);
-      setIsListening(false);
-      handleRedirectClick(spoken);
+      if (finalTranscript.trim()) {
+        applyNaturalLanguageQuery(finalTranscript.trim());
+      }
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      if (event?.error === "no-speech") setVoiceError("No speech detected. Please try again.");
+      else if (event?.error === "not-allowed") setVoiceError("Microphone access is blocked.");
+      else setVoiceError("Voice search failed. Please try again.");
       setIsListening(false);
     };
     recognition.onend = () => {
       setIsListening(false);
+      recognitionRef.current = null;
     };
   }
 
@@ -2904,8 +2917,20 @@ export default function TBOHomepage() {
                   autoFocus
                   aria-label="Search"
                 />
+                <button className="exp-icon-btn" onClick={() => fileInputRef.current?.click()} title="Search by image">
+                  <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                </button>
                 <div className={isListening ? "voice-active" : ""}>
-                  <button className="exp-icon-btn" onClick={() => (isListening ? stopVoiceSearch() : startVoiceSearch())} title={isListening ? "Stop" : "Voice search"}>
+                  <button
+                    className="exp-icon-btn"
+                    onClick={() => (isListening ? stopVoiceSearch() : startVoiceSearch())}
+                    title={isListening ? "Stop voice search" : "Voice search"}
+                    aria-label={isListening ? "Stop voice search" : "Start voice search"}
+                  >
                     <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="9" y="2" width="6" height="12" rx="3"/>
                       <path d="M5 10a7 7 0 0014 0"/>
@@ -2914,13 +2939,6 @@ export default function TBOHomepage() {
                     </svg>
                   </button>
                 </div>
-                <button className="exp-icon-btn" onClick={() => fileInputRef.current?.click()} title="Search by image">
-                  <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21,15 16,10 5,21"/>
-                  </svg>
-                </button>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={e => { const f = e.target.files[0]; handleImageSearchFile(f); }}/>
                 <button className="exp-go-btn" onClick={() => handleRedirectClick(searchQuery, true)} aria-label="Search" title="Search">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}>
@@ -3027,6 +3045,20 @@ export default function TBOHomepage() {
                     </svg>
                   </button>
                   {/* Orange Search button — triggers filter search */}
+                  <button
+                    type="button"
+                    className="pill-icon-btn"
+                    onClick={() => (isListening ? stopVoiceSearch() : startVoiceSearch())}
+                    aria-label={isListening ? "Stop voice search" : "Start voice search"}
+                    title={isListening ? "Stop voice search" : "Voice search"}
+                  >
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="2" width="6" height="12" rx="3"/>
+                      <path d="M5 10a7 7 0 0014 0"/>
+                      <line x1="12" y1="19" x2="12" y2="23"/>
+                      <line x1="9" y1="23" x2="15" y2="23"/>
+                    </svg>
+                  </button>
                   <button type="button" className="pill-search-btn" onClick={() => handleRedirectClick()}>Search</button>
                 </div>
 
@@ -3243,6 +3275,16 @@ export default function TBOHomepage() {
                   </div>
                 )}
               </div>
+            )}
+            {isListening && (
+              <p style={{ marginTop: 8, textAlign: "center", color: "#ff6600", fontSize: ".78rem", fontWeight: 700 }}>
+                Listening...
+              </p>
+            )}
+            {!isListening && voiceError && (
+              <p style={{ marginTop: 8, textAlign: "center", color: "#b42318", fontSize: ".76rem", fontWeight: 600 }}>
+                {voiceError}
+              </p>
             )}
           </div>
         </div>

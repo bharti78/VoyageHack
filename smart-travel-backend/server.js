@@ -15,6 +15,7 @@ app.use("/api/user", require("./routes/userRoutes"))
 app.use("/api/hotels", require("./routes/hotelRoutes"))
 app.use("/api/flights", require("./routes/flightRoutes"))
 app.use("/api/unified-search", require("./routes/unifiedSearchRoutes"))
+app.use("/api/chat", require("./routes/chatRoutes"))
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
