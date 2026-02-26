@@ -979,8 +979,15 @@ export default function HotelsPage({onBack}){
         }
       }
 
-      if (prefBudget > 0 && Number(budget || 0) <= 0) {
-        setBudget(String(prefBudget));
+      const hasIncomingSearchContext = Boolean(
+        prefill.query || smart.query || unified.query ||
+        prefill.destination || prefill.toCity || smart.destination || unified.destination || unified.toCity
+      );
+      if (prefBudget > 0) {
+        const currentBudget = Number(budget || 0);
+        if ((hasIncomingSearchContext || currentBudget <= 0) && currentBudget !== prefBudget) {
+          setBudget(String(prefBudget));
+        }
       }
 
       // Dates: prefer prefill, then smart query.

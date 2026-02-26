@@ -2182,12 +2182,16 @@ export default function TBOHomepage() {
 
   function extractBudgetValueFromText(text) {
     const normalized = normalizeText(text);
-    const lakhMatch = normalized.match(/(\d+(\.\d+)?)\s*lakh/);
-    const kMatch = normalized.match(/(\d+)\s*k/);
-    const plainMatch = normalized.match(/(?:under|below|max|budget)\s*(\d{4,7})/);
+    const lakhMatch = normalized.match(/(?:under|below|max(?:imum)?|budget(?:\s*(?:is|of|around|about|near))?|within|upto|up to)?\s*(\d+(\.\d+)?)\s*lakh\b/);
+    const kMatch = normalized.match(/(?:under|below|max(?:imum)?|budget(?:\s*(?:is|of|around|about|near))?|within|upto|up to)?\s*(\d+(\.\d+)?)\s*k\b/);
+    const rupeeMatch = normalized.match(/(?:rs|inr|rupees?)\s*(\d{3,9})\b/);
+    const plainMatch = normalized.match(/(?:under|below|max(?:imum)?|budget(?:\s*(?:is|of|around|about|near))?|within|upto|up to)\s*(\d{3,9})\b/);
+    const anyNumberMatch = normalized.match(/\b(\d{4,9})\b/);
     if (lakhMatch) return Number(lakhMatch[1]) * 100000;
     if (kMatch) return Number(kMatch[1]) * 1000;
+    if (rupeeMatch) return Number(rupeeMatch[1]);
     if (plainMatch) return Number(plainMatch[1]);
+    if (anyNumberMatch) return Number(anyNumberMatch[1]);
     return 0;
   }
 
@@ -2477,7 +2481,7 @@ export default function TBOHomepage() {
       : effectiveDestination;
     const parsedSource = intent.source || routeFromQuery.source || fromCity || "";
     const queryBudget = extractBudgetValueFromText(effectiveQuery || searchQuery);
-    const parsedBudget = Number(intent.budget || queryBudget || payload.budget.maxValue || 0);
+    const parsedBudget = Number(queryBudget || intent.budget || payload.budget.maxValue || 0);
     const queryDurationDays = inferDurationDaysFromText(effectiveQuery || searchQuery);
     const parsedDurationDays = Number(intent.durationDays || (intent.nights ? intent.nights + 1 : 0) || queryDurationDays || 0);
     const queryForService = normalizeText(payload.query || "");
