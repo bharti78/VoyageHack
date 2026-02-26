@@ -9,6 +9,7 @@ import ServiceNav from "../components/ServiceNav";
 const API_BASE = "http://localhost:5000/api/hotels";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 const HOTEL_CITIES_CACHE_KEY = "voyagehack.hotels.cities.cache.v1";
+const HOTEL_RESULTS_CACHE_KEY = "voyagehack.hotels.results.v1";
 
 // ==========================================================
 // CITY_STATE_MAP
@@ -95,6 +96,48 @@ function findBestCityMatch(cityInput, allCities) {
     allCities.find(c => (c.CityName||"").toLowerCase().includes(q)) ||
     null
   );
+}
+
+function extractToCityFromQuery(queryText) {
+  if (!queryText) return "";
+  const normalized = String(queryText).replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+
+  const stopWords = "(?:for|under|below|max|budget|with|within|in|on|starting|start|by|after|before|days?|nights?|night|day|flight|flights|hotel|hotels|trip|travel|vacation|holiday|please|now)";
+  const toMatch = normalized.match(new RegExp(`\\bto\\s+(.+?)(?=\\s+${stopWords}\\b|$)`, "i"));
+  return (toMatch?.[1] || "").trim();
+}
+
+function extractDurationDaysFromQuery(queryText) {
+  if (!queryText) return 0;
+  const normalized = String(queryText).toLowerCase();
+  const dayMatch = normalized.match(/(\d+)\s*(day|days|d)\b/);
+  if (dayMatch) {
+    const days = Number(dayMatch[1]);
+    return Number.isFinite(days) && days > 0 ? days : 0;
+  }
+  const nightMatch = normalized.match(/(\d+)\s*(night|nights|n)\b/);
+  if (nightMatch) {
+    const nights = Number(nightMatch[1]);
+    return Number.isFinite(nights) && nights > 0 ? nights + 1 : 0;
+  }
+  return 0;
+}
+
+function extractBudgetFromQuery(queryText) {
+  if (!queryText) return 0;
+  const text = String(queryText).toLowerCase().replace(/,/g, " ").trim();
+  if (!text) return 0;
+
+  const scoped = text.match(/(?:under|below|max(?:imum)?|budget(?:\s*of)?|within)\s*₹?\s*(\d+(?:\.\d+)?)\s*([kml])?/i);
+  const generic = scoped || text.match(/₹\s*(\d+(?:\.\d+)?)\s*([kml])?/i);
+  if (!generic) return 0;
+
+  const value = Number(generic[1]);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const suffix = String(generic[2] || "").toLowerCase();
+  const multiplier = suffix === "k" ? 1000 : suffix === "m" ? 1000000 : suffix === "l" ? 100000 : 1;
+  return Math.round(value * multiplier);
 }
 
 async function apiPost(endpoint, payload) {
@@ -222,6 +265,40 @@ function parseStoredDate(value) {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function loadCachedHotelResults() {
+  try {
+    const raw = localStorage.getItem(HOTEL_RESULTS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.hotels)) return null;
+    const savedAt = Number(parsed.savedAt || 0);
+    // Keep warm results for 20 minutes so back-navigation is instant.
+    if (!savedAt || Date.now() - savedAt > 20 * 60 * 1000) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedHotelResults(payload) {
+  try {
+    localStorage.setItem(HOTEL_RESULTS_CACHE_KEY, JSON.stringify({
+      ...payload,
+      savedAt: Date.now(),
+    }));
+  } catch {
+    // Ignore cache failures.
+  }
+}
+
+function clearCachedHotelResults() {
+  try {
+    localStorage.removeItem(HOTEL_RESULTS_CACHE_KEY);
+  } catch {
+    // Ignore cache clear failures.
+  }
 }
 
 function parseHotelMapPoint(hotel) {
@@ -777,6 +854,7 @@ function MiniCal({value, onChange, onClose, minDate}){
 export default function HotelsPage({onBack}){
   const navigate = useNavigate();
   const persistedForm = loadPersistedHotelForm() || {};
+  const cachedResults = loadCachedHotelResults();
 
   /* ── search form state ── */
   const [cityQuery,setCityQuery]   = useState(persistedForm.cityQuery || "");
@@ -797,13 +875,13 @@ export default function HotelsPage({onBack}){
   const [drop,setDrop]     = useState(null);
 
   /* ── api / page state ── */
-  const [page,setPage]       = useState("home");   // home | results | prebook | confirm | detail
+  const [page,setPage]       = useState(cachedResults ? "results" : "home");   // home | results | prebook | confirm | detail
   const [loading,setLoading] = useState(false);
   const [apiErr,setApiErr]   = useState("");
 
   /* ── results ── */
-  const [searchId,setSearchId] = useState("");
-  const [hotels,setHotels]     = useState([]);
+  const [searchId,setSearchId] = useState(cachedResults?.searchId || "");
+  const [hotels,setHotels]     = useState(Array.isArray(cachedResults?.hotels) ? cachedResults.hotels : []);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
   const [showMap,setShowMap]   = useState(true);
   const [mobileNavOpen,setMobileNavOpen] = useState(false);
@@ -862,20 +940,30 @@ export default function HotelsPage({onBack}){
       const prefill = JSON.parse(localStorage.getItem("voyagehack.hotel.prefill") || "{}");
       const unified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
       const smart = JSON.parse(localStorage.getItem("voyagehack.smartQuery") || "{}");
-      const prefBudget = Number(prefill.budget || unified?.budget?.maxValue || smart.budget || 0);
+      const queryText = prefill.query || smart.query || unified.query || "";
+      const prefBudget = Number(
+        prefill.budget ||
+        prefill.maxBudget ||
+        unified?.budget?.maxValue ||
+        smart.budget ||
+        extractBudgetFromQuery(queryText) ||
+        0
+      );
 
       // Destination: prefer explicit prefill, then smart query destination.
       // Keep the visible field as user-typed city text (e.g. "Jaipur"),
       // while resolving CityId/CityName in background for API calls.
-      const smartDest = smart.destination || unified.destination || "";
-      const rawDest = prefill.destination || smartDest || "";
+      const queryDest = extractToCityFromQuery(prefill.query || smart.query || unified.query || "");
+      const smartDest = smart.destination || unified.destination || unified.toCity || "";
+      const rawDest = prefill.destination || prefill.toCity || smartDest || queryDest || "";
       if (rawDest) {
         const nextText = String(rawDest).trim();
         const currentText = String(cityQuery || "").trim();
+        const destinationChanged = !currentText || currentText.toLowerCase() !== nextText.toLowerCase();
         if (!currentText || currentText.toLowerCase() !== nextText.toLowerCase()) {
           setCityQuery(nextText);
           setCityId("");
-          setCityName("");
+          setCityName(nextText);
         }
         // If allCities is loaded we can also set cityId immediately.
         if (allCities.length > 0) {
@@ -885,29 +973,65 @@ export default function HotelsPage({onBack}){
             setCityName(match.CityName);
           }
         }
-        setAutoSearchPending(true);
+        const hasExistingSearchState = page === "results";
+        if (destinationChanged || !hasExistingSearchState) {
+          setAutoSearchPending(true);
+        }
       }
 
-      if (prefBudget > 0 && !budget) {
+      if (prefBudget > 0 && Number(budget || 0) <= 0) {
         setBudget(String(prefBudget));
       }
 
-      // Dates: prefer prefill, then smart query
+      // Dates: prefer prefill, then smart query.
+      // If no dates are stored, default to today and derive checkout from duration.
       const startDateSrc = prefill.startDate || smart.startDate || unified.startDate;
       const endDateSrc = prefill.endDate || smart.endDate || unified.endDate;
-      if (startDateSrc && !checkIn) {
-        const d = new Date(startDateSrc);
-        if (!Number.isNaN(d.getTime())) setCI(d);
-      }
-      if (endDateSrc && !checkOut) {
-        const d = new Date(endDateSrc);
-        if (!Number.isNaN(d.getTime())) setCO(d);
-      }
-      if (startDateSrc && !endDateSrc && !checkOut) {
-        const d = new Date(startDateSrc);
-        if (!Number.isNaN(d.getTime())) {
-          d.setDate(d.getDate() + 1);
+      const durationDays =
+        Number(prefill.durationDays || smart.durationDays || smart.duration || 0) ||
+        extractDurationDaysFromQuery(queryText);
+
+      // For queries like "trip for 4 days", always anchor hotel dates from today.
+      if (durationDays > 0 && queryText) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkout = new Date(today);
+        checkout.setDate(checkout.getDate() + Math.max(1, durationDays));
+        setCI(today);
+        setCO(checkout);
+      } else {
+
+        if (startDateSrc && !checkIn) {
+          const d = new Date(startDateSrc);
+          if (!Number.isNaN(d.getTime())) setCI(d);
+        } else if (!startDateSrc && !checkIn) {
+          const d = new Date();
+          d.setHours(0, 0, 0, 0);
+          setCI(d);
+        }
+
+        if (endDateSrc && !checkOut) {
+          const d = new Date(endDateSrc);
+          if (!Number.isNaN(d.getTime())) setCO(d);
+        }
+
+        if (startDateSrc && !endDateSrc && !checkOut) {
+          const d = new Date(startDateSrc);
+          if (!Number.isNaN(d.getTime())) {
+            d.setDate(d.getDate() + Math.max(1, durationDays || 1));
+            setCO(d);
+          }
+        } else if (!startDateSrc && !endDateSrc && !checkOut) {
+          const d = new Date();
+          d.setHours(0, 0, 0, 0);
+          d.setDate(d.getDate() + Math.max(1, durationDays || 1));
           setCO(d);
+        } else if (!startDateSrc && endDateSrc && !checkIn) {
+          const d = new Date();
+          d.setHours(0, 0, 0, 0);
+          if (!Number.isNaN(d.getTime())) {
+            setCI(d);
+          }
         }
       }
 
@@ -1010,7 +1134,7 @@ export default function HotelsPage({onBack}){
   async function doSearch(){
     if(!cityId){ setApiErr("Please select a city from the suggestions."); return; }
     if(!checkIn||!checkOut){ setApiErr("Please select check-in and check-out dates."); return; }
-    setApiErr(""); setLoading(true); setHotels([]); setPage("results");
+    setApiErr(""); setLoading(true); setPage("results");
     try{
       const body={
         CheckIn   : fmtApi(checkIn),
@@ -1031,12 +1155,17 @@ export default function HotelsPage({onBack}){
           ...(budget?{MaxPrice:parseFloat(budget)}:{}),
         },
         CityId      : cityId,
+        CityName    : cityQuery || cityName || "",
         CountryCode : destCountry,
       };
       const data = await apiPost("search", body);
       setSearchId(data.SearchId||"");
       const list = data.Hotels||data.HotelResult||[];
       setHotels(list);
+      writeCachedHotelResults({
+        searchId: data.SearchId || "",
+        hotels: Array.isArray(list) ? list : [],
+      });
       if(list.length===0) setApiErr("No hotels found. Try a different city, dates, or relax the filters.");
     }catch(e){
       setApiErr(`Search failed: ${e.message}`);
@@ -1994,7 +2123,7 @@ export default function HotelsPage({onBack}){
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     {loading?"Loading…":"View Booking Detail"}
                   </button>
-                  <button className="hp-btn-out" onClick={()=>{setPage("home");setHotels([]);}}>
+                  <button className="hp-btn-out" onClick={()=>{setPage("home");setHotels([]);setSearchId("");clearCachedHotelResults();}}>
                     Search More Hotels
                   </button>
                   <button className="hp-btn-red" onClick={doCancel} disabled={loading}>

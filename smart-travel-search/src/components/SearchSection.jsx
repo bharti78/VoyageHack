@@ -2430,10 +2430,8 @@ export default function TBOHomepage() {
     };
     const fallbackStart = (() => {
       const d = new Date();
-      d.setDate(d.getDate() + 7);
       return d;
     })();
-    const startDt = payload.startDate ? new Date(payload.startDate) : fallbackStart;
 
     const userData = (() => {
       try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
@@ -2475,11 +2473,25 @@ export default function TBOHomepage() {
       (queryForService.includes("flight") || queryForService.includes("air") || routeFromQuery?.source || routeFromQuery?.destination) ? "flights" :
       "flights";
 
+    const startDt = payload.startDate
+      ? new Date(payload.startDate)
+      : (() => {
+          if (parsedDurationDays > 0) {
+            const d = new Date();
+            return d;
+          }
+          return fallbackStart;
+        })();
+
     const endDt = payload.endDate
       ? new Date(payload.endDate)
       : (() => {
           const d = new Date(startDt);
-          d.setDate(d.getDate() + Math.max(1, (parsedDurationDays || 3) - 1));
+          if (parsedDurationDays > 0) {
+            d.setDate(d.getDate() + parsedDurationDays);
+          } else {
+            d.setDate(d.getDate() + Math.max(1, (parsedDurationDays || 3) - 1));
+          }
           return d;
         })();
 

@@ -203,6 +203,14 @@ function detectIntent(query) {
   return 'flights';
 }
 
+function parseDurationDays(parsed) {
+  const direct = Number(parsed?.durationDays || parsed?.duration || 0);
+  if (Number.isFinite(direct) && direct > 0) return Math.round(direct);
+  const nights = Number(parsed?.nights || 0);
+  if (Number.isFinite(nights) && nights > 0) return Math.round(nights) + 1;
+  return 0;
+}
+
 /* ── Suggestion type icons ────────────────────────────── */
 function getIcon(type) {
   switch (type) {
@@ -346,18 +354,27 @@ export default function SmartSearchBar({
       });
       const data = res.ok ? await res.json() : {};
       const parsed = data?.data || {};
+      const parsedDurationDays = parseDurationDays(parsed);
       const defaultStartDate = (() => {
         const d = new Date();
-        d.setDate(d.getDate() + 7);
         return d.toISOString();
       })();
       const defaultEndDate = (() => {
         const d = new Date();
-        d.setDate(d.getDate() + 10);
+        d.setDate(d.getDate() + 3);
         return d.toISOString();
       })();
-      const effectiveStartDate = parsed.startDate || defaultStartDate;
-      const effectiveEndDate = parsed.endDate || defaultEndDate;
+      const durationStartDate = (() => {
+        const d = new Date();
+        return d.toISOString();
+      })();
+      const durationEndDate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + parsedDurationDays);
+        return d.toISOString();
+      })();
+      const effectiveStartDate = parsed.startDate || (parsedDurationDays > 0 ? durationStartDate : defaultStartDate);
+      const effectiveEndDate = parsed.endDate || (parsedDurationDays > 0 ? durationEndDate : defaultEndDate);
 
       // Build the smartQuery object that result pages read
       const smartQuery = {
