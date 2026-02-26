@@ -257,6 +257,7 @@ export default function SmartSearchBar({
   const [submitting, setSubmitting] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const inputRef = useRef(null);
   const wrapRef = useRef(null);
@@ -330,6 +331,7 @@ export default function SmartSearchBar({
   function handleChange(e) {
     const val = e.target.value;
     setQuery(val);
+    setValidationError('');
     setHoveredIdx(-1);
     fetchSuggestions(val);
     fetchParsePreview(val);
@@ -395,6 +397,15 @@ export default function SmartSearchBar({
     setIsListening(false);
   }
 
+  function isValidSearchInput(value) {
+    const q = String(value || '').trim();
+    if (!q) return false;
+    if (q.length < 2) return false;
+    // Reject symbol-only noise, allow normal alphanumeric queries.
+    if (!/[a-zA-Z0-9]/.test(q)) return false;
+    return true;
+  }
+
   /* ── Keyboard navigation ─────────────────────────────── */
   function handleKeyDown(e) {
     const max = suggestions.length;
@@ -419,7 +430,11 @@ export default function SmartSearchBar({
   /* ── Main submit: parse → store → navigate ────────────── */
   async function handleSubmit() {
     const q = query.trim();
-    if (!q) return;
+    if (!isValidSearchInput(q)) {
+      setValidationError('Please enter a valid destination.');
+      return;
+    }
+    setValidationError('');
     setSubmitting(true);
     setSuggestions([]);
     setFocused(false);
@@ -603,6 +618,12 @@ export default function SmartSearchBar({
           ) : 'Search'}
         </button>
       </div>
+
+      {!!validationError && (
+        <div style={{ marginTop: 8, fontSize: '.78rem', color: '#dc6a6a', fontWeight: 600 }}>
+          {validationError}
+        </div>
+      )}
 
       {/* Dropdown */}
       {showDropdown && (

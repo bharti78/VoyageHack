@@ -753,7 +753,7 @@ export default function FlightsPage() {
   useEffect(() => {
     if (!autoSearchPending) return;
     setAutoSearchPending(false);
-    handleSearch();
+    handleSearch(null, { showAlert: false });
   }, [autoSearchPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredFrom = (fromQuery
@@ -789,7 +789,24 @@ export default function FlightsPage() {
     return `${total} Traveller${total !== 1 ? "s" : ""}, ${cabin}`;
   }
 
-  async function handleSearch() {
+  async function handleSearch(e, options = {}) {
+    if (e?.preventDefault) e.preventDefault();
+    const { showAlert = true } = options;
+    const origin = String(from?.city || from?.code || "").trim();
+    const destination = String(to?.city || to?.code || "").trim();
+    if (
+      !origin ||
+      !destination ||
+      origin.length < 2 ||
+      destination.length < 2 ||
+      origin.toLowerCase() === destination.toLowerCase() ||
+      !/^[a-zA-Z\s]+$/.test(origin) ||
+      !/^[a-zA-Z\s]+$/.test(destination)
+    ) {
+      if (showAlert) alert("Please enter valid flight details.");
+      return;
+    }
+
     if (!from.code || !to.code || !depDate) { setError("Please fill in all required fields."); return; }
     setError(null);
     setLoading(true);
@@ -1115,7 +1132,7 @@ export default function FlightsPage() {
                 )}
               </div>
 
-              <button className="fp-sbtn" onClick={handleSearch} disabled={loading}>
+              <button type="button" className="fp-sbtn" onClick={(e) => handleSearch(e)} disabled={loading}>
                 {loading ? <><div className="fp-spin" />Searching...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search Flights</>}
               </button>
               <button className="fp-sbtn" onClick={loadCalendarFares} disabled={calendarLoading} style={{background:"linear-gradient(135deg,#0f766e,#0d9488)"}}>
