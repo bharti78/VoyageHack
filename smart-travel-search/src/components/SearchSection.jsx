@@ -2904,13 +2904,14 @@ export default function TBOHomepage() {
             </p>
           </div>
 
-          <div ref={searchRef}>
+          <div ref={searchRef} style={{ display: "none" }}>
             {openPanel && !searchExpanded && (
               <div className="dropdown-overlay" onClick={() => setOpenPanel(null)} />
             )}
 
             {/* ── EXPANDED TEXT SEARCH ── */}
-            {searchExpanded ? (
+            {/* Expanded text search disabled intentionally */}
+            {false ? (
               <div className="expanded-search-bar">
                 <input
                   className="expanded-search-input"
