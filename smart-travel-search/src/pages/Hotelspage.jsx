@@ -651,6 +651,10 @@ const css = `
 .hp-detail-more-item.active{border:2px solid #0f5298}
 .hp-detail-map{height:220px;border-radius:10px;overflow:hidden;border:1px solid #dbeafe}
 .hp-detail-map-empty{font-size:.74rem;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:12px}
+.hp-img-lightbox{position:fixed;inset:0;background:rgba(2,6,23,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.hp-img-lightbox-inner{max-width:min(96vw,1400px);max-height:92vh;display:flex;align-items:center;justify-content:center}
+.hp-img-lightbox-inner img{max-width:100%;max-height:92vh;object-fit:contain;border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.5)}
+.hp-img-lightbox-close{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(15,23,42,.7);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
 /* rate cards */
 .hp-rcard{border:1.5px solid #e2e8f0;border-radius:12px;padding:13px 15px;margin-bottom:9px;cursor:pointer;transition:all .18s}
@@ -903,6 +907,7 @@ export default function HotelsPage({onBack}){
   const [detailHotel,setDetailHotel] = useState(null);
   const [detailImageIdx,setDetailImageIdx] = useState(0);
   const [detailLoading,setDetailLoading] = useState(false);
+  const [fullscreenImageUrl,setFullscreenImageUrl] = useState("");
   const [autoSearchPending,setAutoSearchPending] = useState(false);
 
   /* ── prebook / booking ── */
@@ -2033,7 +2038,14 @@ export default function HotelsPage({onBack}){
                 <div className="hp-mbody hp-detail-grid">
                   <div className="hp-detail-left">
                     {detailLoading && <div className="hp-detail-loading">Loading more hotel photos...</div>}
-                    <div className="hp-detail-main-image">
+                    <div
+                      className="hp-detail-main-image"
+                      style={{cursor: detailImages[detailImageIdx] ? "zoom-in" : "default"}}
+                      onClick={() => {
+                        const selected = detailImages[detailImageIdx];
+                        if (selected) setFullscreenImageUrl(selected);
+                      }}
+                    >
                       <HotelImage
                         hotel={{...detailHotel, Images: detailImages.slice(detailImageIdx)}}
                         alt={detailHotel.HotelName}
@@ -2046,29 +2058,15 @@ export default function HotelsPage({onBack}){
                           <button
                             key={`${u}-${i}`}
                             type="button"
-                            onClick={()=>setDetailImageIdx(i)}
+                            onClick={()=>{
+                              setDetailImageIdx(i);
+                              setFullscreenImageUrl(u);
+                            }}
                             className={`hp-detail-thumb${i===detailImageIdx ? " active" : ""}`}
                           >
                             <img src={proxyImageUrl(u)} alt={`Hotel ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
                           </button>
                         ))}
-                      </div>
-                    )}
-                    {detailImages.length > 4 && (
-                      <div className="hp-detail-section">
-                        <div className="hp-detail-section-title">More Photos ({detailImages.length})</div>
-                        <div className="hp-detail-more-grid">
-                          {detailImages.map((u, i) => (
-                            <button
-                              key={`grid-${u}-${i}`}
-                              type="button"
-                              onClick={()=>setDetailImageIdx(i)}
-                              className={`hp-detail-more-item${i===detailImageIdx ? " active" : ""}`}
-                            >
-                              <img src={proxyImageUrl(u)} alt={`Hotel image ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     )}
                     {detailDescription && (
@@ -2114,6 +2112,22 @@ export default function HotelsPage({onBack}){
           {/* ══════════════════════════════
               PRE-BOOK / RATE SELECT
               ══════════════════════════════ */}
+
+          {fullscreenImageUrl && (
+            <div className="hp-img-lightbox" onClick={()=>setFullscreenImageUrl("")}>
+              <button
+                type="button"
+                className="hp-img-lightbox-close"
+                onClick={()=>setFullscreenImageUrl("")}
+                aria-label="Close image"
+              >
+                x
+              </button>
+              <div className="hp-img-lightbox-inner" onClick={(e)=>e.stopPropagation()}>
+                <img src={proxyImageUrl(fullscreenImageUrl)} alt="Hotel full size" loading="eager" />
+              </div>
+            </div>
+          )}
           {page==="prebook" && !loading && selHotel && (
             <div className="fade" style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16,alignItems:"start"}}>
 
@@ -2371,6 +2385,7 @@ export default function HotelsPage({onBack}){
     </>
   );
 }
+
 
 
 
