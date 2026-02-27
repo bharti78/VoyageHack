@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
 
-const API_BASE = "http://localhost:5000/api/flights";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = `${API_ORIGIN}/api/flights`;
 const MOCK_FLIGHT_BOOKING = String(import.meta.env.VITE_MOCK_FLIGHT_BOOKING || "false").toLowerCase() === "true";
 
 async function apiPost(endpoint, payload) {

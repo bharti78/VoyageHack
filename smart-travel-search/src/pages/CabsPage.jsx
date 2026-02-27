@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
 
-const SMART_SEARCH_API = "http://localhost:5000/api/search";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const SMART_SEARCH_API = `${API_ORIGIN}/api/search`;
 
 /* ── Mock cab data ── */
 const CITIES = ["New Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Goa"];

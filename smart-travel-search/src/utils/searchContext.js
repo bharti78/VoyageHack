@@ -6,6 +6,7 @@
 
 const SEARCH_KEY = "voyagehack.unifiedSearch";
 const RESULTS_KEY = "voyagehack.unifiedResults";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 /** Store the unified search context */
 export function storeSearchContext(ctx) {
@@ -46,8 +47,7 @@ export function readUnifiedResults() {
  * Returns the full response object or throws on error.
  */
 export async function executeUnifiedSearch(params) {
-  const API_BASE = "http://localhost:5000";
-  const res = await fetch(`${API_BASE}/api/unified-search`, {
+  const res = await fetch(`${API_ORIGIN}/api/unified-search`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),

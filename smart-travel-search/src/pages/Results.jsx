@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/HomepageNavbar";
 import { buildAndStore, readUnified } from "../utils/unifiedSearch";
 
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 /* ── API base URLs ─────────────────────────────────────────────── */
-const FLIGHTS_API   = "http://localhost:5000/api/flights";
-const HOTELS_API    = "http://localhost:5000/api/hotels";
-const SMART_API     = "http://localhost:5000/api/search";
+const FLIGHTS_API   = `${API_ORIGIN}/api/flights`;
+const HOTELS_API    = `${API_ORIGIN}/api/hotels`;
+const SMART_API     = `${API_ORIGIN}/api/search`;
 
 /* ── Static lookup tables ──────────────────────────────────────── */
 const COUNTRY_CODE_MAP = {

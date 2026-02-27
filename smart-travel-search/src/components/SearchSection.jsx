@@ -5,7 +5,8 @@ import { buildAndStore } from "../utils/unifiedSearch";
 import { storeSearchContext, storeUnifiedResults, executeUnifiedSearch } from "../utils/searchContext";
 import SmartSearchBar from "./SmartSearchBar";
 
-const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const SMART_SEARCH_API = `${API_ORIGIN}/api/search/plan`;
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700&display=swap');

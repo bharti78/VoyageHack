@@ -6,7 +6,8 @@ import ServiceNav from "../components/ServiceNav";
 /* ═══════════════════════════════════════════════
    BACKEND PROXY  ─  all TBO calls go through here
    ═══════════════════════════════════════════════ */
-const API_BASE = "http://localhost:5000/api/hotels";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = `${API_ORIGIN}/api/hotels`;
 const MOCK_HOTEL_BOOKING = String(import.meta.env.VITE_MOCK_HOTEL_BOOKING || "false").toLowerCase() === "true";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 const HOTEL_CITIES_CACHE_KEY = "voyagehack.hotels.cities.cache.v1";

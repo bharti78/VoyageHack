@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 export default function LoginModal() {
   const { setShowLogin, setShowRegister, setShowPersona, loginWithData } = useAuth();
   const [email, setEmail] = useState("");
@@ -12,7 +14,7 @@ export default function LoginModal() {
   const handleGoogleResponse = async (response) => {
     try {
       const idToken = response.credential;
-      const res = await fetch("http://localhost:5000/api/auth/google", {
+      const res = await fetch(`${API_ORIGIN}/api/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
@@ -38,7 +40,7 @@ export default function LoginModal() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_ORIGIN}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

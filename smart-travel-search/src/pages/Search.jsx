@@ -4,7 +4,8 @@ import { buildAndStore } from "../utils/unifiedSearch";
 import ChatAssistant from "../components/ChatAssistant";
 import Navbar from "../components/HomepageNavbar";
 
-const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const SMART_SEARCH_API = `${API_ORIGIN}/api/search/plan`;
 
 function Search() {
   const [query, setQuery] = useState("");

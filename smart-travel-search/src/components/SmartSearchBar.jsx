@@ -20,7 +20,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 /* ── Backend base URL ──────────────────────────────────── */
-const API = 'http://localhost:5000/api/search';
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_ORIGIN}/api/search`;
 
 /* ── Storage key used by result pages ─────────────────── */
 export const SMART_QUERY_KEY = 'voyagehack.smartQuery';

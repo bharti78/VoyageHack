@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/HomepageNavbar";
 
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 function Profile() {
   const [user, setUser] = useState({
     name: "",
@@ -95,7 +97,7 @@ function Profile() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/user/profile", {
+      const response = await fetch(`${API_ORIGIN}/api/user/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 
-const CHAT_API = "http://localhost:5000/api/chat"
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const CHAT_API = `${API_ORIGIN}/api/chat`
 
 function normalizeMessageText(value, fallback = "I couldn't generate a response right now.") {
   if (typeof value === "string") {

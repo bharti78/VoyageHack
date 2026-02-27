@@ -4,8 +4,9 @@ import Navbar from "../components/HomepageNavbar";
 import { buildAndStore, detectIntentService } from "../utils/unifiedSearch";
 import { useAuth } from "../context/AuthContext";
 
-const SMART_SEARCH_API = "http://localhost:5000/api/search/plan";
-const SUGGEST_API = "http://localhost:5000/api/search/suggestions";
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const SMART_SEARCH_API = `${API_ORIGIN}/api/search/plan`;
+const SUGGEST_API = `${API_ORIGIN}/api/search/suggestions`;
 
 const AIRPORT_BY_CITY = {
   mumbai: { code: "BOM", city: "Mumbai" },

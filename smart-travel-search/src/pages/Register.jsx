@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 function Register() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -15,7 +17,7 @@ function Register() {
     try {
       const idToken = response.credential
 
-      const res = await fetch("http://localhost:5000/api/auth/google", {
+      const res = await fetch(`${API_ORIGIN}/api/auth/google`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -63,7 +65,7 @@ function Register() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${API_ORIGIN}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
