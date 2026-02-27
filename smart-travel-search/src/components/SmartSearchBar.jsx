@@ -17,6 +17,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 /* ── Backend base URL ──────────────────────────────────── */
 const API = 'http://localhost:5000/api/search';
@@ -324,6 +325,7 @@ export default function SmartSearchBar({
   style = {},
 }) {
   const navigate = useNavigate();
+  const { requireAuth } = useAuth();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -519,6 +521,7 @@ export default function SmartSearchBar({
       setErrorPopup('That input does not look like a travel search. Try: "Delhi to Goa", "Hotels in Jaipur", or "Cab in Mumbai".');
       return;
     }
+    if (!requireAuth()) return;
     setValidationError('');
     setSubmitting(true);
     setSuggestions([]);

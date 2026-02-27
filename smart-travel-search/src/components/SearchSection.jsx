@@ -2760,8 +2760,7 @@ export default function TBOHomepage() {
               )}
             </div>
 
-            <button className="nav-link">TBO Cares</button>
-            <button className="nav-link">Careers</button>
+            <button className="nav-link" onClick={() => navigate("/tbocares")}>TBO Cares</button>
             <button className="nav-link">About Us</button>
             <button className="nav-link">Help</button>
           </div>
@@ -2801,8 +2800,7 @@ export default function TBOHomepage() {
           <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Solutions</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>TBO Cares</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Careers</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/tbocares"); }}>TBO Cares</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>About Us</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Help</button>
             {isLoggedIn ? (

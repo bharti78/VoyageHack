@@ -10,6 +10,7 @@ const API_BASE = "http://localhost:5000/api/hotels";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 const HOTEL_CITIES_CACHE_KEY = "voyagehack.hotels.cities.cache.v1";
 const HOTEL_RESULTS_CACHE_KEY = "voyagehack.hotels.results.v1";
+const HOTEL_SEARCH_RESPONSE_TIME = 8;
 
 // ==========================================================
 // CITY_STATE_MAP
@@ -629,6 +630,22 @@ const css = `
 .hp-mclose:hover{background:#fee2e2;border-color:#fca5a5;color:#e53e3e}
 .hp-mbody{padding:18px 22px}
 .hp-mftr{padding:14px 22px;border-top:1px solid #f0f4f8;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.hp-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+.hp-detail-left{min-width:0}
+.hp-detail-right{display:flex;flex-direction:column;gap:10px}
+.hp-detail-loading{margin-bottom:8px;font-size:.74rem;color:#64748b}
+.hp-detail-main-image{height:320px;border-radius:14px;overflow:hidden;border:1px solid #dbeafe;background:linear-gradient(135deg,#f8fafc,#f1f5f9);display:flex;align-items:center;justify-content:center}
+.hp-detail-thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding:2px 0 4px}
+.hp-detail-thumb{border:1px solid #cbd5e1;border-radius:9px;padding:0;overflow:hidden;width:84px;height:56px;background:#fff;cursor:pointer;flex-shrink:0;transition:border-color .14s,box-shadow .14s}
+.hp-detail-thumb.active{border:2px solid #0f5298;box-shadow:0 0 0 2px rgba(15,82,152,.1)}
+.hp-detail-section{margin-top:12px;background:#f8fbff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px}
+.hp-detail-section-title{font-size:.74rem;font-weight:700;color:#475569;margin-bottom:6px}
+.hp-detail-desc{font-size:.78rem;color:#334155;line-height:1.62}
+.hp-detail-more-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.hp-detail-more-item{border:1px solid #cbd5e1;border-radius:8px;padding:0;overflow:hidden;height:78px;background:#fff;cursor:pointer}
+.hp-detail-more-item.active{border:2px solid #0f5298}
+.hp-detail-map{height:220px;border-radius:10px;overflow:hidden;border:1px solid #dbeafe}
+.hp-detail-map-empty{font-size:.74rem;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:12px}
 
 /* rate cards */
 .hp-rcard{border:1.5px solid #e2e8f0;border-radius:12px;padding:13px 15px;margin-bottom:9px;cursor:pointer;transition:all .18s}
@@ -736,6 +753,7 @@ const css = `
   .hp-srow2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;padding:12px 14px 14px;gap:10px}
   .hp-ff{min-width:0}
   .hp-ffin{min-height:42px}
+  .hp-detail-grid{grid-template-columns:1fr}
 }
 @media(max-width:640px){
   .hp-hdr{padding:0 12px;min-height:64px;gap:10px}
@@ -756,6 +774,8 @@ const css = `
   .hp-ffval,.hp-ffin input{font-size:.88rem;color:#1e293b}
   .hp-ffic svg,.hp-chev svg{width:16px;height:16px}
   .hp-ff .hp-drop{left:0;right:0;min-width:0;width:100%}
+  .hp-detail-main-image{height:220px}
+  .hp-detail-map{height:180px}
 }
 `;
 
@@ -842,7 +862,6 @@ function MiniCal({value, onChange, onClose, minDate}){
 export default function HotelsPage({onBack}){
   const navigate = useNavigate();
   const persistedForm = loadPersistedHotelForm() || {};
-  const cachedResults = loadCachedHotelResults();
 
   /* ── search form state ── */
   const [cityQuery,setCityQuery]   = useState(persistedForm.cityQuery || "");
@@ -863,13 +882,13 @@ export default function HotelsPage({onBack}){
   const [drop,setDrop]     = useState(null);
 
   /* ── api / page state ── */
-  const [page,setPage]       = useState(cachedResults ? "results" : "home");   // home | results | prebook | confirm | detail
+  const [page,setPage]       = useState("home");   // home | results | prebook | confirm | detail
   const [loading,setLoading] = useState(false);
   const [apiErr,setApiErr]   = useState("");
 
   /* ── results ── */
-  const [searchId,setSearchId] = useState(cachedResults?.searchId || "");
-  const [hotels,setHotels]     = useState(Array.isArray(cachedResults?.hotels) ? cachedResults.hotels : []);
+  const [searchId,setSearchId] = useState("");
+  const [hotels,setHotels]     = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
   const [showMap,setShowMap]   = useState(true);
   const [mobileNavOpen,setMobileNavOpen] = useState(false);
@@ -1129,7 +1148,35 @@ export default function HotelsPage({onBack}){
   async function doSearch(){
     if(!cityId){ setApiErr("Please select a city from the suggestions."); return; }
     if(!checkIn||!checkOut){ setApiErr("Please select check-in and check-out dates."); return; }
-    setApiErr(""); setLoading(true); setPage("results");
+    const searchKey = JSON.stringify({
+      cityId,
+      cityName: cityQuery || cityName || "",
+      country: destCountry,
+      checkIn: fmtApi(checkIn),
+      checkOut: fmtApi(checkOut),
+      rooms: roomCfg,
+      nat,
+      starF,
+      budget: budget || "",
+      hotelCodes: hotelCodes || "",
+    });
+    const warmCache = loadCachedHotelResults();
+    const hasInstantResults =
+      warmCache?.searchKey === searchKey &&
+      Array.isArray(warmCache?.hotels) &&
+      warmCache.hotels.length > 0;
+
+    setApiErr("");
+    setPage("results");
+    if (hasInstantResults) {
+      setSearchId(warmCache.searchId || "");
+      setHotels(warmCache.hotels);
+      setLoading(false);
+    } else {
+      setSearchId("");
+      setHotels([]);
+      setLoading(true);
+    }
     try{
       const body={
         CheckIn   : fmtApi(checkIn),
@@ -1141,7 +1188,7 @@ export default function HotelsPage({onBack}){
           Children    : roomCfg.children,
           ChildrenAges: roomCfg.children>0?Array(roomCfg.children).fill(8):[],
         })),
-        ResponseTime       : 23,
+        ResponseTime       : HOTEL_SEARCH_RESPONSE_TIME,
         IsDetailedResponse : true,
         Filters: {
           Refundable: false,
@@ -1159,11 +1206,14 @@ export default function HotelsPage({onBack}){
       setHotels(list);
       writeCachedHotelResults({
         searchId: data.SearchId || "",
+        searchKey,
         hotels: Array.isArray(list) ? list : [],
       });
       if(list.length===0) setApiErr("No hotels found. Try a different city, dates, or relax the filters.");
     }catch(e){
-      setApiErr(`Search failed: ${e.message}`);
+      if (!hasInstantResults) {
+        setApiErr(`Search failed: ${e.message}`);
+      }
     }finally{ setLoading(false); }
   }
 
@@ -1349,6 +1399,11 @@ export default function HotelsPage({onBack}){
   const rateList = prebookRooms.length ? prebookRooms : (selHotel?.Rooms || []);
   const pickedRate = rateList[selRateIdx] || rateList[0] || selHotel || {};
   const totalPrice = roomTotal(pickedRate, selHotel);
+  const detailImages = detailHotel ? hotelImageUrls(detailHotel) : [];
+  const detailMapPoint = detailHotel ? parseHotelMapPoint(detailHotel) : null;
+  const detailDescription = detailHotel?.Description
+    ? String(detailHotel.Description).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+    : "";
 
   /* ═══════════════════════════════════════════════
      RENDER
@@ -1823,7 +1878,7 @@ export default function HotelsPage({onBack}){
             </div>
           )}
 
-          {detailHotel && (
+                    {detailHotel && (
             <div className="hp-modal-bg" onClick={()=>setDetailHotel(null)}>
               <div className="hp-modal" onClick={(e)=>e.stopPropagation()} style={{maxWidth:980}}>
                 <div className="hp-mhdr">
@@ -1831,46 +1886,42 @@ export default function HotelsPage({onBack}){
                     <div className="hp-mttl">{detailHotel.HotelName || "Hotel Details"}</div>
                     <div className="hp-msub">{detailHotel.HotelAddress || detailHotel.Address || "Address not available"}</div>
                   </div>
-                  <button className="hp-mclose" onClick={()=>setDetailHotel(null)}>×</button>
+                  <button className="hp-mclose" onClick={()=>setDetailHotel(null)}>x</button>
                 </div>
-                <div className="hp-mbody" style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:14}}>
-                  <div>
-                    {detailLoading && (
-                      <div style={{marginBottom:8,fontSize:".74rem",color:"#64748b"}}>Loading more hotel photos...</div>
-                    )}
-                    <div style={{height:290,borderRadius:12,overflow:"hidden",border:"1px solid #dbeafe",background:"#f8fafc",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div className="hp-mbody hp-detail-grid">
+                  <div className="hp-detail-left">
+                    {detailLoading && <div className="hp-detail-loading">Loading more hotel photos...</div>}
+                    <div className="hp-detail-main-image">
                       <HotelImage
-                        hotel={{...detailHotel, Images: hotelImageUrls(detailHotel).slice(detailImageIdx)}}
+                        hotel={{...detailHotel, Images: detailImages.slice(detailImageIdx)}}
                         alt={detailHotel.HotelName}
                         style={{width:"100%",height:"100%",objectFit:"cover"}}
                       />
                     </div>
-                    {hotelImageUrls(detailHotel).length > 1 && (
-                      <div style={{display:"flex",gap:8,overflowX:"auto",marginTop:8,paddingBottom:2}}>
-                        {hotelImageUrls(detailHotel).map((u, i) => (
+                    {detailImages.length > 1 && (
+                      <div className="hp-detail-thumbs">
+                        {detailImages.map((u, i) => (
                           <button
                             key={`${u}-${i}`}
                             type="button"
                             onClick={()=>setDetailImageIdx(i)}
-                            style={{border:i===detailImageIdx?"2px solid #0f5298":"1px solid #cbd5e1",borderRadius:8,padding:0,overflow:"hidden",width:84,height:56,background:"#fff",cursor:"pointer",flexShrink:0}}
+                            className={`hp-detail-thumb${i===detailImageIdx ? " active" : ""}`}
                           >
                             <img src={proxyImageUrl(u)} alt={`Hotel ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
                           </button>
                         ))}
                       </div>
                     )}
-                    {hotelImageUrls(detailHotel).length > 4 && (
-                      <div style={{marginTop:12}}>
-                        <div style={{fontSize:".74rem",fontWeight:700,color:"#475569",marginBottom:8}}>
-                          More Photos ({hotelImageUrls(detailHotel).length})
-                        </div>
-                        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8}}>
-                          {hotelImageUrls(detailHotel).map((u, i) => (
+                    {detailImages.length > 4 && (
+                      <div className="hp-detail-section">
+                        <div className="hp-detail-section-title">More Photos ({detailImages.length})</div>
+                        <div className="hp-detail-more-grid">
+                          {detailImages.map((u, i) => (
                             <button
                               key={`grid-${u}-${i}`}
                               type="button"
                               onClick={()=>setDetailImageIdx(i)}
-                              style={{border:i===detailImageIdx?"2px solid #0f5298":"1px solid #cbd5e1",borderRadius:8,padding:0,overflow:"hidden",height:80,background:"#fff",cursor:"pointer"}}
+                              className={`hp-detail-more-item${i===detailImageIdx ? " active" : ""}`}
                             >
                               <img src={proxyImageUrl(u)} alt={`Hotel image ${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" />
                             </button>
@@ -1878,29 +1929,30 @@ export default function HotelsPage({onBack}){
                         </div>
                       </div>
                     )}
-                    {detailHotel.Description && (
-                      <div style={{marginTop:10,fontSize:".78rem",color:"#334155",lineHeight:1.6}}>
-                        {String(detailHotel.Description).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()}
+                    {detailDescription && (
+                      <div className="hp-detail-section">
+                        <div className="hp-detail-section-title">About This Hotel</div>
+                        <div className="hp-detail-desc">{detailDescription}</div>
                       </div>
                     )}
                     {normalizeFacilities(detailHotel.HotelFacilities).length > 0 && (
-                      <div className="hp-htags" style={{marginTop:10}}>
+                      <div className="hp-htags" style={{marginTop:12}}>
                         {normalizeFacilities(detailHotel.HotelFacilities).slice(0,12).map((f,i)=><span key={i} className="hp-htag">{f}</span>)}
                       </div>
                     )}
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    {parseHotelMapPoint(detailHotel) ? (
-                      <div style={{height:210,borderRadius:10,overflow:"hidden",border:"1px solid #dbeafe"}}>
-                        <MapContainer center={[parseHotelMapPoint(detailHotel).lat, parseHotelMapPoint(detailHotel).lng]} zoom={14} style={{height:"100%",width:"100%"}} scrollWheelZoom={false}>
+                  <div className="hp-detail-right">
+                    {detailMapPoint ? (
+                      <div className="hp-detail-map">
+                        <MapContainer center={[detailMapPoint.lat, detailMapPoint.lng]} zoom={14} style={{height:"100%",width:"100%"}} scrollWheelZoom={false}>
                           <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <Marker position={[parseHotelMapPoint(detailHotel).lat, parseHotelMapPoint(detailHotel).lng]}>
+                          <Marker position={[detailMapPoint.lat, detailMapPoint.lng]}>
                             <Popup>{detailHotel.HotelName}</Popup>
                           </Marker>
                         </MapContainer>
                       </div>
                     ) : (
-                      <div style={{fontSize:".74rem",color:"#64748b",background:"#f8fafc",border:"1px dashed #cbd5e1",borderRadius:10,padding:12}}>Map location not available for this hotel.</div>
+                      <div className="hp-detail-map-empty">Map location not available for this hotel.</div>
                     )}
                     <div className="hp-sumbox" style={{marginBottom:0}}>
                       <div className="hp-sumttl">Contact</div>
@@ -2177,3 +2229,4 @@ export default function HotelsPage({onBack}){
     </>
   );
 }
+
