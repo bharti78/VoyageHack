@@ -109,29 +109,30 @@ function extractToCityFromQuery(queryText) {
   return (toMatch?.[1] || "").trim();
 }
 
-function extractDurationDaysFromQuery(queryText) {
-  if (!queryText) return 0;
+function extractDays(queryText) {
+  if (!queryText) return 1;
   const normalized = String(queryText).toLowerCase();
   const dayMatch = normalized.match(/(\d+)\s*(day|days|d)\b/);
   if (dayMatch) {
     const days = Number(dayMatch[1]);
-    return Number.isFinite(days) && days > 0 ? days : 0;
+    return Number.isFinite(days) && days > 0 ? days : 1;
   }
-  const nightMatch = normalized.match(/(\d+)\s*(night|nights|n)\b/);
+  const nightMatch = normalized.match(/(?:stay\s*)?(\d+)\s*(night|nights|n)\b/);
   if (nightMatch) {
     const nights = Number(nightMatch[1]);
-    return Number.isFinite(nights) && nights > 0 ? nights + 1 : 0;
+    return Number.isFinite(nights) && nights > 0 ? nights : 1;
   }
-  return 0;
+  return 1;
 }
 
-function extractBudgetFromQuery(queryText) {
+function extractBudget(queryText) {
   if (!queryText) return 0;
   const text = String(queryText).toLowerCase().replace(/,/g, " ").trim();
   if (!text) return 0;
 
   const scoped = text.match(/(?:under|below|max(?:imum)?|budget(?:\s*of)?|within)\s*₹?\s*(\d+(?:\.\d+)?)\s*([kml])?/i);
-  const generic = scoped || text.match(/₹\s*(\d+(?:\.\d+)?)\s*([kml])?/i);
+  const trailingBudget = text.match(/\b(\d+(?:\.\d+)?)\s*([kml])?\s*budget\b/i);
+  const generic = scoped || trailingBudget || text.match(/₹\s*(\d+(?:\.\d+)?)\s*([kml])?/i);
   if (!generic) return 0;
 
   const value = Number(generic[1]);
@@ -140,6 +141,10 @@ function extractBudgetFromQuery(queryText) {
   const multiplier = suffix === "k" ? 1000 : suffix === "m" ? 1000000 : suffix === "l" ? 100000 : 1;
   return Math.round(value * multiplier);
 }
+
+// Backward-compatible aliases
+const extractDurationDaysFromQuery = extractDays;
+const extractBudgetFromQuery = extractBudget;
 
 async function apiPost(endpoint, payload) {
   const res = await fetch(`${API_BASE}/${endpoint}`, {
@@ -799,11 +804,10 @@ const DEST_COUNTRIES = [
   {code:"NZ",label:"New Zealand"},{code:"LK",label:"Sri Lanka"},{code:"NP",label:"Nepal"},
 ];
 const STAR_OPTS = [
-  {label:"All Stars",val:null},
+  {label:"All",val:null},
   {label:"5 Star",val:[5]},
-  {label:"4 Star or More",val:[4,5]},
-  {label:"3 Star or More",val:[3,4,5]},
-  {label:"2 Star",val:[2]},
+  {label:"4 Star",val:[4]},
+  {label:"3 Star",val:[3]},
 ];
 
 /* ═══════════════════════════════════════════════
@@ -912,6 +916,7 @@ export default function HotelsPage({onBack}){
   const boxRef = useRef(null);
   const cityDDRef = useRef(null);
   const hasFetchedCitiesOnce = useRef(false);
+  const lastAppliedQuerySignature = useRef("");
 
   /* fetch city list when destination country changes */
   useEffect(()=>{
@@ -1001,12 +1006,25 @@ export default function HotelsPage({onBack}){
       // If no dates are stored, default to today and derive checkout from duration.
       const startDateSrc = prefill.startDate || smart.startDate || unified.startDate;
       const endDateSrc = prefill.endDate || smart.endDate || unified.endDate;
-      const durationDays =
-        Number(prefill.durationDays || smart.durationDays || smart.duration || 0) ||
-        extractDurationDaysFromQuery(queryText);
+      const durationDays = Number(prefill.durationDays || smart.durationDays || smart.duration || 0) || extractDays(queryText);
+      const querySignature = `${String(queryText || "").trim().toLowerCase()}::${String(smart.createdAt || prefill.createdAt || unified.createdAt || "")}`;
 
-      // For queries like "trip for 4 days", always anchor hotel dates from today.
-      if (durationDays > 0 && queryText) {
+      // Fresh duration extraction per new search query:
+      // always reset stay to today + extracted days (default 1 day if no match).
+      if (String(queryText || "").trim() && querySignature !== lastAppliedQuerySignature.current) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkout = new Date(today);
+        checkout.setDate(checkout.getDate() + Math.max(1, durationDays));
+        setCI(today);
+        setCO(checkout);
+        lastAppliedQuerySignature.current = querySignature;
+      }
+
+      // Respect explicit/manual dates first.
+      // Auto-detect from query only when there are no incoming dates and no preselected dates.
+      const hasExplicitDates = Boolean(startDateSrc || endDateSrc || checkIn || checkOut);
+      if (!hasExplicitDates && !String(queryText || "").trim()) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const checkout = new Date(today);
@@ -1032,13 +1050,13 @@ export default function HotelsPage({onBack}){
         if (startDateSrc && !endDateSrc && !checkOut) {
           const d = new Date(startDateSrc);
           if (!Number.isNaN(d.getTime())) {
-            d.setDate(d.getDate() + Math.max(1, durationDays || 1));
+            d.setDate(d.getDate() + durationDays);
             setCO(d);
           }
         } else if (!startDateSrc && !endDateSrc && !checkOut) {
           const d = new Date();
           d.setHours(0, 0, 0, 0);
-          d.setDate(d.getDate() + Math.max(1, durationDays || 1));
+          d.setDate(d.getDate() + durationDays);
           setCO(d);
         } else if (!startDateSrc && endDateSrc && !checkIn) {
           const d = new Date();
@@ -1139,7 +1157,7 @@ export default function HotelsPage({onBack}){
   /* ── derived ── */
   const nt = nights(checkIn,checkOut);
   const roomLbl = `${roomCfg.count} Room${roomCfg.count>1?"s":""} (${roomCfg.adults} Adult${roomCfg.adults>1?"s":""},  ${roomCfg.children} Child${roomCfg.children!==1?"ren":""})`;
-  const starLbl = STAR_OPTS.find(s=>JSON.stringify(s.val)===JSON.stringify(starF))?.label||"All Stars";
+  const starLbl = STAR_OPTS.find(s=>JSON.stringify(s.val)===JSON.stringify(starF))?.label||"All";
   const natLbl  = NAT.find(n=>n.code===nat)?.label||nat;
 
   /* ══════════════════════
@@ -1380,11 +1398,27 @@ export default function HotelsPage({onBack}){
   /* ══════════════════════
      SORT results
      ══════════════════════ */
-  const sorted = [...hotels].sort((a,b)=>{
+  const activeBudget = Number(budget || 0);
+  const activeStarValues = Array.isArray(starF) ? starF.map((v) => Number(v)).filter(Number.isFinite) : [];
+  const hasStarFilter = activeStarValues.length > 0;
+  const filteredHotels = hotels.filter((hotel) => {
+    if (hasStarFilter) {
+      const rawRating = Number(hotel?.HotelRating ?? hotel?.StarRating ?? 0);
+      const bucket = Math.floor(rawRating);
+      if (!activeStarValues.includes(bucket)) return false;
+    }
+    if (Number.isFinite(activeBudget) && activeBudget > 0) {
+      const priceInINR = Number(hotelDisplayPrice(hotel).amountINR || 0);
+      if (!(priceInINR > 0 && priceInINR <= activeBudget)) return false;
+    }
+    return true;
+  });
+
+  const sorted = [...filteredHotels].sort((a,b)=>{
     const pa = roomTotal(a?.Rooms?.[0], a), pb = roomTotal(b?.Rooms?.[0], b);
     if(sortBy==="price_asc")  return pa-pb;
     if(sortBy==="price_desc") return pb-pa;
-    if(sortBy==="stars")      return (b.HotelRating||0)-(a.HotelRating||0);
+    if(sortBy==="stars" || sortBy==="rating_desc") return (b.HotelRating||0)-(a.HotelRating||0);
     if(sortBy==="name")       return (a.HotelName||"").localeCompare(b.HotelName||"");
     return 0;
   });
@@ -1736,8 +1770,8 @@ export default function HotelsPage({onBack}){
             <div className="fade">
               <div className="hp-res-bar">
                 <div className="hp-res-ct">
-                  {hotels.length>0
-                    ? <><span>{hotels.length}</span> hotel{hotels.length!==1?"s":""} found{checkIn&&checkOut?` · ${fmtDisp(checkIn)} → ${fmtDisp(checkOut)} · ${nt} night${nt!==1?"s":""}`:""}</>
+                  {sorted.length>0
+                    ? <><span>{sorted.length}</span> hotel{sorted.length!==1?"s":""} found{checkIn&&checkOut?` · ${fmtDisp(checkIn)} → ${fmtDisp(checkOut)} · ${nt} night${nt!==1?"s":""}`:""}</>
                     : "No hotels found for your search criteria"}
                 </div>
                 {hotels.length>0 && (
@@ -1746,7 +1780,7 @@ export default function HotelsPage({onBack}){
                     <select className="hp-sort-sel" value={sortBy} onChange={e=>setSortBy(e.target.value)}>
                       <option value="price_asc">Price: Low → High</option>
                       <option value="price_desc">Price: High → Low</option>
-                      <option value="stars">Star Rating</option>
+                      <option value="rating_desc">Rating: High → Low</option>
                       <option value="name">Name A – Z</option>
                     </select>
                   </div>
