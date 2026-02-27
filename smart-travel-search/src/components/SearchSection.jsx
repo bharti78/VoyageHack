@@ -1238,12 +1238,6 @@ const BUDGET_OPTIONS = [
   { id: "premium", label: "Premium", range: "₹80,000 – ₹1,50,000", icon: "💎" },
   { id: "luxury", label: "Luxury", range: "₹1,50,000+", icon: "👑" },
 ];
-const PRODUCTS = [
-  { id: "flights", name: "Flights", desc: "Domestic & international", icon: "✈️", colorClass: "flights" },
-  { id: "hotels", name: "Hotels", desc: "1M+ properties worldwide", icon: "🏨", colorClass: "hotels" },
-  { id: "cabs", name: "Cabs", desc: "Airport & city transfers", icon: "🚕", colorClass: "cabs" },
-  { id: "carrental", name: "Car Rental", desc: "Self-drive at your pace", icon: "🚗", colorClass: "carrental" },
-];
 const SOLUTIONS = ["Travel Buyers", "Travel Suppliers", "Travelpreneurs", "API Solutions"];
 const MONTHS_LIST = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_EMOJIS = ["❄️","🌸","🌧️","🌷","☀️","🏖️","🌞","🌻","🍂","🎃","🍁","🎄"];
@@ -1806,12 +1800,9 @@ export default function TBOHomepage() {
   const [nearbyCountry, setNearbyCountry] = useState("");
 
   // Nav dropdowns
-  const [productsOpen, setProductsOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const productsRef = useRef(null);
   const solutionsRef = useRef(null);
 
   // Sections
@@ -1842,11 +1833,9 @@ export default function TBOHomepage() {
         setOpenPanel(null);
         if (searchExpanded) stopVoiceSearch();
       }
-      if (productsRef.current && !productsRef.current.contains(e.target)) setProductsOpen(false);
       if (solutionsRef.current && !solutionsRef.current.contains(e.target)) setSolutionsOpen(false);
       if (!e.target.closest(".mobile-nav-toggle") && !e.target.closest(".mobile-nav-menu")) {
         setMobileNavOpen(false);
-        setMobileProductsOpen(false);
       }
     }
     document.addEventListener("mousedown", handle);
@@ -2721,41 +2710,6 @@ export default function TBOHomepage() {
           {/* Nav links */}
           <div className="tbo-nav-links">
             <button className="nav-link active">Home</button>
-
-            {/* Products dropdown */}
-            <div className="products-nav-wrap" ref={productsRef} style={{position:"relative"}}
-              onMouseEnter={() => setProductsOpen(true)}
-              onMouseLeave={() => setProductsOpen(false)}
-            >
-              <button
-                className={`nav-link${productsOpen ? " active" : ""}`}
-                onClick={() => setProductsOpen(o => !o)}
-              >
-                Products <span className="chevron" />
-              </button>
-              {productsOpen && (
-                <>
-                  {/* invisible bridge to prevent gap closing dropdown */}
-                  <div style={{position:"absolute",top:"100%",left:0,right:0,height:14,zIndex:599}} />
-                  <div className="products-dropdown" style={{top:"calc(100% + 14px)"}}>
-                    {PRODUCTS.map(p => {
-                      const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
-                      return (
-                        <div key={p.id} className="product-item" role="button"
-                          onClick={() => { setProductsOpen(false); navigate(routeMap[p.id]); }}>
-                          <div className={`product-item-icon ${p.colorClass}`}>{p.icon}</div>
-                          <div className="product-item-text">
-                            <div className="product-item-name">{p.name}</div>
-                            <div className="product-item-desc">{p.desc}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-
             {/* Solutions dropdown */}
             <div className="products-nav-wrap" ref={solutionsRef} style={{position:"relative"}}>
               <button
@@ -2807,13 +2761,7 @@ export default function TBOHomepage() {
             <button
               type="button"
               className="mobile-nav-toggle"
-              onClick={() => {
-                setMobileNavOpen((v) => {
-                  const next = !v;
-                  if (!next) setMobileProductsOpen(false);
-                  return next;
-                });
-              }}
+              onClick={() => { setMobileNavOpen((v) => !v); }}
               aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -2823,40 +2771,6 @@ export default function TBOHomepage() {
           </div>
           <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
-            <div className="mobile-products-wrap">
-              <button
-                className="mobile-nav-item mobile-products-toggle"
-                onClick={() => setMobileProductsOpen((v) => !v)}
-              >
-                <span>Products</span>
-                <span>{mobileProductsOpen ? "▲" : "▼"}</span>
-              </button>
-              {mobileProductsOpen && (
-                <div className="mobile-products-dropdown">
-                  {PRODUCTS.map((p) => {
-                    const routeMap = { flights: "/flights", hotels: "/hotels", cabs: "/cabs", carrental: "/carrental" };
-                    return (
-                      <div
-                        key={p.id}
-                        className="product-item"
-                        role="button"
-                        onClick={() => {
-                          setMobileProductsOpen(false);
-                          setMobileNavOpen(false);
-                          navigate(routeMap[p.id]);
-                        }}
-                      >
-                        <div className={`product-item-icon ${p.colorClass}`}>{p.icon}</div>
-                        <div className="product-item-text">
-                          <div className="product-item-name">{p.name}</div>
-                          <div className="product-item-desc">{p.desc}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Solutions</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>TBO Cares</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Careers</button>
@@ -3448,3 +3362,4 @@ export default function TBOHomepage() {
     </>
   );
 }
+
