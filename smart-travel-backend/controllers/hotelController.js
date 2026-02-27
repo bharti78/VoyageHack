@@ -151,6 +151,36 @@ function normalizeHotelCodes(rawCodes) {
   return uniqueCodes.slice(0, MAX_SEARCH_HOTEL_CODES).join(",");
 }
 
+function getHotelMinFare(searchData) {
+  const list = Array.isArray(searchData?.HotelResult)
+    ? searchData.HotelResult
+    : (Array.isArray(searchData?.Hotels) ? searchData.Hotels : []);
+  if (!Array.isArray(list) || list.length === 0) return null;
+
+  const fares = [];
+  for (const hotel of list) {
+    const roomList = Array.isArray(hotel?.Rooms)
+      ? hotel.Rooms
+      : (hotel?.Rooms ? [hotel.Rooms] : []);
+    for (const room of roomList) {
+      const val = Number(
+        room?.Price?.OfferedPrice ??
+        room?.Price?.PublishedPrice ??
+        room?.TotalFare
+      );
+      if (Number.isFinite(val) && val > 0) fares.push(val);
+    }
+    const fallback = Number(
+      hotel?.Price?.OfferedPrice ??
+      hotel?.Price?.PublishedPrice ??
+      hotel?.TotalFare
+    );
+    if (Number.isFinite(fallback) && fallback > 0) fares.push(fallback);
+  }
+  if (fares.length === 0) return null;
+  return Math.min(...fares);
+}
+
 async function getHotelCodesForCity(cityCode) {
   const key = String(cityCode || "").trim();
   if (!key) return "";
@@ -498,6 +528,124 @@ exports.hotelSearch = async (req, res) => {
   } catch (err) {
     console.error('Hotel search error:', err);
     res.status(502).json({ error: err.message });
+  }
+};
+
+exports.calendarFares = async (req, res) => {
+  try {
+    const {
+      CityId,
+      CityName = "",
+      CountryCode = "IN",
+      CheckIn,
+      CheckOut,
+      HotelCodes = "",
+      GuestNationality = "IN",
+      PaxRooms,
+      Filters = {},
+      Days = 14,
+      FlexDays = 0,
+      ResponseTime = 4,
+    } = req.body || {};
+
+    if (!CityId) return res.status(400).json({ error: "calendar-fares requires CityId." });
+    if (!CheckIn || !CheckOut) return res.status(400).json({ error: "calendar-fares requires CheckIn and CheckOut." });
+
+    const baseCheckIn = new Date(CheckIn);
+    const baseCheckOut = new Date(CheckOut);
+    if (Number.isNaN(baseCheckIn.getTime()) || Number.isNaN(baseCheckOut.getTime())) {
+      return res.status(400).json({ error: "CheckIn/CheckOut must be valid dates (YYYY-MM-DD)." });
+    }
+
+    const nightMs = 24 * 60 * 60 * 1000;
+    const nights = Math.max(1, Math.round((baseCheckOut.getTime() - baseCheckIn.getTime()) / nightMs) || 1);
+    const totalDays = Math.max(1, Math.min(31, Number(Days) || 14));
+    const flexDays = Math.max(0, Math.min(14, Number(FlexDays) || 0));
+
+    let normalizedHotelCodes = normalizeHotelCodes(HotelCodes);
+    if (!normalizedHotelCodes) normalizedHotelCodes = await getHotelCodesForCity(CityId);
+    if (!normalizedHotelCodes) {
+      return res.json({ success: true, cityId: String(CityId), nights, days: totalDays, flexDays, lowestFare: null, fares: [] });
+    }
+
+    const dates = [];
+    for (let i = -flexDays; i < totalDays + flexDays; i += 1) {
+      const d = new Date(baseCheckIn);
+      d.setDate(baseCheckIn.getDate() + i);
+      dates.push(formatYmd(d));
+    }
+    const uniqDates = [...new Set(dates)];
+    const calendar = [];
+
+    for (const inDate of uniqDates) {
+      const inDt = new Date(inDate);
+      const outDt = new Date(inDt);
+      outDt.setDate(inDt.getDate() + nights);
+      const outDate = formatYmd(outDt);
+
+      try {
+        const payload = {
+          CheckIn: inDate,
+          CheckOut: outDate,
+          HotelCodes: normalizedHotelCodes,
+          GuestNationality,
+          PaxRooms: Array.isArray(PaxRooms) && PaxRooms.length
+            ? PaxRooms
+            : [{ Adults: 2, Children: 0, ChildrenAges: [] }],
+          ResponseTime,
+          IsDetailedResponse: false,
+          Filters: {
+            Refundable: false,
+            ...(Filters || {}),
+          },
+          CityName,
+          CountryCode,
+        };
+        delete payload.CityId;
+
+        const data = await tboFetch("Search", payload);
+        const minFare = getHotelMinFare(data);
+        calendar.push({
+          checkIn: inDate,
+          checkOut: outDate,
+          minFare,
+          currency: "INR",
+        });
+      } catch (err) {
+        calendar.push({
+          checkIn: inDate,
+          checkOut: outDate,
+          minFare: null,
+          currency: "INR",
+          error: err?.message || "No fare",
+        });
+      }
+    }
+
+    const valid = calendar.filter((x) => Number.isFinite(x.minFare) && x.minFare > 0);
+    const lowestFare = valid.length ? Math.min(...valid.map((x) => x.minFare)) : null;
+
+    res.json({
+      success: true,
+      cityId: String(CityId),
+      nights,
+      days: totalDays,
+      flexDays,
+      lowestFare,
+      fares: calendar.map((d) => ({
+        ...d,
+        isLowest: lowestFare !== null && d.minFare === lowestFare,
+        level: !Number.isFinite(d.minFare)
+          ? "na"
+          : d.minFare <= lowestFare * 1.15
+            ? "low"
+            : d.minFare <= lowestFare * 1.35
+              ? "mid"
+              : "high",
+      })),
+    });
+  } catch (err) {
+    res.status(502).json({ error: err.message || "Hotel calendar fare search failed" });
   }
 };
 

@@ -10,7 +10,7 @@ const API_BASE = "http://localhost:5000/api/hotels";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 const HOTEL_CITIES_CACHE_KEY = "voyagehack.hotels.cities.cache.v1";
 const HOTEL_RESULTS_CACHE_KEY = "voyagehack.hotels.results.v1";
-const HOTEL_SEARCH_RESPONSE_TIME = 8;
+const HOTEL_SEARCH_RESPONSE_TIME = 4;
 
 // ==========================================================
 // CITY_STATE_MAP
@@ -893,6 +893,9 @@ export default function HotelsPage({onBack}){
   /* ── results ── */
   const [searchId,setSearchId] = useState("");
   const [hotels,setHotels]     = useState([]);
+  const [calendarLoading,setCalendarLoading] = useState(false);
+  const [calendarFlexDays,setCalendarFlexDays] = useState(3);
+  const [hotelCalendarFares,setHotelCalendarFares] = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
   const [showMap,setShowMap]   = useState(true);
   const [mobileNavOpen,setMobileNavOpen] = useState(false);
@@ -1163,15 +1166,17 @@ export default function HotelsPage({onBack}){
   /* ══════════════════════
      SEARCH
      ══════════════════════ */
-  async function doSearch(){
+  async function doSearch(options = {}){
+    const activeCheckIn = options.checkInDate || checkIn;
+    const activeCheckOut = options.checkOutDate || checkOut;
     if(!cityId){ setApiErr("Please select a city from the suggestions."); return; }
-    if(!checkIn||!checkOut){ setApiErr("Please select check-in and check-out dates."); return; }
+    if(!activeCheckIn||!activeCheckOut){ setApiErr("Please select check-in and check-out dates."); return; }
     const searchKey = JSON.stringify({
       cityId,
       cityName: cityQuery || cityName || "",
       country: destCountry,
-      checkIn: fmtApi(checkIn),
-      checkOut: fmtApi(checkOut),
+      checkIn: fmtApi(activeCheckIn),
+      checkOut: fmtApi(activeCheckOut),
       rooms: roomCfg,
       nat,
       starF,
@@ -1192,13 +1197,12 @@ export default function HotelsPage({onBack}){
       setLoading(false);
     } else {
       setSearchId("");
-      setHotels([]);
       setLoading(true);
     }
     try{
       const body={
-        CheckIn   : fmtApi(checkIn),
-        CheckOut  : fmtApi(checkOut),
+        CheckIn   : fmtApi(activeCheckIn),
+        CheckOut  : fmtApi(activeCheckOut),
         HotelCodes: hotelCodes,
         GuestNationality: nat,
         PaxRooms  : Array.from({length:roomCfg.count},()=>({
@@ -1235,6 +1239,45 @@ export default function HotelsPage({onBack}){
     }finally{ setLoading(false); }
   }
 
+
+  async function loadCalendarFares(){
+    if(!cityId){ setApiErr("Please select a city from the suggestions."); return; }
+    if(!checkIn||!checkOut){ setApiErr("Please select check-in and check-out dates."); return; }
+
+    setApiErr("");
+    setCalendarLoading(true);
+    try{
+      const data = await apiPost("calendar-fares",{
+        CityId      : cityId,
+        CityName    : cityQuery || cityName || "",
+        CountryCode : destCountry,
+        CheckIn     : fmtApi(checkIn),
+        CheckOut    : fmtApi(checkOut),
+        HotelCodes  : hotelCodes,
+        GuestNationality: nat,
+        PaxRooms    : Array.from({length:roomCfg.count},()=>({
+          Adults      : roomCfg.adults,
+          Children    : roomCfg.children,
+          ChildrenAges: roomCfg.children>0?Array(roomCfg.children).fill(8):[],
+        })),
+        ResponseTime: HOTEL_SEARCH_RESPONSE_TIME,
+        Days: 14,
+        FlexDays: calendarFlexDays,
+        Filters: {
+          Refundable: false,
+          NoOfRooms : roomCfg.count,
+          ...(starF?{StarRating:starF}:{}),
+          ...(budget?{MaxPrice:parseFloat(budget)}:{}),
+        },
+      });
+      setHotelCalendarFares(Array.isArray(data?.fares) ? data.fares : []);
+    }catch(e){
+      setApiErr(`Calendar fare failed: ${e.message}`);
+      setHotelCalendarFares([]);
+    }finally{
+      setCalendarLoading(false);
+    }
+  }
   async function openHotelDetails(hotel){
     setDetailImageIdx(0);
     setDetailHotel(hotel);
@@ -1645,6 +1688,27 @@ export default function HotelsPage({onBack}){
                     ? <><div className="hp-spin" style={{width:16,height:16,borderWidth:2}}/>Searching…</>
                     : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</>}
                 </button>
+                <button className="hp-sbtn" onClick={loadCalendarFares} disabled={calendarLoading} style={{background:"linear-gradient(135deg,#0f766e,#0d9488)"}}>
+                  {calendarLoading
+                    ? <><div className="hp-spin" style={{width:16,height:16,borderWidth:2}}/>Loading...</>
+                    : "Calendar Fare"}
+                </button>
+                <button
+                  className="hp-sbtn"
+                  type="button"
+                  onClick={() => setCalendarFlexDays(3)}
+                  style={{background:calendarFlexDays === 3 ? "linear-gradient(135deg,#0f766e,#0d9488)" : "linear-gradient(135deg,#64748b,#475569)"}}
+                >
+                  +/-3 Days
+                </button>
+                <button
+                  className="hp-sbtn"
+                  type="button"
+                  onClick={() => setCalendarFlexDays(7)}
+                  style={{background:calendarFlexDays === 7 ? "linear-gradient(135deg,#0f766e,#0d9488)" : "linear-gradient(135deg,#64748b,#475569)"}}
+                >
+                  +/-7 Days
+                </button>
               </div>
 
               {/* row 2 – filters */}
@@ -1749,10 +1813,51 @@ export default function HotelsPage({onBack}){
             </div>
           )}
 
+
+          {hotelCalendarFares.length > 0 && (
+            <div className="hp-sbox" style={{padding:"14px 16px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                <div style={{fontSize:".9rem",fontWeight:700,color:"#1e293b"}}>
+                  14-Day Hotel Calendar Fare: {cityQuery || cityName}
+                </div>
+                <div style={{fontSize:".68rem",color:"#64748b"}}>
+                  Green = cheaper, Yellow = medium, Red = expensive
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
+                {hotelCalendarFares.map((f) => {
+                  const bg = f.level === "low" ? "#dcfce7" : f.level === "mid" ? "#fef9c3" : f.level === "high" ? "#fee2e2" : "#f8fafc";
+                  const bd = f.level === "low" ? "#86efac" : f.level === "mid" ? "#fde047" : f.level === "high" ? "#fca5a5" : "#e2e8f0";
+                  return (
+                    <button
+                      key={`${f.checkIn}-${f.checkOut}`}
+                      type="button"
+                      onClick={() => {
+                        const inDate = new Date(f.checkIn);
+                        const outDate = new Date(f.checkOut);
+                        if (Number.isNaN(inDate.getTime()) || Number.isNaN(outDate.getTime())) return;
+                        setCI(inDate);
+                        setCO(outDate);
+                        setPage("results");
+                        void doSearch({ checkInDate: inDate, checkOutDate: outDate });
+                      }}
+                      style={{textAlign:"left",background:bg,border:`1.5px solid ${bd}`,borderRadius:10,padding:"9px 10px",cursor:"pointer",fontFamily:"inherit"}}
+                    >
+                      <div style={{fontSize:".68rem",color:"#475569",fontWeight:600}}>{f.checkIn}</div>
+                      <div style={{fontSize:".88rem",fontWeight:800,color:"#1e293b",marginTop:2}}>
+                        {Number.isFinite(f.minFare) ? `Rs ${Math.round(f.minFare).toLocaleString("en-IN")}` : "N/A"}
+                      </div>
+                      {f.isLowest && <div style={{fontSize:".6rem",fontWeight:700,color:"#166534",marginTop:3}}>Lowest Fare</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {/* ══════════════════════════════
               LOADING
               ══════════════════════════════ */}
-          {loading && (
+          {loading && (page!=="results" || sorted.length===0) && (
             <div className="hp-loader">
               <div className="hp-spin"/>
               <div className="hp-load-txt">
@@ -1766,13 +1871,16 @@ export default function HotelsPage({onBack}){
           {/* ══════════════════════════════
               RESULTS
               ══════════════════════════════ */}
-          {page==="results" && !loading && (
+          {page==="results" && (
             <div className="fade">
+              {loading && sorted.length > 0 && (
+                <div className="hp-load-txt" style={{marginBottom:10,textAlign:"left"}}>Refreshing hotels and prices...</div>
+              )}
               <div className="hp-res-bar">
                 <div className="hp-res-ct">
                   {sorted.length>0
                     ? <><span>{sorted.length}</span> hotel{sorted.length!==1?"s":""} found{checkIn&&checkOut?` · ${fmtDisp(checkIn)} → ${fmtDisp(checkOut)} · ${nt} night${nt!==1?"s":""}`:""}</>
-                    : "No hotels found for your search criteria"}
+                    : (loading ? "Searching hotels across our global network..." : "No hotels found for your search criteria")}
                 </div>
                 {hotels.length>0 && (
                   <div className="hp-sort-wrap">
@@ -2263,4 +2371,6 @@ export default function HotelsPage({onBack}){
     </>
   );
 }
+
+
 

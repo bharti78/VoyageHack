@@ -7,6 +7,7 @@ const {
   tboHotelCodeList,
   hotelDetails,
   hotelSearch,
+  calendarFares,
   proxyHotelImage,
   preBook,
   book,
@@ -21,6 +22,7 @@ router.get("/hotelcodes", hotelCodeList)
 router.post("/hotelcodelist", tboHotelCodeList)
 router.post("/hoteldetails", hotelDetails)
 router.post("/search", hotelSearch)
+router.post("/calendar-fares", calendarFares)
 router.get("/image", proxyHotelImage)
 router.post("/prebook", preBook)
 router.post("/book", book)

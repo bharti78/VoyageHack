@@ -783,6 +783,12 @@ export default function FlightsPage() {
     if (!d) return "";
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   }
+  function isSameDay(a, b) {
+    if (!a || !b) return false;
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
 
   function paxLabel() {
     const total = pax.adults + pax.children + (pax.infants || 0);
@@ -791,7 +797,9 @@ export default function FlightsPage() {
 
   async function handleSearch(e, options = {}) {
     if (e?.preventDefault) e.preventDefault();
-    const { showAlert = true } = options;
+    const { showAlert = true, depDateOverride = null, retDateOverride = null } = options;
+    const activeDepDate = depDateOverride || depDate;
+    const activeRetDate = retDateOverride || retDate;
     const origin = String(from?.city || from?.code || "").trim();
     const destination = String(to?.city || to?.code || "").trim();
     if (
@@ -807,11 +815,33 @@ export default function FlightsPage() {
       return;
     }
 
-    if (!from.code || !to.code || !depDate) { setError("Please fill in all required fields."); return; }
+    if (!from.code || !to.code || !activeDepDate) { setError("Please fill in all required fields."); return; }
+    const plannedSearchKey = buildFlightSearchKey({
+      fromCode: from.code,
+      toCode: to.code,
+      depDate: activeDepDate,
+      retDate: activeRetDate,
+      tripType,
+      cabin,
+      adults: pax.adults,
+      children: pax.children,
+      infants: pax.infants || 0,
+      budgetLimit,
+    });
+    const cached = readFlightResultsCache();
+    const hasInstantResults =
+      cached?.searchKey === plannedSearchKey &&
+      Array.isArray(cached.flights) &&
+      cached.flights.length > 0;
+
     setError(null);
-    setLoading(true);
     setSearched(true);
-    setFlights([]);
+    if (hasInstantResults) {
+      setFlights(cached.flights);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
       const payload = {
         EndUserIp: "122.160.30.1",
@@ -828,48 +858,34 @@ export default function FlightsPage() {
             Origin: from.code,
             Destination: to.code,
             FlightCabinClass: cabin === "Economy" ? "1" : cabin === "Business" ? "3" : cabin === "First" ? "4" : "2",
-            PreferredDepartureTime: `${fmtDate(depDate)}T00:00:00`,
-            PreferredArrivalTime: `${fmtDate(depDate)}T00:00:00`,
+            PreferredDepartureTime: `${fmtDate(activeDepDate)}T00:00:00`,
+            PreferredArrivalTime: `${fmtDate(activeDepDate)}T00:00:00`,
           },
-          ...(tripType === "roundtrip" && retDate ? [{
+          ...(tripType === "roundtrip" && activeRetDate ? [{
             Origin: to.code,
             Destination: from.code,
             FlightCabinClass: cabin === "Economy" ? "1" : "3",
-            PreferredDepartureTime: `${fmtDate(retDate)}T00:00:00`,
-            PreferredArrivalTime: `${fmtDate(retDate)}T00:00:00`,
+            PreferredDepartureTime: `${fmtDate(activeRetDate)}T00:00:00`,
+            PreferredArrivalTime: `${fmtDate(activeRetDate)}T00:00:00`,
           }] : []),
         ],
         Sources: null,
       };
       const data = await apiPost("search", payload);
       const providerStatus = Number(data?.Response?.ResponseStatus);
-      const providerError = data?.Response?.Error?.ErrorMessage;
-      if (providerStatus === 2) {
-        throw new Error(providerError || "No flights found for this route and date. Try different dates or airports.");
-      }
       const results = parseFlightResults(data);
-      if (results.length === 0) {
-        throw new Error(providerError || "No flights found for this route and date. Try different dates or airports.");
+      if (providerStatus === 2 || results.length === 0) {
+        setFlights([]);
+        setError(null);
+        return;
       }
       const budgetFiltered = budgetLimit > 0
         ? results.filter((flight) => Number(getFlightInfo(flight).fare || 0) <= budgetLimit)
         : results;
       setFlights(budgetFiltered);
 
-      const searchKey = buildFlightSearchKey({
-        fromCode: from.code,
-        toCode: to.code,
-        depDate,
-        retDate,
-        tripType,
-        cabin,
-        adults: pax.adults,
-        children: pax.children,
-        infants: pax.infants || 0,
-        budgetLimit,
-      });
       writeFlightResultsCache({
-        searchKey,
+        searchKey: plannedSearchKey,
         flights: budgetFiltered,
         savedAt: new Date().toISOString(),
       });
@@ -879,8 +895,8 @@ export default function FlightsPage() {
           to,
           fromCity: from.city,
           toCity: to.city,
-          depDate: depDate ? depDate.toISOString() : "",
-          retDate: retDate ? retDate.toISOString() : "",
+          depDate: activeDepDate ? activeDepDate.toISOString() : "",
+          retDate: activeRetDate ? activeRetDate.toISOString() : "",
           tripType,
           cabin,
           pax: {
@@ -894,8 +910,10 @@ export default function FlightsPage() {
         // Ignore storage failures.
       }
     } catch (e) {
-      setError(e.message || "Failed to search flights. Please try again.");
-      setFlights([]);
+      if (!hasInstantResults) {
+        setError(e.message || "Failed to search flights. Please try again.");
+        setFlights([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -1196,7 +1214,12 @@ export default function FlightsPage() {
                     <button
                       key={f.date}
                       type="button"
-                      onClick={() => { const d = new Date(f.date); if (!Number.isNaN(d.getTime())) setDepDate(d); }}
+                      onClick={() => {
+                        const d = new Date(f.date);
+                        if (Number.isNaN(d.getTime())) return;
+                        setDepDate(d);
+                        void handleSearch(null, { showAlert: false, depDateOverride: d });
+                      }}
                       title={
                         f?.detail
                           ? `${f.detail.airlineName || f.detail.airlineCode || "Airline"} | Stops: ${f.detail.stops || 0} | Duration: ${f.detail.durationMinutes || 0} mins`
@@ -1237,21 +1260,20 @@ export default function FlightsPage() {
           )}
 
           {/* Results */}
-          {loading && (
-            <div className="fp-loading">
-              <div className="fp-spin" />
-              Searching for the best flights on your route...
-            </div>
-          )}
-
-          {!loading && searched && (
+          {searched && (
             <div className="fp-results">
+              {loading && (
+                <div className="fp-loading" style={{justifyContent:"flex-start",padding:"8px 0 14px"}}>
+                  <div className="fp-spin" />
+                  Refreshing flight fares...
+                </div>
+              )}
               <div className="fp-results-hdr">
                 <div>
                   <div className="fp-results-title">
-                    {from.city} → {to.city} · {sortedFlights.length} flights found
+                    {from.city} to {to.city} | {sortedFlights.length} flights found
                   </div>
-                  <div className="fp-results-sub">{formatDateStr(depDate)} · {pax.adults + pax.children} traveller{pax.adults + pax.children > 1 ? "s" : ""}</div>
+                  <div className="fp-results-sub">{formatDateStr(depDate)} | {pax.adults + pax.children} traveller{pax.adults + pax.children > 1 ? "s" : ""}</div>
                 </div>
                 <div className="fp-sort">
                   <span style={{fontSize:".72rem",fontWeight:600,color:"#64748b",alignSelf:"center"}}>Sort:</span>
@@ -1263,16 +1285,26 @@ export default function FlightsPage() {
 
               {sortedFlights.length > 0 ? sortedFlights.map((f, i) => (
                 <FlightCard key={i} flight={f} pax={pax} />
-              )) : (
+              )) : loading ? (
+                <div className="fp-loading">
+                  <div className="fp-spin" />
+                  Searching for the best flights on your route...
+                </div>
+              ) : (
                 <div className="fp-empty">
                   <div className="fp-empty-icon">✈️</div>
-                  <div className="fp-empty-title">No flights found</div>
-                  <div className="fp-empty-sub">Try different dates, airports, or filters</div>
+                  <div className="fp-empty-title">
+                    {isSameDay(depDate, new Date()) ? "Flights are limited for today" : "No matching flights right now"}
+                  </div>
+                  <div className="fp-empty-sub">
+                    {isSameDay(depDate, new Date())
+                      ? "Please try a later date or nearby airport. New fares appear throughout the day."
+                      : "Please try different dates, airports, or filters."}
+                  </div>
                 </div>
               )}
             </div>
           )}
-
           {!searched && !loading && (
             <div className="fp-empty">
               <div className="fp-empty-icon">✈️</div>
@@ -1285,4 +1317,5 @@ export default function FlightsPage() {
     </>
   );
 }
+
 
