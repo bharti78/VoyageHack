@@ -7,6 +7,7 @@ import ServiceNav from "../components/ServiceNav";
    BACKEND PROXY  ─  all TBO calls go through here
    ═══════════════════════════════════════════════ */
 const API_BASE = "http://localhost:5000/api/hotels";
+const MOCK_HOTEL_BOOKING = String(import.meta.env.VITE_MOCK_HOTEL_BOOKING || "false").toLowerCase() === "true";
 const HOTEL_FORM_STORAGE_KEY = "voyagehack.hotels.form.v1";
 const HOTEL_CITIES_CACHE_KEY = "voyagehack.hotels.cities.cache.v1";
 const HOTEL_RESULTS_CACHE_KEY = "voyagehack.hotels.results.v1";
@@ -146,7 +147,10 @@ function extractBudget(queryText) {
 const extractDurationDaysFromQuery = extractDays;
 const extractBudgetFromQuery = extractBudget;
 
-async function apiPost(endpoint, payload) {
+async function apiPost(endpoint, payload, options = {}) {
+  const allowStatusCodes = new Set(
+    (Array.isArray(options?.allowStatusCodes) ? options.allowStatusCodes : []).map((v) => String(v))
+  );
   const res = await fetch(`${API_BASE}/${endpoint}`, {
     method : "POST",
     headers: { "Content-Type": "application/json" },
@@ -157,6 +161,7 @@ async function apiPost(endpoint, payload) {
   try { json = JSON.parse(text); } catch { throw new Error(`Non-JSON response: ${text.slice(0,200)}`); }
   if (json.error) throw new Error(json.error);
   if (json.Status?.Code && json.Status.Code !== 200 && json.Status.Code !== "01") {
+    if (allowStatusCodes.has(String(json.Status.Code))) return json;
     const desc = json.Status?.Description;
     if (desc && !desc.toLowerCase().includes("success")) throw new Error(desc);
   }
@@ -1420,8 +1425,15 @@ export default function HotelsPage({onBack}){
       const data  = await apiPost("prebook",{
         BookingCode: bcode,
         PaymentMode: "Limit",
-      });
+      }, { allowStatusCodes: [300] });
       setPrebookRes(data);
+      if (String(data?.Status?.Code) === "300") {
+        setApiErr(
+          MOCK_HOTEL_BOOKING
+            ? "Live fare loaded. Mock booking mode is ON, so you can continue demo booking."
+            : "Live fare loaded, but booking is currently blocked because TBO account has insufficient balance."
+        );
+      }
     }catch(e){
       setApiErr(`PreBook failed: ${e.message}`);
     }finally{ setLoading(false); }
@@ -1442,6 +1454,11 @@ export default function HotelsPage({onBack}){
     const bcode    = prebookRes?.BookingCode || rate.BookingCode || selHotel?.BookingCode || "";
     if (!bcode) {
       setApiErr("Unable to confirm booking: booking code is missing. Please re-open room selection.");
+      setLoading(false);
+      return;
+    }
+    if (String(prebookRes?.Status?.Code) === "300" && !MOCK_HOTEL_BOOKING) {
+      setApiErr("Cannot complete booking: TBO account has insufficient balance. Please top up supplier wallet.");
       setLoading(false);
       return;
     }
@@ -1488,6 +1505,7 @@ export default function HotelsPage({onBack}){
         PhoneNumber       : guest.phone,
         BookingType       : "Voucher",
         PaymentMode       : "Limit",
+        MockBooking       : MOCK_HOTEL_BOOKING,
       });
       const ref = data.ConfirmationNumber || data.BookingReferenceId || data.BookingId || `REF${Date.now()}`;
       setBookingRef(ref);
@@ -1503,7 +1521,12 @@ export default function HotelsPage({onBack}){
   async function doDetail(){
     setApiErr(""); setLoading(true);
     try{
-      const data = await apiPost("detail",{ConfirmationNumber:bookingRef,PaymentMode:"Limit"});
+      const data = await apiPost("detail",{
+        ConfirmationNumber: bookingRef,
+        BookingReferenceId: bookingRef,
+        PaymentMode:"Limit",
+        MockBooking:MOCK_HOTEL_BOOKING
+      });
       setBookingDetail(data.BookingDetail||data);
       setPage("detail");
     }catch(e){
@@ -1518,7 +1541,11 @@ export default function HotelsPage({onBack}){
     if(!window.confirm("Are you sure you want to cancel this booking? This action may be irreversible.")) return;
     setApiErr(""); setLoading(true); setCancelMsg("");
     try{
-      const data = await apiPost("cancel",{ConfirmationNumber:bookingRef});
+      const data = await apiPost("cancel",{
+        ConfirmationNumber: bookingRef,
+        BookingReferenceId: bookingRef,
+        MockBooking:MOCK_HOTEL_BOOKING
+      });
       const ok   = data.Status?.Code==="01"
                 || data.Status?.Code===200
                 || String(data.Status?.Description||"").toLowerCase().includes("success")

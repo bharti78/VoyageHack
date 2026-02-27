@@ -7,6 +7,7 @@ const SEARCH_TIMEOUT_MS = Number(process.env.TBO_FLIGHT_SEARCH_TIMEOUT_MS || 120
 const DEFAULT_TIMEOUT_MS = Number(process.env.TBO_FLIGHT_TIMEOUT_MS || 30000);
 const SEARCH_RETRIES = Math.max(0, Number(process.env.TBO_FLIGHT_SEARCH_RETRIES || 1));
 const RETRY_DELAY_MS = Math.max(0, Number(process.env.TBO_FLIGHT_RETRY_DELAY_MS || 1500));
+const ENABLE_MOCK_FLIGHT_BOOKING_MODE = String(process.env.ENABLE_MOCK_FLIGHT_BOOKING_MODE || "false").toLowerCase() === "true";
 
 const TBO_CREDS = {
   UserName: process.env.TBO_FLIGHT_USER || process.env.TBO_USER || "Hackathon",
@@ -108,6 +109,54 @@ function buildFallbackSearchPayloads(payload) {
 // Cache token
 let cachedToken = null;
 let tokenExpiry = null;
+
+function isMockFlightBookingRequested(body = {}) {
+  const requested = String(body?.MockBooking || body?.mockBooking || "").toLowerCase();
+  return ENABLE_MOCK_FLIGHT_BOOKING_MODE || requested === "true";
+}
+
+function buildMockFlightBookingResponse(body = {}, sourceError = "") {
+  const now = Date.now();
+  const mockRef = `MOCKFL_${now}`;
+  return {
+    success: true,
+    Mock: true,
+    MockReason: sourceError ? "upstream_book_failed" : "mock_mode_enabled",
+    SourceError: sourceError || null,
+    ConfirmationNumber: mockRef,
+    BookingReferenceId: body?.BookingReferenceId || mockRef,
+    PNR: `PNR${String(now).slice(-6)}`,
+    BookingStatus: "Confirmed",
+    InvoiceAmount: Number(body?.InvoiceAmount || body?.Fare?.PublishedFare || 0),
+    TicketAdvisory: "Mock booking generated for demo mode.",
+  };
+}
+
+function buildMockFlightBookingDetail(body = {}) {
+  const ref = String(body?.ConfirmationNumber || body?.BookingReferenceId || `MOCKFL_${Date.now()}`).trim();
+  return {
+    success: true,
+    Mock: true,
+    BookingDetail: {
+      ConfirmationNumber: ref,
+      BookingReferenceId: ref,
+      BookingStatus: "Confirmed",
+      TicketStatus: "Issued",
+    },
+  };
+}
+
+function buildMockFlightCancelResponse(ref) {
+  return {
+    success: true,
+    Mock: true,
+    ConfirmationNumber: ref,
+    Status: {
+      Code: 200,
+      Description: "Mock flight booking cancelled successfully.",
+    },
+  };
+}
 
 function buildSearchPayload(body, token) {
   return {
@@ -573,7 +622,55 @@ exports.bookFlight = async (req, res) => {
     );
     res.json(response.data);
   } catch (err) {
+    if (isMockFlightBookingRequested(req.body)) {
+      return res.json(buildMockFlightBookingResponse(req.body, extractFlightError(err, "Book failed")));
+    }
     res.status(502).json({ error: extractFlightError(err, "Book failed") });
+  }
+};
+
+exports.flightBookingDetail = async (req, res) => {
+  try {
+    const confirmationNumber = String(req.body?.ConfirmationNumber || "").trim();
+    const bookingReferenceId = String(req.body?.BookingReferenceId || "").trim();
+    if (!confirmationNumber && !bookingReferenceId) {
+      return res.status(400).json({ error: "Booking detail requires ConfirmationNumber or BookingReferenceId." });
+    }
+
+    const ref = confirmationNumber || bookingReferenceId;
+    if (String(ref).startsWith("MOCKFL_")) {
+      return res.json(buildMockFlightBookingDetail({
+        ConfirmationNumber: confirmationNumber,
+        BookingReferenceId: bookingReferenceId,
+      }));
+    }
+
+    return res.status(400).json({
+      error: "Real-time flight booking detail is not enabled for this supplier flow yet.",
+    });
+  } catch (err) {
+    res.status(502).json({ error: extractFlightError(err, "Booking detail failed") });
+  }
+};
+
+exports.cancelFlightBooking = async (req, res) => {
+  try {
+    const confirmationNumber = String(req.body?.ConfirmationNumber || "").trim();
+    const bookingReferenceId = String(req.body?.BookingReferenceId || "").trim();
+    if (!confirmationNumber && !bookingReferenceId) {
+      return res.status(400).json({ error: "Cancel requires ConfirmationNumber or BookingReferenceId." });
+    }
+
+    const ref = confirmationNumber || bookingReferenceId;
+    if (String(ref).startsWith("MOCKFL_")) {
+      return res.json(buildMockFlightCancelResponse(ref));
+    }
+
+    return res.status(400).json({
+      error: "Real-time flight cancellation is not enabled for this supplier flow yet.",
+    });
+  } catch (err) {
+    res.status(502).json({ error: extractFlightError(err, "Cancel failed") });
   }
 };
 

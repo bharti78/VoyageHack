@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
 
 const API_BASE = "http://localhost:5000/api/flights";
+const MOCK_FLIGHT_BOOKING = String(import.meta.env.VITE_MOCK_FLIGHT_BOOKING || "false").toLowerCase() === "true";
 
 async function apiPost(endpoint, payload) {
   const res = await fetch(`${API_BASE}/${endpoint}`, {
@@ -558,7 +559,7 @@ function getFlightInfo(r) {
   return { origin, dest, dep, arr, code, flightNum, stops, duration, fare, baseFare, tax, cabinClass, allSegs, raw: r };
 }
 
-function FlightCard({ flight, pax }) {
+function FlightCard({ flight, pax, onBook }) {
   const [expanded, setExpanded] = useState(false);
   const info = getFlightInfo(flight);
   const airline = AIRLINES[info.code] || { name: info.code || "Airline", emoji: "✈️" };
@@ -613,7 +614,7 @@ function FlightCard({ flight, pax }) {
           <button className="fp-detail-btn" onClick={() => setExpanded(e => !e)}>
             {expanded ? "Hide Details" : "Flight Details"}
           </button>
-          <button className="fp-book-btn">Book Now</button>
+          <button className="fp-book-btn" onClick={() => onBook?.(flight)}>Book Now</button>
         </div>
       </div>
       {expanded && (
@@ -685,6 +686,9 @@ export default function FlightsPage() {
     try { return localStorage.getItem("voyagehack.flightPriceAlert") === "1"; } catch { return false; }
   });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [flightBookingRef, setFlightBookingRef] = useState("");
+  const [flightBookingStatus, setFlightBookingStatus] = useState("");
+  const [flightBookingMock, setFlightBookingMock] = useState(false);
 
   const panelRef = useRef(null);
 
@@ -852,6 +856,66 @@ export default function FlightsPage() {
   function paxLabel() {
     const total = pax.adults + pax.children + (pax.infants || 0);
     return `${total} Traveller${total !== 1 ? "s" : ""}, ${cabin}`;
+  }
+
+  async function handleBookFlight(flight) {
+    const info = getFlightInfo(flight);
+    const proceed = window.confirm(
+      `Confirm booking for ${info.origin} -> ${info.dest} on ${formatDateStr(depDate)}?`
+    );
+    if (!proceed) return;
+
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await apiPost("book", {
+        MockBooking: MOCK_FLIGHT_BOOKING,
+        ResultIndex: flight?.ResultIndex ?? info?.raw?.ResultIndex ?? null,
+        TraceId: flight?.TraceId ?? info?.raw?.TraceId ?? null,
+        BookingReferenceId: `FLBK_${Date.now()}`,
+        FlightSummary: {
+          from: info.origin,
+          to: info.dest,
+          dep: info.dep,
+          arr: info.arr,
+          fare: Number(info.fare || 0),
+          pax: (pax?.adults || 1) + (pax?.children || 0),
+        },
+      });
+
+      const ref = data?.ConfirmationNumber || data?.BookingReferenceId || data?.PNR || `FLREF_${Date.now()}`;
+      setFlightBookingRef(String(ref));
+      setFlightBookingStatus(String(data?.BookingStatus || "Confirmed"));
+      setFlightBookingMock(Boolean(data?.Mock));
+    } catch (e) {
+      setError(e?.message || "Flight booking failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCancelFlight() {
+    if (!flightBookingRef) return;
+    const proceed = window.confirm("Cancel this flight booking?");
+    if (!proceed) return;
+
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await apiPost("cancel", {
+        ConfirmationNumber: flightBookingRef,
+        BookingReferenceId: flightBookingRef,
+        MockBooking: MOCK_FLIGHT_BOOKING,
+      });
+      const ok = Number(data?.Status?.Code) === 200
+        || String(data?.Status?.Description || "").toLowerCase().includes("cancel");
+      if (!ok) throw new Error(data?.Status?.Description || "Cancellation failed");
+      setFlightBookingStatus("Cancelled");
+    } catch (e) {
+      setError(e?.message || "Flight cancellation failed.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSearch(e, options = {}) {
@@ -1087,6 +1151,20 @@ export default function FlightsPage() {
             <div className="fp-err">
               <span className="fp-err-txt">⚠ {error}</span>
               <button className="fp-err-x" onClick={() => setError(null)}>Dismiss</button>
+            </div>
+          )}
+
+          {flightBookingRef && (
+            <div className="fp-err" style={{ background: "#ecfeff", borderColor: "#99f6e4" }}>
+              <span className="fp-err-txt" style={{ color: "#134e4a" }}>
+                Flight Booking Ref: {flightBookingRef} | Status: {flightBookingStatus}
+                {flightBookingMock ? " | Mock booking mode" : ""}
+              </span>
+              {flightBookingStatus !== "Cancelled" && (
+                <button className="fp-err-x" style={{ background: "#0f766e" }} onClick={handleCancelFlight}>
+                  Cancel Booking
+                </button>
+              )}
             </div>
           )}
 
@@ -1388,7 +1466,7 @@ export default function FlightsPage() {
               </div>
 
               {sortedFlights.length > 0 ? sortedFlights.map((f, i) => (
-                <FlightCard key={i} flight={f} pax={pax} />
+                <FlightCard key={i} flight={f} pax={pax} onBook={handleBookFlight} />
               )) : loading ? (
                 <div className="fp-loading">
                   <div className="fp-spin" />

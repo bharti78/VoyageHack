@@ -4,9 +4,8 @@ const { parseNaturalQuery, buildSuggestions } = require("../utils/nlqParser");
 
 const NIGHT_START_HOUR = 20;
 const NIGHT_END_HOUR = 5;
-const FEMALE_NIGHT_MIN_DRIVER_RATING = 4.0;
-const FEMALE_NIGHT_MAX_DRIVER_RATING = 5.0;
-const FEMALE_NIGHT_MIN_EXPERIENCE_YEARS = 5;
+const FEMALE_SAFE_FALLBACK_MIN_DRIVER_RATING = 5.0;
+const FEMALE_SAFE_FALLBACK_MIN_EXPERIENCE_YEARS = 5;
 const API_BASE = process.env.LOCAL_API_BASE || "http://localhost:5000/api";
 const CITY_TO_AIRPORT = {
   mumbai: "BOM",
@@ -28,6 +27,94 @@ const CITY_TO_AIRPORT = {
   srinagar: "SXR",
   leh: "IXL",
 };
+
+const DRIVER_FIRST_NAMES = [
+  "Aarav", "Vihaan", "Arjun", "Reyansh", "Kabir", "Aditya", "Rohan", "Karan",
+  "Neha", "Priya", "Kavya", "Ananya", "Pooja", "Aisha", "Naina", "Ritika",
+];
+
+const DRIVER_LAST_INITIALS = ["S.", "K.", "M.", "R.", "P.", "T.", "D.", "V."];
+
+const VEHICLE_TYPES = [
+  "Maruti Dzire",
+  "Hyundai Aura",
+  "Honda Amaze",
+  "Toyota Innova",
+  "Kia Carens",
+  "Mahindra XUV700",
+  "Bajaj RE Auto",
+  "Honda Activa",
+];
+
+function hashSeed(input) {
+  const text = String(input || "seed");
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+  }
+  return h >>> 0;
+}
+
+function seededRng(seed) {
+  let x = seed || 123456789;
+  return () => {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return ((x >>> 0) % 1000000) / 1000000;
+  };
+}
+
+function estimateCabCountByBudget(budget) {
+  const b = Number(budget || 0);
+  if (!Number.isFinite(b) || b <= 0) return 18;
+  if (b < 2000) return 10;
+  if (b < 6000) return 14;
+  if (b < 12000) return 18;
+  return 24;
+}
+
+function buildRealisticFallbackDrivers({ city = "", budget = 0, travelTime = "" }) {
+  const count = estimateCabCountByBudget(budget);
+  const seed = hashSeed(`${city}|${travelTime}|${budget}|cab_fallback_v1`);
+  const rand = seededRng(seed);
+  const hour = Number(String(travelTime || "").split(":")[0]);
+  const isPeak = Number.isFinite(hour) && ([8, 9, 10, 17, 18, 19].includes(hour));
+
+  return Array.from({ length: count }, (_, idx) => {
+    const first = DRIVER_FIRST_NAMES[Math.floor(rand() * DRIVER_FIRST_NAMES.length)];
+    const last = DRIVER_LAST_INITIALS[Math.floor(rand() * DRIVER_LAST_INITIALS.length)];
+    const vehicle = VEHICLE_TYPES[Math.floor(rand() * VEHICLE_TYPES.length)];
+    const gender = rand() < 0.38 ? "female" : "male";
+    const baseRating = isPeak ? 4.4 : 4.5;
+    const rating = Math.min(5, Number((baseRating + rand() * 0.6).toFixed(1)));
+    const exp = Math.max(1, Math.round(2 + rand() * 12));
+    const online = rand() > (isPeak ? 0.12 : 0.2);
+
+    return {
+      _id: `fallback_${hashSeed(`${city}_${idx}_${first}_${last}`)}`,
+      name: `${first} ${last}`,
+      gender,
+      verified: true,
+      rating,
+      totalTrips: 150 + Math.round(rand() * 5000),
+      vehicle_type: vehicle,
+      experienceYears: exp,
+      safety: {
+        backgroundCheckStatus: "verified",
+        womenSafetyTrainingCompleted: true,
+        panicButtonEnabled: true,
+        sosEnabled: true,
+      },
+      availability: {
+        isOnline: online,
+        preferredShift: rand() < 0.5 ? "day" : "both",
+      },
+      source: "fallback-generated",
+    };
+  }).filter((d) => d.availability?.isOnline);
+}
 
 function isNightHour(timeValue) {
   const hour = Number(String(timeValue || "").split(":")[0]);
@@ -149,24 +236,23 @@ function applyWomenSafetyCabRules(drivers, { persona, userGender, travelTime }) 
     return { drivers: femaleDrivers, mode: "female_only" };
   }
 
-  if (isNightHour(travelTime)) {
-    const trustedFallback = drivers.filter((d) => {
-      const rating = Number(d.rating || 0);
-      const exp = Number(d.experienceYears || 0);
-      return (
-        rating >= FEMALE_NIGHT_MIN_DRIVER_RATING &&
-        rating <= FEMALE_NIGHT_MAX_DRIVER_RATING &&
-        exp >= FEMALE_NIGHT_MIN_EXPERIENCE_YEARS
-      );
-    });
+  const trustedFallback = drivers.filter((d) => {
+    const rating = Number(d.rating || 0);
+    const exp = Number(d.experienceYears || 0);
+    return (
+      rating >= FEMALE_SAFE_FALLBACK_MIN_DRIVER_RATING &&
+      exp >= FEMALE_SAFE_FALLBACK_MIN_EXPERIENCE_YEARS
+    );
+  });
 
+  if (trustedFallback.length > 0) {
     return {
       drivers: trustedFallback,
-      mode: "night_trusted_fallback",
+      mode: "trusted_fallback_5star",
     };
   }
 
-  return { drivers, mode: "fallback_no_female" };
+  return { drivers: [], mode: isNightHour(travelTime) ? "female_only_unavailable_night" : "female_only_unavailable" };
 }
 
 exports.searchTrip = async (req, res) => {
@@ -182,7 +268,10 @@ exports.searchTrip = async (req, res) => {
       hotels = hotels.filter((h) => h.female_safe && Number(h.safety || 0) > 4);
     }
 
-    const baseDrivers = await Driver.find({ verified: true });
+    const baseDriversFromDb = await Driver.find({ verified: true });
+    const baseDrivers = baseDriversFromDb.length > 0
+      ? baseDriversFromDb
+      : buildRealisticFallbackDrivers({ city, budget, travelTime });
     const safetyFiltered = applyWomenSafetyCabRules(baseDrivers, {
       persona,
       userGender,
@@ -194,10 +283,10 @@ exports.searchTrip = async (req, res) => {
       drivers: safetyFiltered.drivers,
       safetyMode: safetyFiltered.mode,
       safetyThresholds: {
-        femaleNightMinRating: FEMALE_NIGHT_MIN_DRIVER_RATING,
-        femaleNightMaxRating: FEMALE_NIGHT_MAX_DRIVER_RATING,
-        femaleNightMinExperienceYears: FEMALE_NIGHT_MIN_EXPERIENCE_YEARS,
+        femaleSafeFallbackMinRating: FEMALE_SAFE_FALLBACK_MIN_DRIVER_RATING,
+        femaleSafeFallbackMinExperienceYears: FEMALE_SAFE_FALLBACK_MIN_EXPERIENCE_YEARS,
       },
+      driversSource: baseDriversFromDb.length > 0 ? "database" : "fallback-generated",
     });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
@@ -231,7 +320,10 @@ exports.smartPlan = async (req, res) => {
       price: { $lte: allocation.hotels > 0 ? allocation.hotels : Number.MAX_SAFE_INTEGER },
     }).limit(20);
 
-    const drivers = await Driver.find({ verified: true }).limit(40);
+    const dbDrivers = await Driver.find({ verified: true }).limit(40);
+    const drivers = dbDrivers.length > 0
+      ? dbDrivers
+      : buildRealisticFallbackDrivers({ city: destination, budget: allocation.cabs, travelTime });
     const safetyFiltered = applyWomenSafetyCabRules(drivers, {
       persona: persona || tripType,
       userGender,
@@ -292,10 +384,10 @@ exports.smartPlan = async (req, res) => {
         },
       },
       safetyThresholds: {
-        femaleNightMinRating: FEMALE_NIGHT_MIN_DRIVER_RATING,
-        femaleNightMaxRating: FEMALE_NIGHT_MAX_DRIVER_RATING,
-        femaleNightMinExperienceYears: FEMALE_NIGHT_MIN_EXPERIENCE_YEARS,
+        femaleSafeFallbackMinRating: FEMALE_SAFE_FALLBACK_MIN_DRIVER_RATING,
+        femaleSafeFallbackMinExperienceYears: FEMALE_SAFE_FALLBACK_MIN_EXPERIENCE_YEARS,
       },
+      driversSource: dbDrivers.length > 0 ? "database" : "fallback-generated",
     });
   } catch (error) {
     res.status(500).json({ error: "Server error" });

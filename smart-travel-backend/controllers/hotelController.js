@@ -14,6 +14,7 @@ const MAX_SEARCH_HOTEL_CODES = 100;
 const MAX_TBO_RETRIES = 2;
 const TBO_RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const SUCCESS_CODES = new Set([200, "200", "01", 201, "201"]);
+const ENABLE_MOCK_BOOKING_MODE = String(process.env.ENABLE_MOCK_BOOKING_MODE || "false").toLowerCase() === "true";
 const ALLOWED_IMAGE_HOSTS = new Set([
   "api.tbotechnology.in",
   "tbotechnology.in",
@@ -55,6 +56,11 @@ async function tboFetch(endpoint, payload = {}, options = {}) {
   const method = (options.method || "POST").toUpperCase();
   const includeCredentialsInBody = options.includeCredentialsInBody !== false;
   const hasBody = method !== "GET";
+  const allowedBusinessCodes = new Set(
+    (Array.isArray(options.allowBusinessErrorCodes) ? options.allowBusinessErrorCodes : []).map((v) =>
+      String(v)
+    )
+  );
 
   console.log(`TBO API Request: ${method} ${endpoint}`, payload);
 
@@ -114,6 +120,10 @@ async function tboFetch(endpoint, payload = {}, options = {}) {
 
       // Check if TBO API returned a business-level error
       if (data.Status && !SUCCESS_CODES.has(data.Status.Code)) {
+        const statusCode = String(data.Status.Code);
+        if (allowedBusinessCodes.has(statusCode)) {
+          return data;
+        }
         throw new Error(`TBO API Error: ${data.Status.Description || "Unknown error"}`);
       }
 
@@ -139,6 +149,58 @@ const cityCache = {};
 const cityHotelCodeCache = {};
 const cityHotelDetailsCache = {};
 const hotelDetailsCache = {};
+
+function isInsufficientBalanceStatus(status) {
+  const code = String(status?.Code || "").trim();
+  const desc = String(status?.Description || "").toLowerCase();
+  return code === "300" && desc.includes("insufficient balance");
+}
+
+function isMockBookingRequested(body = {}) {
+  const requested = String(body?.MockBooking || body?.mockBooking || "").toLowerCase();
+  return ENABLE_MOCK_BOOKING_MODE || requested === "true";
+}
+
+function buildMockBookingResponse(payload = {}, sourceStatus = {}) {
+  const now = Date.now();
+  const mockRef = `MOCKBK_${now}`;
+  return {
+    Status: {
+      Code: 200,
+      Description: "Mock booking confirmed (insufficient supplier balance).",
+    },
+    ConfirmationNumber: mockRef,
+    BookingReferenceId: payload?.BookingReferenceId || mockRef,
+    BookingId: mockRef,
+    BookingStatus: "Confirmed",
+    Mock: true,
+    MockReason: "insufficient_balance",
+    SourceStatus: sourceStatus || null,
+    HotelResult: [],
+  };
+}
+
+function buildMockBookingDetail(payload = {}) {
+  const ref = String(payload?.ConfirmationNumber || payload?.BookingReferenceId || `MOCKBK_${Date.now()}`).trim();
+  return {
+    Status: { Code: 200, Description: "Mock booking detail" },
+    BookingDetail: {
+      ConfirmationNumber: ref,
+      BookingReferenceId: ref,
+      BookingStatus: "Confirmed",
+      VoucherStatus: "Issued",
+      Mock: true,
+    },
+  };
+}
+
+function buildMockCancelResponse(ref) {
+  return {
+    Status: { Code: 200, Description: "Mock booking cancelled" },
+    ConfirmationNumber: ref,
+    Mock: true,
+  };
+}
 
 function normalizeHotelCodes(rawCodes) {
   if (!rawCodes) return "";
@@ -770,7 +832,9 @@ exports.preBook = async (req, res) => {
       PaymentMode: req.body?.PaymentMode || "Limit",
     };
 
-    const data = await tboFetch("PreBook", payload);
+    const data = await tboFetch("PreBook", payload, {
+      allowBusinessErrorCodes: [300],
+    });
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
@@ -810,7 +874,13 @@ exports.book = async (req, res) => {
       PaymentMode: req.body?.PaymentMode || "Limit",
     };
 
-    const data = await tboFetch("Book", payload);
+    const mockBookingEnabled = isMockBookingRequested(req.body);
+    const data = await tboFetch("Book", payload, {
+      allowBusinessErrorCodes: mockBookingEnabled ? [300] : [],
+    });
+    if (mockBookingEnabled && isInsufficientBalanceStatus(data?.Status)) {
+      return res.json(buildMockBookingResponse(payload, data?.Status));
+    }
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
@@ -833,6 +903,11 @@ exports.bookingDetail = async (req, res) => {
       return res.status(400).json({ error: "BookingDetail requires ConfirmationNumber or BookingReferenceId." });
     }
 
+    const isMockRef = String(payload.ConfirmationNumber || payload.BookingReferenceId || "").startsWith("MOCKBK_");
+    if (isMockRef) {
+      return res.json(buildMockBookingDetail(payload));
+    }
+
     const data = await tboFetch("BookingDetail", payload);
     res.json(data);
   } catch (err) {
@@ -845,12 +920,25 @@ exports.cancel = async (req, res) => {
     const confirmationNumber = String(
       req.body?.ConfirmationNumber || req.body?.confirmationNumber || req.body?.BookingRefNo || ""
     ).trim();
+    const bookingReferenceId = String(
+      req.body?.BookingReferenceId || req.body?.bookingReferenceId || req.body?.BookingRefNo || ""
+    ).trim();
 
-    if (!confirmationNumber) {
-      return res.status(400).json({ error: "Cancel requires ConfirmationNumber." });
+    if (!confirmationNumber && !bookingReferenceId) {
+      return res.status(400).json({ error: "Cancel requires ConfirmationNumber or BookingReferenceId." });
     }
 
-    const data = await tboFetch("Cancel", { ConfirmationNumber: confirmationNumber });
+    const ref = confirmationNumber || bookingReferenceId;
+    if (String(ref).startsWith("MOCKBK_")) {
+      return res.json(buildMockCancelResponse(ref));
+    }
+
+    const payload = {
+      ...(confirmationNumber ? { ConfirmationNumber: confirmationNumber } : {}),
+      ...(bookingReferenceId ? { BookingReferenceId: bookingReferenceId } : {}),
+    };
+
+    const data = await tboFetch("Cancel", payload);
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
