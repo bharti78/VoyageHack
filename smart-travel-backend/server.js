@@ -11,10 +11,19 @@ const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173,http:
   .map((o) => o.trim())
   .filter(Boolean);
 
+function isAllowedOrigin(origin) {
+  if (allowedOrigins.includes(origin)) return true;
+  return allowedOrigins.some((entry) => {
+    if (!entry.startsWith("*.")) return false;
+    const base = entry.slice(1); // ".example.com"
+    return origin.endsWith(base);
+  });
+}
+
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (isAllowedOrigin(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -48,6 +57,7 @@ app.use((err, req, res, next) => {
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB Connected")
-    app.listen(5000, () => console.log("Server running on port 5000"))
+    const PORT = Number(process.env.PORT || 5000);
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
   })
   .catch(err => console.log(err))
