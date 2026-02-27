@@ -69,24 +69,69 @@ function applyCabSafetyRules(cabs, { persona, travelerGender, time }) {
   const femaleDrivers = cabs.filter((c) => String(c.driverGender).toLowerCase() === "female");
   if (femaleDrivers.length > 0) return { list: femaleDrivers, mode: "female_only" };
 
-  if (isNightHour(time)) {
-    const trusted = cabs.filter((c) => Number(c.driverRating) >= 4 && Number(c.yearsExperience) >= 5);
-    return { list: trusted, mode: "night_trusted_fallback" };
+  const trustedFiveStar = cabs.filter((c) => Number(c.driverRating) >= 5 && Number(c.yearsExperience) >= 5);
+  if (trustedFiveStar.length > 0) {
+    return { list: trustedFiveStar, mode: "trusted_fallback_5star" };
   }
 
-  return { list: cabs, mode: "fallback_no_female" };
+  return { list: [], mode: isNightHour(time) ? "female_only_unavailable_night" : "female_only_unavailable" };
 }
 
-async function fetchDriverSuggestions({ city, budget, persona, userGender, travelTime }) {
+async function fetchLiveCabSearch({ city, budget, persona, userGender, travelTime }) {
   const res = await fetch(SMART_SEARCH_API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ city, budget, persona, userGender, travelTime }),
   });
-  if (!res.ok) return [];
+  if (!res.ok) throw new Error(`Cab API failed (${res.status})`);
   const data = await res.json().catch(() => ({}));
   const drivers = Array.isArray(data?.drivers) ? data.drivers : [];
-  return drivers;
+  return { drivers, safetyMode: data?.safetyMode || "normal" };
+}
+
+function inferCabTypeFromDriver(driver = {}) {
+  const vehicle = String(driver?.vehicle_type || "").toLowerCase();
+  if (vehicle.includes("bike")) return CAB_TYPES.find((t) => t.id === "bike") || CAB_TYPES[0];
+  if (vehicle.includes("auto")) return CAB_TYPES.find((t) => t.id === "auto") || CAB_TYPES[0];
+  if (vehicle.includes("suv") || vehicle.includes("innova")) return CAB_TYPES.find((t) => t.id === "suv") || CAB_TYPES[0];
+  if (vehicle.includes("xl") || vehicle.includes("urbania") || vehicle.includes("tempo")) return CAB_TYPES.find((t) => t.id === "xl") || CAB_TYPES[0];
+  if (vehicle.includes("prime") || vehicle.includes("premium")) return CAB_TYPES.find((t) => t.id === "prime") || CAB_TYPES[0];
+  return CAB_TYPES.find((t) => t.id === "sedan") || CAB_TYPES[0];
+}
+
+function mapDriverToCab(driver, idx, { pickup, drop, time }) {
+  const type = inferCabTypeFromDriver(driver);
+  const hour = time ? parseInt(time.split(":")[0], 10) : new Date().getHours();
+  const isSurge = type.surgeHours.includes(hour);
+  const distKm = 6 + ((idx * 3) % 18);
+  const fare = Math.max(type.minFare, Math.round(type.pricePerKm * distKm * (isSurge ? 1.25 : 1)));
+  const eta = 4 + ((idx * 2) % 11);
+  const gender = String(driver?.gender || "male").toLowerCase();
+  return {
+    id: String(driver?._id || `live-${idx}`),
+    type,
+    provider: { name: "Verified Local", logo: "✅", color: "#166534" },
+    fare,
+    distKm,
+    eta,
+    isSurge,
+    driverName: String(driver?.name || "Driver"),
+    driverGender: gender || "male",
+    driverRating: Number(driver?.rating || type.rating || 4).toFixed(1),
+    yearsExperience: Number(driver?.experienceYears || 0),
+    carModel: String(driver?.vehicle_type || type.name),
+    plateNo: "Verified by partner",
+    acAvailable: type.id !== "bike" && type.id !== "auto",
+    pickup,
+    drop,
+    features: [
+      "📡 Live Tracking",
+      type.id !== "bike" && type.id !== "auto" ? "❄️ AC" : null,
+      "💳 All Payments",
+      "🛡️ Verified Driver",
+      isSurge ? null : "💰 Best Price",
+    ].filter(Boolean),
+  };
 }
 
 /* ── CSS ── */
@@ -265,37 +310,25 @@ export default function CabsPage() {
     if (shouldAutoSearch) setTimeout(() => handleSearch(), 0);
   }, [pickup]);
 
-  function handleSearch() {
+  async function handleSearch() {
     if (!pickup || !drop) { setError("Please enter pickup and drop locations."); return; }
     setError(null);
     setLoading(true);
     setSearched(true);
     setCabs([]);
-    setTimeout(async () => {
-      const generated = generateCabs(pickup, drop, date, time, cabType || null);
-      let results = generated;
-      try {
-        const drivers = await fetchDriverSuggestions({
-          city: pickup,
-          budget: budgetLimit > 0 ? budgetLimit : 999999,
-          persona,
-          userGender: travelerGender,
-          travelTime: time,
-        });
-        if (drivers.length > 0) {
-          results = generated.map((cab, idx) => {
-            const d = drivers[idx % drivers.length];
-            return {
-              ...cab,
-              driverName: d.name || cab.driverName,
-              driverGender: d.gender || cab.driverGender,
-              driverRating: Number(d.rating || cab.driverRating).toFixed(1),
-              yearsExperience: Number(d.experienceYears || cab.yearsExperience || 0),
-            };
-          });
-        }
-      } catch {
-        // keep generated fallback
+    try {
+      const live = await fetchLiveCabSearch({
+        city: pickup,
+        budget: budgetLimit > 0 ? budgetLimit : 999999,
+        persona,
+        userGender: travelerGender,
+        travelTime: time,
+      });
+      let results = (live.drivers || []).map((driver, idx) =>
+        mapDriverToCab(driver, idx, { pickup, drop, time })
+      );
+      if (!results.length) {
+        throw new Error("No verified cab drivers found for this city.");
       }
       if (budgetLimit > 0) {
         results = results.filter((cab) => Number(cab.fare || 0) <= budgetLimit);
@@ -303,9 +336,28 @@ export default function CabsPage() {
       setCabs(results);
       const safety = applyCabSafetyRules(results, { persona, travelerGender, time });
       setDisplayedCabs(safety.list);
+      setSafetyMode(safety.mode || live.safetyMode || "normal");
+      if (!safety.list.length && safety.mode?.startsWith("female_only_unavailable")) {
+        setError("No female drivers are currently available for solo female travel on this route/time.");
+      }
+    } catch (e) {
+      // Last-resort fallback so UX doesn't break if backend is down.
+      let fallback = generateCabs(pickup, drop, date, time, cabType || null);
+      if (budgetLimit > 0) {
+        fallback = fallback.filter((cab) => Number(cab.fare || 0) <= budgetLimit);
+      }
+      setCabs(fallback);
+      const safety = applyCabSafetyRules(fallback, { persona, travelerGender, time });
+      setDisplayedCabs(safety.list);
       setSafetyMode(safety.mode);
+      if (!safety.list.length && safety.mode?.startsWith("female_only_unavailable")) {
+        setError("No female drivers are currently available for solo female travel on this route/time.");
+      } else {
+        setError(e?.message || "Live cab data unavailable, showing fallback results.");
+      }
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   }
 
   function handleBook(cab) {
@@ -412,8 +464,9 @@ export default function CabsPage() {
           {!loading && searched && (
             <div style={{background:"#ecfeff",border:"1.5px solid #99f6e4",borderRadius:10,padding:"10px 12px",marginBottom:12,fontSize:".74rem",color:"#134e4a"}}>
               {safetyMode === "female_only" && "Safety mode applied: only female drivers shown for solo female traveller."}
-              {safetyMode === "night_trusted_fallback" && "Female drivers unavailable at night. Showing only 4-5 star, experienced drivers (5+ years)."}
-              {safetyMode === "fallback_no_female" && "Female drivers unavailable. Showing available verified drivers."}
+              {safetyMode === "trusted_fallback_5star" && "Female drivers unavailable. Showing only 5-star drivers with 5+ years experience."}
+              {safetyMode === "female_only_unavailable_night" && "No female drivers available right now (night window). Please try another time."}
+              {safetyMode === "female_only_unavailable" && "No female drivers available right now. Please try again shortly."}
               {safetyMode === "normal" && "Showing available verified drivers."}
             </div>
           )}

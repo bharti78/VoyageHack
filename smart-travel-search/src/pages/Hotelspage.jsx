@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
@@ -224,10 +224,12 @@ function facilityHighlights(facilities) {
   const hasSenior = list.some((f) => /wheelchair|lift|elevator|accessible|senior|medical/.test(f));
   const hasDining = list.some((f) => /restaurant|dining|breakfast|meal|buffet|cafe/.test(f));
   const hasWellness = list.some((f) => /spa|gym|fitness|pool|wellness/.test(f));
+  const hasCab = list.some((f) => /cab|taxi|shuttle|transfer|airport pickup|airport drop|car hire/.test(f));
   return [
     hasSenior ? "Senior Friendly" : null,
     hasDining ? "Dining Options" : null,
     hasWellness ? "Wellness" : null,
+    hasCab ? "Cab Facility" : null,
   ].filter(Boolean);
 }
 
@@ -497,7 +499,7 @@ const css = `
 .hp-back-btn:hover{background:rgba(255,255,255,.2)}
 
 /* ── content ── */
-.hp-content{flex:1;padding:20px 28px 40px;display:flex;flex-direction:column;gap:0;overflow:auto}
+.hp-content{flex:1;padding:20px 28px 40px;display:flex;flex-direction:column;gap:0;overflow:auto;position:relative;isolation:isolate}
 .hp-bc{font-size:.73rem;color:#64748b;margin-bottom:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .hp-bc .act{color:#0f5298;font-weight:600}
 .hp-bc-sep{color:#cbd5e1}
@@ -508,7 +510,8 @@ const css = `
 .hp-err-x{background:#e53e3e;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:.7rem;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit}
 
 /* ── search box ── */
-.hp-sbox{background:#fff;border-radius:18px;box-shadow:0 4px 28px rgba(15,82,152,.09),0 1px 4px rgba(0,0,0,.05);border:1px solid rgba(15,82,152,.08)}
+.hp-sbox{background:#fff;border-radius:18px;box-shadow:0 4px 28px rgba(15,82,152,.09),0 1px 4px rgba(0,0,0,.05);border:1px solid rgba(15,82,152,.08);position:relative}
+.hp-search-box{z-index:40}
 .hp-srow1{display:flex;align-items:flex-end;padding:18px 18px 14px;gap:10px;border-bottom:1px solid #f0f4f8;flex-wrap:wrap}
 .hp-srow2{display:flex;align-items:flex-end;padding:12px 18px 16px;gap:10px;flex-wrap:wrap}
 .hp-filters-toggle{display:none}
@@ -549,7 +552,7 @@ const css = `
 .hp-sbtn svg{width:16px;height:16px}
 
 /* dropdown */
-.hp-drop{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05);z-index:400;animation:fadeDown .18s ease both;overflow:hidden}
+.hp-drop{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05);z-index:5000;animation:fadeDown .18s ease both;overflow:hidden}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 
 /* calendar */
@@ -560,12 +563,18 @@ const css = `
 .hp-cal-mon{font-size:.82rem;font-weight:700;color:#1e293b}
 .hp-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .hp-dow{font-size:.56rem;font-weight:700;text-align:center;color:#94a3b8;padding:3px;text-transform:uppercase}
-.hp-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;font-size:.72rem;font-weight:500;color:#334155;transition:all .13s;position:relative}
+.hp-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:7px;cursor:pointer;font-size:.72rem;font-weight:500;color:#334155;transition:all .13s;position:relative;padding:4px 2px}
 .hp-day:hover:not(.dis){background:#e8f0fe;color:#0f5298}
 .hp-day.dis{color:#d1d5db;cursor:default}
 .hp-day.sel{background:#0f5298 !important;color:#fff !important;font-weight:700}
 .hp-day.tod::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:#0f5298}
 .hp-day.tod.sel::after{background:rgba(255,255,255,.7)}
+.hp-day-num{line-height:1}
+.hp-day-fare{font-size:.56rem;font-weight:700;line-height:1}
+.hp-day-fare.low{color:#166534}
+.hp-day-fare.mid{color:#854d0e}
+.hp-day-fare.high{color:#991b1b}
+.hp-day.sel .hp-day-fare{color:#fff !important}
 
 /* rooms dropdown */
 .hp-rm-drop{padding:15px;min-width:255px}
@@ -737,7 +746,11 @@ const css = `
 .fade{animation:fadeIn .22s ease}
 
 /* city autocomplete */
-.hp-city-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05);z-index:400;animation:fadeDown .18s ease both;max-height:260px;overflow-y:auto;padding:5px}
+.hp-city-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05);z-index:5000;animation:fadeDown .18s ease both;max-height:260px;overflow-y:auto;padding:5px}
+
+/* Keep Leaflet map panes below field dropdowns/calendars */
+.leaflet-container{z-index:1 !important}
+.leaflet-pane,.leaflet-top,.leaflet-bottom,.leaflet-control,.leaflet-map-pane{z-index:1 !important}
 .hp-city-item{padding:9px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background .14s}
 .hp-city-item:hover{background:#f0f7ff}
 .hp-city-item .name{font-size:.82rem;font-weight:600;color:#1e293b}
@@ -825,10 +838,24 @@ function stars(n){ n=Math.max(0,Math.min(5,n||0)); return "★".repeat(n)+"☆".
 /* ═══════════════════════════════════════════════
    MINI CALENDAR
    ═══════════════════════════════════════════════ */
-function MiniCal({value, onChange, onClose, minDate}){
+function dateKeyFromDate(dt){ if(!dt) return ""; return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; }
+function stableHash(text){ let h=0; for(let i=0;i<text.length;i+=1){ h=((h<<5)-h+text.charCodeAt(i))|0; } return Math.abs(h); }
+function buildRealisticHotelFallbackFare({date,citySeed,rooms,adults,children}){
+  const routeSeed = stableHash(String(citySeed||"city"));
+  const dateSeed = stableHash(`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`);
+  const day = date.getDay();
+  const weekendLift = day===5 || day===6 || day===0 ? 700 : 0;
+  const occupancyLift = Math.max(0, Number(rooms||1)-1) * 1200 + Math.max(0, Number(adults||2)-2) * 600 + Math.max(0, Number(children||0)) * 350;
+  const base = 2400 + (routeSeed % 4200);
+  const swing = (dateSeed % 1400) - 500;
+  return Math.max(1800, Math.round(base + occupancyLift + weekendLift + swing));
+}
+
+function MiniCal({value, onChange, onClose, minDate, faresByDate = {}, onViewChange, fallbackSeed = "city", roomCfg = {count:1,adults:2,children:0}}){
   const today=new Date(); today.setHours(0,0,0,0);
   const init=value||today;
   const [v,setV]=useState({y:init.getFullYear(),m:init.getMonth()});
+  useEffect(()=>{ if(!onViewChange) return; onViewChange(new Date(v.y,v.m,1)); },[v.y,v.m]); // eslint-disable-line react-hooks/exhaustive-deps
   const days=new Date(v.y,v.m+1,0).getDate();
   const first=new Date(v.y,v.m,1).getDay();
   const cells=[...Array(first).fill(null),...Array.from({length:days},(_,i)=>i+1)];
@@ -849,6 +876,17 @@ function MiniCal({value, onChange, onClose, minDate}){
     }
     return c;
   }
+  function fareMeta(d){
+    if(!d) return null;
+    const dt=new Date(v.y,v.m,d); dt.setHours(0,0,0,0);
+    if(dt<(minDate||today)) return null;
+    const key = dateKeyFromDate(dt);
+    const apiFare = faresByDate[key];
+    const fallback = buildRealisticHotelFallbackFare({date:dt,citySeed:fallbackSeed,rooms:roomCfg.count,adults:roomCfg.adults,children:roomCfg.children});
+    const amount = Number.isFinite(Number(apiFare?.minFare)) ? Number(apiFare.minFare) : fallback;
+    const level = apiFare?.level || (amount <= 3500 ? "low" : amount <= 6000 ? "mid" : "high");
+    return { amount, level };
+  }
   return (
     <div className="hp-cal">
       <div className="hp-cal-hdr">
@@ -858,7 +896,15 @@ function MiniCal({value, onChange, onClose, minDate}){
       </div>
       <div className="hp-cal-grid">
         {DOW.map(d=><div key={d} className="hp-dow">{d}</div>)}
-        {cells.map((d,i)=><div key={i} className={cls(d)} onClick={()=>pick(d)}>{d}</div>)}
+        {cells.map((d,i)=>{
+          const meta = fareMeta(d);
+          return (
+            <div key={i} className={cls(d)} onClick={()=>pick(d)}>
+              <div className="hp-day-num">{d}</div>
+              {meta && <div className={`hp-day-fare ${meta.level}`}>Rs {Math.round(meta.amount).toLocaleString("en-IN")}</div>}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -897,8 +943,7 @@ export default function HotelsPage({onBack}){
   /* ── results ── */
   const [searchId,setSearchId] = useState("");
   const [hotels,setHotels]     = useState([]);
-  const [calendarLoading,setCalendarLoading] = useState(false);
-  const [calendarFlexDays,setCalendarFlexDays] = useState(3);
+  const calendarFlexDays = 3;
   const [hotelCalendarFares,setHotelCalendarFares] = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
   const [showMap,setShowMap]   = useState(true);
@@ -909,6 +954,15 @@ export default function HotelsPage({onBack}){
   const [detailLoading,setDetailLoading] = useState(false);
   const [fullscreenImageUrl,setFullscreenImageUrl] = useState("");
   const [autoSearchPending,setAutoSearchPending] = useState(false);
+
+  const hotelCalendarFareMap = useMemo(()=>{
+    const out = {};
+    for (const fare of hotelCalendarFares) {
+      if (!fare?.checkIn) continue;
+      out[String(fare.checkIn)] = fare;
+    }
+    return out;
+  }, [hotelCalendarFares]);
 
   /* ── prebook / booking ── */
   const [selHotel,setSelHotel]   = useState(null);
@@ -1245,19 +1299,24 @@ export default function HotelsPage({onBack}){
   }
 
 
-  async function loadCalendarFares(){
+  async function loadCalendarFares(anchorDate = checkIn, options = {}){
+    const { silent = false } = options;
     if(!cityId){ setApiErr("Please select a city from the suggestions."); return; }
-    if(!checkIn||!checkOut){ setApiErr("Please select check-in and check-out dates."); return; }
+    if(!anchorDate){ setApiErr("Please select check-in and check-out dates."); return; }
 
-    setApiErr("");
-    setCalendarLoading(true);
+    const stayNights = Math.max(1, nights(checkIn, checkOut) || 1);
+    const activeCheckIn = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+    const activeCheckOut = new Date(activeCheckIn);
+    activeCheckOut.setDate(activeCheckOut.getDate() + stayNights);
+
+    if(!silent) setApiErr("");
     try{
       const data = await apiPost("calendar-fares",{
         CityId      : cityId,
         CityName    : cityQuery || cityName || "",
         CountryCode : destCountry,
-        CheckIn     : fmtApi(checkIn),
-        CheckOut    : fmtApi(checkOut),
+        CheckIn     : fmtApi(activeCheckIn),
+        CheckOut    : fmtApi(activeCheckOut),
         HotelCodes  : hotelCodes,
         GuestNationality: nat,
         PaxRooms    : Array.from({length:roomCfg.count},()=>({
@@ -1266,7 +1325,7 @@ export default function HotelsPage({onBack}){
           ChildrenAges: roomCfg.children>0?Array(roomCfg.children).fill(8):[],
         })),
         ResponseTime: HOTEL_SEARCH_RESPONSE_TIME,
-        Days: 14,
+        Days: 42,
         FlexDays: calendarFlexDays,
         Filters: {
           Refundable: false,
@@ -1277,12 +1336,16 @@ export default function HotelsPage({onBack}){
       });
       setHotelCalendarFares(Array.isArray(data?.fares) ? data.fares : []);
     }catch(e){
-      setApiErr(`Calendar fare failed: ${e.message}`);
+      if(!silent) setApiErr(`Calendar fare failed: ${e.message}`);
       setHotelCalendarFares([]);
-    }finally{
-      setCalendarLoading(false);
     }
   }
+  useEffect(()=>{
+    if (drop!=="ci" && drop!=="co") return;
+    const seed = drop==="co" ? (checkOut || checkIn) : checkIn;
+    if (!seed || !cityId) return;
+    void loadCalendarFares(seed, { silent: true });
+  }, [drop, cityId, cityName, cityQuery, checkIn, checkOut, hotelCodes, nat, roomCfg.count, roomCfg.adults, roomCfg.children, destCountry, calendarFlexDays]); // eslint-disable-line react-hooks/exhaustive-deps
   async function openHotelDetails(hotel){
     setDetailImageIdx(0);
     setDetailHotel(hotel);
@@ -1308,6 +1371,34 @@ export default function HotelsPage({onBack}){
     }finally{
       setDetailLoading(false);
     }
+  }
+
+  function openCabForHotel(hotel) {
+    const fallbackCity = cityQuery || cityName || hotel?.CityName || "";
+    const city = String(fallbackCity || "").trim();
+    if (!city) return;
+    const pickupDate = checkIn ? new Date(checkIn) : new Date();
+    try {
+      localStorage.setItem("voyagehack.cab.prefill", JSON.stringify({
+        city,
+        budget: Number(budget || 0) || 0,
+        date: pickupDate.toISOString(),
+      }));
+      const prevUnified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
+      localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
+        ...prevUnified,
+        destination: city,
+        startDate: checkIn ? checkIn.toISOString() : prevUnified?.startDate || "",
+        endDate: checkOut ? checkOut.toISOString() : prevUnified?.endDate || "",
+        budget: {
+          ...(prevUnified?.budget || {}),
+          maxValue: Number(budget || prevUnified?.budget?.maxValue || 0) || 0,
+        },
+      }));
+    } catch {
+      // Ignore storage issues and still navigate.
+    }
+    navigate("/cabs");
   }
 
   /* ══════════════════════
@@ -1543,7 +1634,7 @@ export default function HotelsPage({onBack}){
               SEARCH FORM (shown on home + results)
               ══════════════════════════════ */}
           {(page==="home"||page==="results") && (
-            <div className="hp-sbox" ref={boxRef}>
+            <div className="hp-sbox hp-search-box" ref={boxRef}>
               {/* row 1 */}
               <div className="hp-srow1">
 
@@ -1634,7 +1725,19 @@ export default function HotelsPage({onBack}){
                       {checkIn&&<div className="hp-fsub">{["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][checkIn.getDay()]}</div>}
                     </div>
                   </div>
-                  {drop==="ci" && <div className="hp-drop"><MiniCal value={checkIn} onChange={d=>{setCI(d);if(checkOut&&d>=checkOut)setCO(null);}} onClose={()=>setDrop(null)}/></div>}
+                  {drop==="ci" && (
+                    <div className="hp-drop">
+                      <MiniCal
+                        value={checkIn}
+                        onChange={d=>{setCI(d);if(checkOut&&d>=checkOut)setCO(null);}}
+                        onClose={()=>setDrop(null)}
+                        faresByDate={hotelCalendarFareMap}
+                        onViewChange={(monthDate)=>{ void loadCalendarFares(monthDate,{ silent:true }); }}
+                        fallbackSeed={cityId || cityQuery || cityName}
+                        roomCfg={roomCfg}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* check-out */}
@@ -1651,7 +1754,20 @@ export default function HotelsPage({onBack}){
                       {checkIn&&checkOut&&<div className="hp-fsub">{nt} night{nt!==1?"s":""}</div>}
                     </div>
                   </div>
-                  {drop==="co" && <div className="hp-drop"><MiniCal value={checkOut} onChange={d=>{setCO(d);setDrop(null);}} onClose={()=>setDrop(null)} minDate={checkIn||new Date()}/></div>}
+                  {drop==="co" && (
+                    <div className="hp-drop">
+                      <MiniCal
+                        value={checkOut}
+                        onChange={d=>{setCO(d);setDrop(null);}}
+                        onClose={()=>setDrop(null)}
+                        minDate={checkIn||new Date()}
+                        faresByDate={hotelCalendarFareMap}
+                        onViewChange={(monthDate)=>{ void loadCalendarFares(monthDate,{ silent:true }); }}
+                        fallbackSeed={cityId || cityQuery || cityName}
+                        roomCfg={roomCfg}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* rooms */}
@@ -1692,27 +1808,6 @@ export default function HotelsPage({onBack}){
                   {loading
                     ? <><div className="hp-spin" style={{width:16,height:16,borderWidth:2}}/>Searching…</>
                     : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</>}
-                </button>
-                <button className="hp-sbtn" onClick={loadCalendarFares} disabled={calendarLoading} style={{background:"linear-gradient(135deg,#0f766e,#0d9488)"}}>
-                  {calendarLoading
-                    ? <><div className="hp-spin" style={{width:16,height:16,borderWidth:2}}/>Loading...</>
-                    : "Calendar Fare"}
-                </button>
-                <button
-                  className="hp-sbtn"
-                  type="button"
-                  onClick={() => setCalendarFlexDays(3)}
-                  style={{background:calendarFlexDays === 3 ? "linear-gradient(135deg,#0f766e,#0d9488)" : "linear-gradient(135deg,#64748b,#475569)"}}
-                >
-                  +/-3 Days
-                </button>
-                <button
-                  className="hp-sbtn"
-                  type="button"
-                  onClick={() => setCalendarFlexDays(7)}
-                  style={{background:calendarFlexDays === 7 ? "linear-gradient(135deg,#0f766e,#0d9488)" : "linear-gradient(135deg,#64748b,#475569)"}}
-                >
-                  +/-7 Days
                 </button>
               </div>
 
@@ -1819,7 +1914,7 @@ export default function HotelsPage({onBack}){
           )}
 
 
-          {hotelCalendarFares.length > 0 && (
+          {false && hotelCalendarFares.length > 0 && (
             <div className="hp-sbox" style={{padding:"14px 16px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",marginBottom:10}}>
                 <div style={{fontSize:".9rem",fontWeight:700,color:"#1e293b"}}>
@@ -1949,6 +2044,7 @@ export default function HotelsPage({onBack}){
                 const stRaw = h.HotelRating  || h.StarRating || 0;
                 const facilities = normalizeFacilities(h.HotelFacilities).slice(0,4);
                 const highlights = facilityHighlights(h.HotelFacilities);
+                const hasCabFacility = highlights.includes("Cab Facility");
                 const attractionPreview = Array.isArray(h.Attractions)
                   ? textPreview(h.Attractions[0], 95)
                   : textPreview(h.Attractions, 95);
@@ -1987,7 +2083,7 @@ export default function HotelsPage({onBack}){
                         )}
                         {highlights.length>0 && (
                           <div className="hp-htags">
-                            {highlights.map((f,i)=><span key={i} className="hp-htag" style={{background:"#ecfeff",borderColor:"#a5f3fc",color:"#0f766e"}}>{f}</span>)}
+                            {highlights.map((f,i)=><span key={i} className="hp-htag" style={f==="Cab Facility"?{background:"#f0fdf4",borderColor:"#86efac",color:"#166534"}:{background:"#ecfeff",borderColor:"#a5f3fc",color:"#0f766e"}}>{f}</span>)}
                           </div>
                         )}
                         {(h.PhoneNumber || h.FaxNumber || h.HotelWebsiteURL) && (
@@ -2014,6 +2110,7 @@ export default function HotelsPage({onBack}){
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
                           <span className={`hp-rbadge ${ref?"ref":"nref"}`}>{ref?"✓ Refundable":"Non-Refundable"}</span>
+                          <button className="hp-detail-btn" style={{background:hasCabFacility?"#f0fdf4":"#f8fafc",border:`1px solid ${hasCabFacility?"#86efac":"#cbd5e1"}`,color:hasCabFacility?"#166534":"#334155",borderRadius:8,padding:"7px 10px",fontSize:".72rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}} onClick={()=>openCabForHotel(h)}>{hasCabFacility ? "Book Hotel Cab" : "Need Cab? Book Now"}</button>
                           <button className="hp-detail-btn" style={{background:"#eef6ff",border:"1px solid #bfdbfe",color:"#0f5298",borderRadius:8,padding:"7px 10px",fontSize:".72rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}} onClick={()=>openHotelDetails(h)}>View Details</button>
                           <button className="hp-selrm-btn" onClick={()=>doPrebook(h)}>Select Room →</button>
                         </div>
@@ -2385,6 +2482,7 @@ export default function HotelsPage({onBack}){
     </>
   );
 }
+
 
 
 
