@@ -241,4 +241,3 @@ export default function ServiceNav({ searchContext }) {
     </>
   );
 }
-
