@@ -25,6 +25,7 @@ function AppInner() {
         <Routes>
           {/* SearchSection is the default landing page */}
           <Route path="/" element={<SearchSection />} />
+          <Route path="/searchsection" element={<SearchSection />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/home" element={<Home />} />

@@ -45,16 +45,16 @@ function generateRentals(city, pickupDate, returnDate, category) {
 
 /* ── CSS ── */
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 .cr-wrap{font-family:'Plus Jakarta Sans',sans-serif;background:#fdf4ff;min-height:100vh;display:flex;flex-direction:column}
-.cr-hdr{background:linear-gradient(135deg,#3b0764 0%,#6d28d9 55%,#7c3aed 100%);display:flex;align-items:center;justify-content:space-between;padding:8px 28px;min-height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
-.cr-logo-v{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;color:#fff}
-.cr-logo-car{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#ddd6fe}
+.cr-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,3%,40px);background:#fff;border-bottom:1px solid #f0f0f0;min-height:72px;gap:12px;flex-shrink:0}
+.cr-logo{display:flex;align-items:center;flex-shrink:0}
+.cr-logo-img{height:58px;width:auto;object-fit:contain;display:block}
 .cr-hdr-right{display:flex;align-items:center;gap:12px;margin-left:auto}
-.cr-back-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;transition:background .2s}
-.cr-back-btn:hover{background:rgba(255,255,255,.22)}
+.cr-back-btn{background:#fff;border:1px solid #f0f0f0;color:#444;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .2s}
+.cr-back-btn:hover{background:#fff5f0;color:#ff6600;border-color:#ffd8bf}
 .cr-nav{background:linear-gradient(90deg,#3b0764,#6d28d9);display:flex;align-items:center;padding:0 28px;height:56px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
 .cr-nav-menu{display:flex;align-items:center;gap:4px;width:100%}
 .cr-nav-toggle{display:none}
@@ -145,7 +145,8 @@ const css = `
 .cr-modal-confirm{flex:1;background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.82rem;box-shadow:0 4px 14px rgba(109,40,217,.35);transition:all .2s}
 
 @media(max-width:768px){
-  .cr-hdr{padding:8px 14px;min-height:56px}
+  .cr-hdr{padding:0 12px;min-height:64px}
+  .cr-logo-img{height:50px}
   .cr-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
   .cr-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
   .cr-nav-toggle svg{width:18px;height:18px}
@@ -248,12 +249,11 @@ export default function CarRentalPage() {
       <style>{css}</style>
       <div className="cr-wrap">
         <header className="cr-hdr">
-          <div style={{display:"flex",alignItems:"center",gap:2}}>
-            <span className="cr-logo-v">Voyage</span>
-            <span className="cr-logo-car">Drive</span>
+          <div className="cr-logo" aria-label="tbo.com">
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com" className="cr-logo-img" />
           </div>
           <div className="cr-hdr-right">
-            <button className="cr-back-btn" onClick={() => navigate("/results")}>← Home</button>
+            <button className="cr-back-btn" onClick={() => navigate("/searchsection")}>Home</button>
           </div>
         </header>
 

@@ -91,16 +91,16 @@ async function fetchDriverSuggestions({ city, budget, persona, userGender, trave
 
 /* ── CSS ── */
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 .cp-wrap{font-family:'Plus Jakarta Sans',sans-serif;background:#f0fdf4;min-height:100vh;display:flex;flex-direction:column}
-.cp-hdr{background:linear-gradient(135deg,#064e3b 0%,#047857 55%,#059669 100%);display:flex;align-items:center;justify-content:space-between;padding:8px 28px;min-height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
-.cp-logo-v{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;color:#fff}
-.cp-logo-cab{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#6ee7b7}
+.cp-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,3%,40px);background:#fff;border-bottom:1px solid #f0f0f0;min-height:72px;gap:12px;flex-shrink:0}
+.cp-logo{display:flex;align-items:center;flex-shrink:0}
+.cp-logo-img{height:58px;width:auto;object-fit:contain;display:block}
 .cp-hdr-right{display:flex;align-items:center;gap:12px;margin-left:auto}
-.cp-back-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit;transition:background .2s}
-.cp-back-btn:hover{background:rgba(255,255,255,.22)}
+.cp-back-btn{background:#fff;border:1px solid #f0f0f0;color:#444;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .2s}
+.cp-back-btn:hover{background:#fff5f0;color:#ff6600;border-color:#ffd8bf}
 .cp-nav{background:linear-gradient(90deg,#064e3b,#047857);display:flex;align-items:center;padding:0 28px;height:56px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
 .cp-nav-menu{display:flex;align-items:center;gap:4px;width:100%}
 .cp-nav-toggle{display:none}
@@ -191,7 +191,8 @@ const css = `
 .cp-modal-confirm:hover{transform:translateY(-1px)}
 
 @media(max-width:768px){
-  .cp-hdr{padding:8px 14px;min-height:56px}
+  .cp-hdr{padding:0 12px;min-height:64px}
+  .cp-logo-img{height:50px}
   .cp-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
   .cp-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
   .cp-nav-toggle svg{width:18px;height:18px}
@@ -326,12 +327,11 @@ export default function CabsPage() {
       <style>{css}</style>
       <div className="cp-wrap">
         <header className="cp-hdr">
-          <div style={{display:"flex",alignItems:"center",gap:2}}>
-            <span className="cp-logo-v">Voyage</span>
-            <span className="cp-logo-cab">Cabs</span>
+          <div className="cp-logo" aria-label="tbo.com">
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com" className="cp-logo-img" />
           </div>
           <div className="cp-hdr-right">
-            <button className="cp-back-btn" onClick={() => navigate("/results")}>← Home</button>
+            <button className="cp-back-btn" onClick={() => navigate("/searchsection")}>Home</button>
           </div>
         </header>
 

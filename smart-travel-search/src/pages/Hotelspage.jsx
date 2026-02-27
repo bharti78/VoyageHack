@@ -465,30 +465,18 @@ function HotelImage({ hotel, alt, style, className }) {
    CSS
    ═══════════════════════════════════════════════ */
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 .hp-wrap{font-family:'Plus Jakarta Sans',sans-serif;background:#eef2f7;min-height:100vh;display:flex;flex-direction:column}
 
 /* ── header ── */
-.hp-hdr{background:linear-gradient(135deg,#0b3d6e 0%,#0f5298 55%,#1565c0 100%);display:flex;align-items:center;justify-content:space-between;padding:8px 28px;min-height:58px;gap:16px;box-shadow:0 2px 12px rgba(0,0,0,.28);flex-shrink:0}
-.hp-logo{display:flex;align-items:center;gap:1px;text-decoration:none}
-.hp-logo-tbo{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#fff}
-.hp-logo-hol{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:700;color:#ffd740}
-.hp-logo-dot{color:#ffd740;font-size:1.2rem;font-weight:700}
-.hp-logo-com{font-size:.7rem;color:rgba(255,255,255,.55);align-self:flex-end;margin-bottom:1px}
-.hp-banner{background:linear-gradient(90deg,#e53935,#ff6f00);border-radius:20px;padding:5px 16px;font-size:.7rem;font-weight:700;color:#fff;letter-spacing:.4px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(229,57,53,.5);display:flex;align-items:center;gap:6px;transition:transform .2s}
-.hp-banner:hover{transform:scale(1.04)}
-.hp-pulse{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.2s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hp-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,3%,40px);background:#fff;border-bottom:1px solid #f0f0f0;min-height:72px;gap:12px;flex-shrink:0}
+.hp-logo{display:flex;align-items:center;flex-shrink:0}
+.hp-logo-img{height:58px;width:auto;object-fit:contain;display:block}
 .hp-hdr-right{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:auto}
-.hp-quot-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:5px 12px;color:#fff;font-size:.7rem;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;font-family:inherit}
-.hp-badge{background:#e53935;color:#fff;font-size:.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:absolute;top:-6px;right:-6px;border:1.5px solid #0f5298}
-.hp-hdivider{width:1px;height:24px;background:rgba(255,255,255,.2)}
-.hp-uname{color:#fff;font-size:.72rem;font-weight:600}
-.hp-uedit{color:rgba(255,255,255,.5);font-size:.62rem;cursor:pointer}
-.hp-logout{background:rgba(229,57,53,.2);border:1px solid rgba(229,57,53,.5);color:#ff8a80;font-size:.7rem;font-weight:600;padding:5px 11px;border-radius:6px;cursor:pointer;font-family:inherit;transition:all .2s}
-.hp-logout:hover{background:#e53935;color:#fff}
+.hp-home-btn{background:#fff;border:1px solid #f0f0f0;color:#444;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .2s}
+.hp-home-btn:hover{background:#fff5f0;color:#ff6600;border-color:#ffd8bf}
 
 /* ── sub-nav ── */
 .hp-nav{background:linear-gradient(90deg,#0b3d6e,#0f5298);display:flex;align-items:center;padding:0 28px;height:60px;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.2);flex-shrink:0}
@@ -750,9 +738,9 @@ const css = `
   .hp-ffin{min-height:42px}
 }
 @media(max-width:640px){
-  .hp-hdr{padding:8px 12px;min-height:56px;gap:10px}
+  .hp-hdr{padding:0 12px;min-height:64px;gap:10px}
+  .hp-logo-img{height:50px}
   .hp-hdr-right{gap:8px}
-  .hp-banner{display:none}
   .hp-content{padding:12px 14px 32px}
   .hp-hcard-inner{grid-template-columns:1fr}
   .hp-himg{width:100%;height:130px;border-radius:0}
@@ -1372,32 +1360,11 @@ export default function HotelsPage({onBack}){
 
         {/* ── HEADER ── */}
         <header className="hp-hdr">
-          <div className="hp-logo">
-            <span className="hp-logo-tbo">tbo</span>
-            <span className="hp-logo-hol">holidays</span>
-            <span className="hp-logo-dot">.</span>
-            <span className="hp-logo-com">com</span>
+          <div className="hp-logo" aria-label="tbo.com">
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com" className="hp-logo-img" />
           </div>
-
-          <div className="hp-banner">
-            <div className="hp-pulse"/>&nbsp;🏆 TBO BOOK N WIN BONANZA – Click Here
-          </div>
-
           <div className="hp-hdr-right">
-            <button className="hp-quot-btn">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-              </svg>
-              My Quotations
-              <span className="hp-badge">2</span>
-            </button>
-            <div className="hp-hdivider"/>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
-              <span className="hp-uname">Agent User</span>
-              <span className="hp-uedit">✏ Edit Profile</span>
-            </div>
-            <button className="hp-logout">Logout</button>
+            <button className="hp-home-btn" onClick={() => navigate("/searchsection")}>Home</button>
           </div>
         </header>
 

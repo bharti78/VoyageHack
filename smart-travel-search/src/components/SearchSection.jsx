@@ -2408,6 +2408,35 @@ export default function TBOHomepage() {
         }
       : (selectedDestinationObj || null));
     const nextGuests = (spokenInput && !isTextSearch) ? inferGuestsFromText(normalizedSpoken) : (isTextSearch ? inferGuestsFromText(normalizedSpoken) : guests);
+    const effectiveSource = routeFromQuery.source || fromCity || "";
+    const normalizedSource = normalizeText(effectiveSource);
+    const normalizedDestination = normalizeText(effectiveDestination);
+    const hasSearchText = Boolean(String(effectiveQuery || searchQuery || "").trim());
+
+    if (!effectiveDestination && !hasSearchText) {
+      const message = "Please enter a destination or search text before searching.";
+      setVoiceError(message);
+      window.alert(message);
+      return;
+    }
+    if (normalizedSource && normalizedDestination && normalizedSource === normalizedDestination) {
+      const message = "Source and destination cannot be the same.";
+      setVoiceError(message);
+      window.alert(message);
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      const message = "Return date must be after departure date.";
+      setVoiceError(message);
+      window.alert(message);
+      return;
+    }
+    if (!nextGuests || Number(nextGuests.adults || 0) < 1) {
+      const message = "At least 1 adult is required.";
+      setVoiceError(message);
+      window.alert(message);
+      return;
+    }
 
     if (spokenInput && !isTextSearch) {
       applyNaturalLanguageQuery(spokenInput);

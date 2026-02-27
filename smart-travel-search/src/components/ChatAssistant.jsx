@@ -56,7 +56,7 @@ function parseMessageBlocks(raw) {
     }
 
     const ordered = line.match(/^(\d+)\.\s+(.+)$/)
-    const bullet = line.match(/^[-*•]\s+(.+)$/)
+    const bullet = line.match(/^[-*\u2022]\s+(.+)$/)
 
     if (ordered) {
       flushParagraph()
@@ -211,10 +211,10 @@ function ChatAssistant({ isOpen, onClose, mode = "modal" }) {
 
   const isFloating = mode === "floating"
   const wrapperClass = isFloating
-    ? "fixed bottom-6 right-6 z-50"
+    ? "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[1300] pointer-events-none"
     : "fixed inset-0 bg-black/35 backdrop-blur-sm z-50 flex items-center justify-center p-4"
   const panelClass = isFloating
-    ? "bg-white rounded-3xl shadow-2xl w-[min(95vw,50vw)] min-w-[20rem] max-w-[52rem] h-[76vh] max-h-[48rem] flex flex-col border border-orange-100 overflow-hidden"
+    ? "pointer-events-auto bg-white rounded-3xl shadow-2xl w-[min(94vw,50vw)] min-w-[22rem] max-w-[52rem] h-[min(78vh,44rem)] flex flex-col border border-orange-100 overflow-hidden"
     : "bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[84vh] flex flex-col border border-orange-100 overflow-hidden"
 
   return (
