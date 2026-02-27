@@ -189,6 +189,54 @@ const S = {
     background: '#f0e8ff',
     color: '#3d0099',
   },
+  errorPopupWrap: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(15, 23, 42, 0.35)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1200,
+    padding: 16,
+  },
+  errorPopup: {
+    width: 'min(92vw, 460px)',
+    background: '#ffffff',
+    border: '1px solid #fecaca',
+    borderRadius: 14,
+    boxShadow: '0 16px 44px rgba(15, 23, 42, 0.25)',
+    overflow: 'hidden',
+  },
+  errorPopupHead: {
+    background: '#fff1f2',
+    color: '#9f1239',
+    fontWeight: 700,
+    fontSize: '.85rem',
+    padding: '10px 14px',
+    borderBottom: '1px solid #fecdd3',
+  },
+  errorPopupBody: {
+    padding: '12px 14px',
+    fontSize: '.82rem',
+    color: '#374151',
+    lineHeight: 1.45,
+  },
+  errorPopupActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 8,
+    padding: '0 14px 12px',
+  },
+  errorPopupBtn: {
+    border: 'none',
+    borderRadius: 8,
+    padding: '7px 12px',
+    cursor: 'pointer',
+    fontWeight: 700,
+    fontSize: '.76rem',
+    background: '#be123c',
+    color: '#fff',
+  },
 };
 
 /* ── Keyframe animation injected once ─────────────────── */
@@ -229,6 +277,34 @@ function parseDurationDays(parsed) {
   return 0;
 }
 
+function looksLikeGibberish(value) {
+  const q = String(value || '').trim();
+  if (!q) return true;
+  const lowered = q.toLowerCase();
+  if (/\bfrom\b.+\bto\b/.test(lowered)) return false;
+  if (/\b(flight|flights|fly|air|hotel|hotels|stay|room|cab|cabs|taxi|car rental|rent a car|trip|travel|vacation|holiday|tour)\b/.test(lowered)) return false;
+
+  const words = q.split(/\s+/).map((w) => w.replace(/[^a-zA-Z0-9]/g, '')).filter(Boolean);
+  if (!words.length) return true;
+
+  const alphaWords = words.filter((w) => /^[a-zA-Z]+$/.test(w));
+  if (!alphaWords.length) return false;
+
+  const hardBadCount = alphaWords.filter((w) =>
+    w.length >= 4 && !/[aeiou]/i.test(w) && !/^[A-Z]{3}$/.test(w)
+  ).length;
+  const longConsonantRun = alphaWords.some((w) => /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(w));
+
+  if (alphaWords.length === 1) {
+    const w = alphaWords[0];
+    if (w.length <= 4) return false;
+    if (!/[aeiou]/i.test(w)) return true;
+    return /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(w);
+  }
+
+  return hardBadCount >= Math.ceil(alphaWords.length / 2) || longConsonantRun;
+}
+
 /* ── Suggestion type icons ────────────────────────────── */
 function getIcon(type) {
   switch (type) {
@@ -258,6 +334,7 @@ export default function SmartSearchBar({
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [errorPopup, setErrorPopup] = useState('');
 
   const inputRef = useRef(null);
   const wrapRef = useRef(null);
@@ -281,6 +358,12 @@ export default function SmartSearchBar({
       if (recognitionRef.current) recognitionRef.current.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (!errorPopup) return undefined;
+    const t = setTimeout(() => setErrorPopup(''), 3500);
+    return () => clearTimeout(t);
+  }, [errorPopup]);
 
   /* ── Debounced autocomplete fetch (400 ms) ────────────── */
   const fetchSuggestions = useCallback((q) => {
@@ -403,6 +486,7 @@ export default function SmartSearchBar({
     if (q.length < 2) return false;
     // Reject symbol-only noise, allow normal alphanumeric queries.
     if (!/[a-zA-Z0-9]/.test(q)) return false;
+    if (looksLikeGibberish(q)) return false;
     return true;
   }
 
@@ -431,7 +515,8 @@ export default function SmartSearchBar({
   async function handleSubmit() {
     const q = query.trim();
     if (!isValidSearchInput(q)) {
-      setValidationError('Please enter a valid destination.');
+      setValidationError('Please enter a meaningful travel query.');
+      setErrorPopup('That input does not look like a travel search. Try: "Delhi to Goa", "Hotels in Jaipur", or "Cab in Mumbai".');
       return;
     }
     setValidationError('');
@@ -622,6 +707,20 @@ export default function SmartSearchBar({
       {!!validationError && (
         <div style={{ marginTop: 8, fontSize: '.78rem', color: '#dc6a6a', fontWeight: 600 }}>
           {validationError}
+        </div>
+      )}
+
+      {!!errorPopup && (
+        <div style={S.errorPopupWrap} role="alertdialog" aria-live="polite" aria-label="Invalid search input">
+          <div style={S.errorPopup}>
+            <div style={S.errorPopupHead}>Please check your input</div>
+            <div style={S.errorPopupBody}>{errorPopup}</div>
+            <div style={S.errorPopupActions}>
+              <button type="button" style={S.errorPopupBtn} onClick={() => setErrorPopup('')}>
+                OK
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
