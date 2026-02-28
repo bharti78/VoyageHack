@@ -1251,6 +1251,14 @@ const css = `
     .when-dropdown, .where-dropdown, .who-dropdown, .budget-dropdown, .type-dropdown { width: 100%; }
     .cal-container { flex-direction: column; gap: 12px; }
     .flex-stay-options { flex-direction: column; }
+    .slider-wrapper, .awards-slider-wrapper { width: 100%; }
+    .slider-arrow, .awards-arrow {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      margin: 0 4px;
+      font-size: 1.1rem;
+    }
   }
   @media (max-width: 420px) {
     .search-pill { grid-template-columns: 1fr; }
@@ -1648,10 +1656,29 @@ function useSliderSizes() {
     function calc() {
       const W = window.innerWidth;
       let vc, cw, va, aw;
-      if (W < 480) { vc = 1; cw = Math.floor(W * 0.86); va = 2; aw = Math.floor((W * 0.86 - 22) / 2); }
-      else if (W < 640) { vc = 2; cw = Math.floor((W * 0.86 - 18) / 2); va = 3; aw = Math.floor((W * 0.86 - 44) / 3); }
-      else if (W < 1000) { vc = 3; cw = Math.floor((W * 0.86 - 36) / 3); va = 4; aw = Math.floor((W * 0.86 - 66) / 4); }
-      else { vc = 4; cw = Math.min(260, Math.floor((W * 0.82 - 54) / 4)); va = 5; aw = Math.min(150, Math.floor((W * 0.82 - 88) / 5)); }
+      if (W < 480) {
+        const available = Math.max(260, W - 108);
+        vc = 1;
+        cw = available;
+        va = 2;
+        aw = Math.max(110, Math.floor((available - 22) / 2));
+      } else if (W < 640) {
+        const available = Math.max(300, W - 112);
+        vc = 2;
+        cw = Math.max(145, Math.floor((available - 18) / 2));
+        va = 3;
+        aw = Math.max(95, Math.floor((available - 44) / 3));
+      } else if (W < 1000) {
+        vc = 3;
+        cw = Math.floor((W * 0.86 - 36) / 3);
+        va = 4;
+        aw = Math.floor((W * 0.86 - 66) / 4);
+      } else {
+        vc = 4;
+        cw = Math.min(260, Math.floor((W * 0.82 - 54) / 4));
+        va = 5;
+        aw = Math.min(150, Math.floor((W * 0.82 - 88) / 5));
+      }
       setSizes({ cardW: cw, visibleCards: vc, awardW: aw, visibleAwards: va });
     }
     calc();
@@ -2491,7 +2518,7 @@ export default function TBOHomepage() {
       return formatDate(startDate);
     }
     if (whenTab === "Months") return `${formatDate(new Date())} â€“ ${formatDate(addMonths(new Date(), monthsDuration))}`;
-    if (whenTab === "Flexible" && stayType && selectedMonths.length > 0) return `${stayType} Â· ${selectedMonths.length} mo`;
+    if (whenTab === "Flexible" && stayType && selectedMonths.length > 0) return `${stayType} \u00B7 ${selectedMonths.length} mo`;
     return null;
   }
   const totalGuests = guests.adults + guests.children;
@@ -3026,7 +3053,7 @@ export default function TBOHomepage() {
           <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
             <button className="mobile-nav-item" onClick={() => setMobileSolutionsOpen((v) => !v)}>
-              Solutions {mobileSolutionsOpen ? "â–²" : "â–¼"}
+              Solutions {mobileSolutionsOpen ? "\u25B2" : "\u25BC"}
             </button>
             {mobileSolutionsOpen && (
               <div className="mobile-submenu">
@@ -3324,7 +3351,7 @@ export default function TBOHomepage() {
                           {fareSummary.cheapestKey ? (
                             <>
                               <div className="fare-info-line">
-                                Cheapest day: <strong>{fareSummary.cheapestKey}</strong> Â· Rs {fareMap[fareSummary.cheapestKey]?.fare?.toLocaleString("en-IN")}
+                                Cheapest day: <strong>{fareSummary.cheapestKey}</strong> {"\u00B7"} Rs {fareMap[fareSummary.cheapestKey]?.fare?.toLocaleString("en-IN")}
                               </div>
                               <div className="fare-info-line">
                                 Fare range: Rs {fareSummary.minFare.toLocaleString("en-IN")} to Rs {fareSummary.maxFare.toLocaleString("en-IN")}
@@ -3335,7 +3362,7 @@ export default function TBOHomepage() {
                           )}
                           {fareFocus && (
                             <div className="fare-info-line">
-                              {fareFocus.key}: {fareFocus.airline} Â· {fareFocus.stops === 0 ? "Non-stop" : "1 stop"} Â· {fareFocus.duration} Â· Rs {fareFocus.fare.toLocaleString("en-IN")}
+                              {fareFocus.key}: {fareFocus.airline} {"\u00B7"} {fareFocus.stops === 0 ? "Non-stop" : "1 stop"} {"\u00B7"} {fareFocus.duration} {"\u00B7"} Rs {fareFocus.fare.toLocaleString("en-IN")}
                             </div>
                           )}
                           {startDate && endDate && fareMap[dateKey(startDate)] && fareMap[dateKey(endDate)] && (
@@ -3631,7 +3658,7 @@ export default function TBOHomepage() {
               ))}
             </div>
           </div>
-          <div className="footer-copy">Â© All rights reserved</div>
+          <div className="footer-copy">\u00A9 All rights reserved</div>
         </footer>
       </div>
     </>
