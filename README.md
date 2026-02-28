@@ -42,12 +42,12 @@ JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=your_google_client_id
 
-TBO_BASE=http://api.tbotechnology.in/TBOHolidays_HotelAPI
+TBO_BASE=XXXXXXXXX
 TBO_USER=your_tbo_user
 TBO_PASS=your_tbo_password
 
-TBO_FLIGHT_BASE=https://Sharedapi.tektravels.com/SharedData.svc/rest
-TBO_FLIGHT_API_BASE=https://api.tektravels.com/BookingEngineService_Air/AirService.svc/rest
+TBO_FLIGHT_BASE=XXXXXXXXX
+TBO_FLIGHT_API_BASE=XXXXXXXXX
 TBO_FLIGHT_USER=your_flight_user
 TBO_FLIGHT_PASS=your_flight_password
 TBO_FLIGHT_CLIENT_ID=your_flight_client_id
@@ -58,7 +58,7 @@ GEMINI_MODEL=gemini-2.5-flash
 
 AMADEUS_API_KEY=your_amadeus_api_key
 AMADEUS_API_SECRET=your_amadeus_api_secret
-AMADEUS_BASE_URL=https://test.api.amadeus.com
+AMADEUS_BASE_URL=XXXXXXXXXX
 
 ENABLE_MOCK_BOOKING_MODE=true
 ENABLE_MOCK_FLIGHT_BOOKING_MODE=true
