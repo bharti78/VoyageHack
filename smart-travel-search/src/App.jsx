@@ -14,6 +14,8 @@ import CabsPage from "./pages/CabsPage"
 import CarRentalPage from "./pages/CarRentalPage"
 import TboCaresPage from "./pages/TboCaresPage"
 import CareersPage from "./pages/CareersPage"
+import AboutUsPage from "./pages/AboutUsPage"
+import BoardOfDirectorsPage from "./pages/BoardOfDirectorsPage"
 import RegisterModal from "./components/RegisterModal"
 import PersonaModal from "./components/PersonaModal"
 import LoginModal from "./components/LoginModal"
@@ -40,6 +42,8 @@ function AppInner() {
           <Route path="/carrental" element={<CarRentalPage />} />
           <Route path="/tbocares" element={<TboCaresPage />} />
           <Route path="/careers" element={<CareersPage />} />
+          <Route path="/aboutus" element={<AboutUsPage />} />
+          <Route path="/board-of-directors" element={<BoardOfDirectorsPage />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>

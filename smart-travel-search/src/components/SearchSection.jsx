@@ -1824,9 +1824,13 @@ export default function TBOHomepage() {
 
   // Nav dropdowns
   const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const solutionsRef = useRef(null);
+  const aboutRef = useRef(null);
+  const solutionsCloseTimerRef = useRef(null);
+  const aboutCloseTimerRef = useRef(null);
 
   // Sections
   const [activeTab, setActiveTab] = useState("Travel buyers");
@@ -1857,6 +1861,7 @@ export default function TBOHomepage() {
         if (searchExpanded) stopVoiceSearch();
       }
       if (solutionsRef.current && !solutionsRef.current.contains(e.target)) setSolutionsOpen(false);
+      if (aboutRef.current && !aboutRef.current.contains(e.target)) setAboutOpen(false);
       if (!e.target.closest(".mobile-nav-toggle") && !e.target.closest(".mobile-nav-menu")) {
         setMobileNavOpen(false);
       }
@@ -1864,6 +1869,33 @@ export default function TBOHomepage() {
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, [searchExpanded]);
+
+  useEffect(() => {
+    return () => {
+      if (solutionsCloseTimerRef.current) clearTimeout(solutionsCloseTimerRef.current);
+      if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current);
+    };
+  }, []);
+
+  function openSolutionsMenu() {
+    if (solutionsCloseTimerRef.current) clearTimeout(solutionsCloseTimerRef.current);
+    setSolutionsOpen(true);
+  }
+
+  function closeSolutionsMenuSoon() {
+    if (solutionsCloseTimerRef.current) clearTimeout(solutionsCloseTimerRef.current);
+    solutionsCloseTimerRef.current = setTimeout(() => setSolutionsOpen(false), 140);
+  }
+
+  function openAboutMenu() {
+    if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current);
+    setAboutOpen(true);
+  }
+
+  function closeAboutMenuSoon() {
+    if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current);
+    aboutCloseTimerRef.current = setTimeout(() => setAboutOpen(false), 140);
+  }
 
   useEffect(() => {
     return () => {
@@ -2764,27 +2796,47 @@ export default function TBOHomepage() {
             <button className="nav-link active">Home</button>
             {/* Solutions dropdown */}
             <div className="products-nav-wrap" ref={solutionsRef} style={{position:"relative"}}>
+              <div onMouseEnter={openSolutionsMenu} onMouseLeave={closeSolutionsMenuSoon}>
               <button
                 className={`nav-link${solutionsOpen ? " active" : ""}`}
-                onMouseEnter={() => setSolutionsOpen(true)}
-                onMouseLeave={() => setSolutionsOpen(false)}
                 onClick={() => setSolutionsOpen(o => !o)}
               >
                 Solutions <span className="chevron" />
               </button>
               {solutionsOpen && (
                 <div className="solutions-dropdown"
-                  onMouseEnter={() => setSolutionsOpen(true)}
-                  onMouseLeave={() => setSolutionsOpen(false)}>
+                >
                   {SOLUTIONS.map(s => (
                     <div key={s} className="sol-item" onClick={() => setSolutionsOpen(false)}>{s}</div>
                   ))}
                 </div>
               )}
+              </div>
             </div>
 
             <button className="nav-link" onClick={() => navigate("/tbocares")}>TBO Cares</button>
-            <button className="nav-link">About Us</button>
+            <div className="products-nav-wrap" ref={aboutRef} style={{position:"relative"}}>
+              <div onMouseEnter={openAboutMenu} onMouseLeave={closeAboutMenuSoon}>
+              <button
+                className={`nav-link${aboutOpen ? " active" : ""}`}
+                onClick={() => setAboutOpen((o) => !o)}
+              >
+                About Us <span className="chevron" />
+              </button>
+              {aboutOpen && (
+                <div
+                  className="solutions-dropdown"
+                >
+                  <div className="sol-item" onClick={() => { setAboutOpen(false); navigate("/aboutus"); }}>
+                    About tbo.com
+                  </div>
+                  <div className="sol-item" onClick={() => { setAboutOpen(false); navigate("/board-of-directors"); }}>
+                    Board of Directors
+                  </div>
+                </div>
+              )}
+              </div>
+            </div>
             <button className="nav-link">Help</button>
           </div>
 
@@ -2824,7 +2876,8 @@ export default function TBOHomepage() {
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Solutions</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/tbocares"); }}>TBO Cares</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>About Us</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/aboutus"); }}>About tbo.com</button>
+            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/board-of-directors"); }}>Board of Directors</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Help</button>
             {isLoggedIn ? (
               <>
