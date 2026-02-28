@@ -30,6 +30,7 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 *,
@@ -45,6 +46,15 @@ canvas,
 iframe {
   max-width: 100%;
   height: auto;
+}
+
+main,
+section,
+header,
+footer,
+nav,
+div {
+  max-width: 100%;
 }
 
 input,
@@ -173,15 +183,18 @@ textarea {
     min-height: 58px;
     padding-top: 8px;
     padding-bottom: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
   }
 
   .fp-hdr-right,
   .hp-hdr-right,
   .cp-hdr-right,
   .cr-hdr-right {
-    width: 100%;
+    width: auto;
     justify-content: flex-end;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 }
 
@@ -276,5 +289,21 @@ textarea {
   .cp-srow,
   .cr-srow {
     padding: 10px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .legal-footer-links,
+  .ssf-links,
+  .footer-links {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .legal-footer-links a,
+  .ssf-link-btn,
+  .footer-links a {
+    white-space: normal;
   }
 }

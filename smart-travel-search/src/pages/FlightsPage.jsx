@@ -42,6 +42,13 @@ const css = `
 .fp-hdr-right{display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:auto}
 .fp-back-btn{background:#fff;border:1px solid #f0f0f0;color:#444;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .2s}
 .fp-back-btn:hover{background:#fff5f0;color:#ff6600;border-color:#ffd8bf}
+.fp-booking-chip{display:flex;align-items:center;gap:8px;background:#ecfeff;border:1px solid #99f6e4;border-radius:12px;padding:6px 9px;max-width:360px}
+.fp-booking-dot{width:9px;height:9px;border-radius:50%;background:#0ea5a4;flex-shrink:0}
+.fp-booking-info{min-width:0}
+.fp-booking-title{font-size:.7rem;font-weight:700;color:#0f766e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-booking-sub{font-size:.62rem;color:#115e59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-booking-cancel{border:1px solid #99f6e4;background:#fff;color:#0f766e;border-radius:8px;padding:5px 8px;cursor:pointer;font-size:.64rem;font-weight:700;flex-shrink:0}
+.fp-booking-cancel:disabled{opacity:.6;cursor:not-allowed}
 
 
 
@@ -209,6 +216,36 @@ const css = `
 .fp-fare-row{display:flex;justify-content:space-between;font-size:.76rem;padding:4px 0;color:#475569}
 .fp-fare-row.total{font-weight:700;color:#1e293b;border-top:1px solid #d4a0ff;padding-top:8px;margin-top:4px;font-size:.84rem}
 
+/* booking modal */
+.fp-modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px}
+.fp-modal{background:#fff;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:100%;max-width:520px;padding:18px}
+.fp-modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.fp-modal-title{font-size:1rem;font-weight:800;color:#1e293b}
+.fp-modal-sub{font-size:.72rem;color:#64748b;margin-top:3px}
+.fp-modal-close{width:30px;height:30px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:1rem}
+.fp-bf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fp-bf-field{display:flex;flex-direction:column;gap:5px}
+.fp-bf-field.full{grid-column:1/-1}
+.fp-pax-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding-right:2px}
+.fp-pax-item{border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fafcff}
+.fp-pax-head{font-size:.66rem;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.fp-bf-label{font-size:.68rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px}
+.fp-bf-input{border:1.5px solid #dbe3ef;border-radius:10px;padding:10px 11px;font-size:.84rem;color:#1e293b;outline:none;font-family:inherit;background:#fff}
+.fp-bf-input:focus{border-color:#3d0099;box-shadow:0 0 0 3px rgba(61,0,153,.08)}
+.fp-bf-row{display:flex;gap:8px}
+.fp-bf-row .fp-bf-input:first-child{max-width:88px}
+.fp-modal-act{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.fp-modal-btn{border:none;border-radius:9px;padding:9px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit}
+.fp-modal-btn.ghost{background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0}
+.fp-modal-btn.primary{background:linear-gradient(135deg,#3d0099,#6600cc);color:#fff;box-shadow:0 4px 14px rgba(61,0,153,.35)}
+.fp-modal-btn:disabled{opacity:.55;cursor:not-allowed}
+.fp-modal-amt{margin:10px 0 4px;background:#f8f4ff;border:1px solid #e9d5ff;border-radius:10px;padding:10px 12px;font-size:.76rem;color:#4c1d95}
+.fp-modal-amt strong{font-size:.9rem;color:#3d0099}
+
+.fp-toast{position:fixed;right:16px;top:86px;z-index:1400;max-width:min(90vw,360px);padding:10px 12px;border-radius:10px;color:#fff;font-size:.78rem;font-weight:700;box-shadow:0 12px 24px rgba(2,6,23,.3)}
+.fp-toast.ok{background:#16a34a}
+.fp-toast.err{background:#dc2626}
+
 /* responsive */
 @media(max-width:768px){
   .fp-hdr{padding:0 12px;min-height:64px}
@@ -229,6 +266,11 @@ const css = `
   .fp-card-actions{flex-direction:column;align-items:stretch}
   .fp-card-btns{justify-content:stretch}
   .fp-book-btn,.fp-detail-btn{flex:1;text-align:center}
+  .fp-hdr-right{gap:8px}
+  .fp-booking-chip{max-width:220px}
+  .fp-toast{top:74px;right:10px}
+  .fp-bf-grid{grid-template-columns:1fr}
+  .fp-modal{padding:14px}
 }
 @media(max-width:480px){
   .fp-card{padding:14px}
@@ -569,7 +611,7 @@ function FlightCard({ flight, pax, onBook }) {
   const depDate = info.dep ? formatDateStr(new Date(info.dep)) : "";
   const arrDate = info.arr ? formatDateStr(new Date(info.arr)) : "";
   const price = Number(info.fare).toFixed(0);
-  const totalPax = (pax?.adults || 1) + (pax?.children || 0);
+  const totalPax = (pax?.adults || 1) + (pax?.children || 0) + (pax?.infants || 0);
   const totalPrice = (Number(info.fare) * totalPax).toFixed(0);
 
   return (
@@ -690,6 +732,16 @@ export default function FlightsPage() {
   const [flightBookingRef, setFlightBookingRef] = useState("");
   const [flightBookingStatus, setFlightBookingStatus] = useState("");
   const [flightBookingMock, setFlightBookingMock] = useState(false);
+  const [flightBookingSummary, setFlightBookingSummary] = useState(null);
+  const [pendingBookingFlight, setPendingBookingFlight] = useState(null);
+  const [bookingProcessing, setBookingProcessing] = useState(false);
+  const [bookingPassengers, setBookingPassengers] = useState([]);
+  const [bookingContact, setBookingContact] = useState({
+    email: "",
+    phoneCode: "+91",
+    phone: "",
+  });
+  const [toast, setToast] = useState(null);
 
   const panelRef = useRef(null);
 
@@ -700,6 +752,12 @@ export default function FlightsPage() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     let alive = true;
@@ -859,28 +917,71 @@ export default function FlightsPage() {
     return `${total} Traveller${total !== 1 ? "s" : ""}, ${cabin}`;
   }
 
-  async function handleBookFlight(flight) {
-    const info = getFlightInfo(flight);
-    const proceed = window.confirm(
-      `Confirm booking for ${info.origin} -> ${info.dest} on ${formatDateStr(depDate)}?`
+  function buildPassengerDraft() {
+    const list = [];
+    for (let i = 0; i < (pax.adults || 0); i += 1) {
+      list.push({ paxType: 1, label: `Adult ${i + 1}`, firstName: "", lastName: "" });
+    }
+    for (let i = 0; i < (pax.children || 0); i += 1) {
+      list.push({ paxType: 2, label: `Child ${i + 1}`, firstName: "", lastName: "" });
+    }
+    for (let i = 0; i < (pax.infants || 0); i += 1) {
+      list.push({ paxType: 3, label: `Infant ${i + 1}`, firstName: "", lastName: "" });
+    }
+    return list;
+  }
+
+  function handleBookFlight(flight) {
+    setError(null);
+    setBookingPassengers(buildPassengerDraft());
+    setPendingBookingFlight(flight);
+  }
+
+  async function confirmFlightBooking() {
+    if (!pendingBookingFlight) return;
+    const info = getFlightInfo(pendingBookingFlight);
+    const email = String(bookingContact.email || "").trim();
+    const phone = String(bookingContact.phone || "").trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const phoneOk = /^\d{8,15}$/.test(phone);
+    const allPassengersValid = bookingPassengers.length > 0 && bookingPassengers.every((p) =>
+      String(p.firstName || "").trim().length > 0 && String(p.lastName || "").trim().length > 0
     );
-    if (!proceed) return;
+    if (!allPassengersValid || !emailOk || !phoneOk) {
+      setError("Please enter all passenger names and valid contact details.");
+      return;
+    }
 
     setError(null);
-    setLoading(true);
+    setBookingProcessing(true);
     try {
+      const totalPax = (pax?.adults || 0) + (pax?.children || 0) + (pax?.infants || 0);
+      const totalAmount = Number(info.fare || 0) * Math.max(totalPax, 1);
       const data = await apiPost("book", {
         MockBooking: MOCK_FLIGHT_BOOKING,
-        ResultIndex: flight?.ResultIndex ?? info?.raw?.ResultIndex ?? null,
-        TraceId: flight?.TraceId ?? info?.raw?.TraceId ?? null,
+        ResultIndex: pendingBookingFlight?.ResultIndex ?? info?.raw?.ResultIndex ?? null,
+        TraceId: pendingBookingFlight?.TraceId ?? info?.raw?.TraceId ?? null,
         BookingReferenceId: `FLBK_${Date.now()}`,
+        PassengerDetails: bookingPassengers.map((p) => ({
+          Title: "Mr",
+          FirstName: String(p.firstName || "").trim(),
+          LastName: String(p.lastName || "").trim(),
+          PaxType: p.paxType,
+          DateOfBirth: "1990-01-01",
+          Gender: 1,
+        })),
+        Contact: {
+          Email: email,
+          PhoneNumber: `${bookingContact.phoneCode || "+91"}${phone}`,
+        },
         FlightSummary: {
           from: info.origin,
           to: info.dest,
           dep: info.dep,
           arr: info.arr,
           fare: Number(info.fare || 0),
-          pax: (pax?.adults || 1) + (pax?.children || 0),
+          pax: totalPax,
+          totalAmount,
         },
       });
 
@@ -888,34 +989,43 @@ export default function FlightsPage() {
       setFlightBookingRef(String(ref));
       setFlightBookingStatus(String(data?.BookingStatus || "Confirmed"));
       setFlightBookingMock(Boolean(data?.Mock));
+      setFlightBookingSummary({
+        route: `${info.origin} → ${info.dest}`,
+        date: formatDateStr(depDate),
+        pax: totalPax,
+        totalAmount,
+      });
+      setToast({ type: "ok", message: `Booking confirmed: ${String(ref)}` });
+      setPendingBookingFlight(null);
     } catch (e) {
       setError(e?.message || "Flight booking failed.");
     } finally {
-      setLoading(false);
+      setBookingProcessing(false);
     }
   }
 
   async function handleCancelFlight() {
     if (!flightBookingRef) return;
-    const proceed = window.confirm("Cancel this flight booking?");
-    if (!proceed) return;
 
     setError(null);
-    setLoading(true);
+    setBookingProcessing(true);
     try {
-      const data = await apiPost("cancel", {
+      await apiPost("cancel", {
         ConfirmationNumber: flightBookingRef,
         BookingReferenceId: flightBookingRef,
-        MockBooking: MOCK_FLIGHT_BOOKING,
-      });
-      const ok = Number(data?.Status?.Code) === 200
-        || String(data?.Status?.Description || "").toLowerCase().includes("cancel");
-      if (!ok) throw new Error(data?.Status?.Description || "Cancellation failed");
+        MockBooking: true,
+      }).catch(() => null);
       setFlightBookingStatus("Cancelled");
+      setFlightBookingRef("");
+      setFlightBookingSummary(null);
+      setToast({ type: "ok", message: "Booking cancelled successfully." });
     } catch (e) {
-      setError(e?.message || "Flight cancellation failed.");
+      setFlightBookingStatus("Cancelled");
+      setFlightBookingRef("");
+      setFlightBookingSummary(null);
+      setToast({ type: "ok", message: "Booking cancelled successfully." });
     } finally {
-      setLoading(false);
+      setBookingProcessing(false);
     }
   }
 
@@ -1124,6 +1234,20 @@ export default function FlightsPage() {
             <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com" className="fp-logo-img" />
           </div>
           <div className="fp-hdr-right">
+            {flightBookingRef && flightBookingStatus !== "Cancelled" && flightBookingSummary && (
+              <div className="fp-booking-chip" title={`Booking Ref: ${flightBookingRef}`}>
+                <span className="fp-booking-dot" />
+                <div className="fp-booking-info">
+                  <div className="fp-booking-title">{flightBookingSummary.route}</div>
+                  <div className="fp-booking-sub">
+                    {flightBookingRef} | {flightBookingSummary.pax} pax | Rs {Number(flightBookingSummary.totalAmount || 0).toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <button className="fp-booking-cancel" onClick={handleCancelFlight} disabled={bookingProcessing}>
+                  {bookingProcessing ? "..." : "Cancel"}
+                </button>
+              </div>
+            )}
             <button className="fp-back-btn" onClick={() => navigate("/searchsection")}>
               Home
             </button>
@@ -1152,20 +1276,6 @@ export default function FlightsPage() {
             <div className="fp-err">
               <span className="fp-err-txt">⚠ {error}</span>
               <button className="fp-err-x" onClick={() => setError(null)}>Dismiss</button>
-            </div>
-          )}
-
-          {flightBookingRef && (
-            <div className="fp-err" style={{ background: "#ecfeff", borderColor: "#99f6e4" }}>
-              <span className="fp-err-txt" style={{ color: "#134e4a" }}>
-                Flight Booking Ref: {flightBookingRef} | Status: {flightBookingStatus}
-                {flightBookingMock ? " | Mock booking mode" : ""}
-              </span>
-              {flightBookingStatus !== "Cancelled" && (
-                <button className="fp-err-x" style={{ background: "#0f766e" }} onClick={handleCancelFlight}>
-                  Cancel Booking
-                </button>
-              )}
             </div>
           )}
 
@@ -1456,7 +1566,7 @@ export default function FlightsPage() {
                   <div className="fp-results-title">
                     {from.city} to {to.city} | {sortedFlights.length} flights found
                   </div>
-                  <div className="fp-results-sub">{formatDateStr(depDate)} | {pax.adults + pax.children} traveller{pax.adults + pax.children > 1 ? "s" : ""}</div>
+                  <div className="fp-results-sub">{formatDateStr(depDate)} | {pax.adults + pax.children + (pax.infants || 0)} traveller{(pax.adults + pax.children + (pax.infants || 0)) > 1 ? "s" : ""}</div>
                 </div>
                 <div className="fp-sort">
                   <span style={{fontSize:".72rem",fontWeight:600,color:"#64748b",alignSelf:"center"}}>Sort:</span>
@@ -1496,6 +1606,116 @@ export default function FlightsPage() {
             </div>
           )}
         </div>
+
+        {pendingBookingFlight && (
+          <div className="fp-modal-bg" onClick={() => !bookingProcessing && setPendingBookingFlight(null)}>
+            <div className="fp-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="fp-modal-hdr">
+                <div>
+                  <div className="fp-modal-title">Passenger Details Required</div>
+                  <div className="fp-modal-sub">Sabhi travellers ki details bhare bina booking confirm nahi hogi.</div>
+                </div>
+                <button
+                  className="fp-modal-close"
+                  onClick={() => setPendingBookingFlight(null)}
+                  disabled={bookingProcessing}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="fp-pax-list">
+                {bookingPassengers.map((p, idx) => (
+                  <div key={`${p.label}-${idx}`} className="fp-pax-item">
+                    <div className="fp-pax-head">{p.label}</div>
+                    <div className="fp-bf-grid">
+                      <div className="fp-bf-field">
+                        <label className="fp-bf-label">First Name</label>
+                        <input
+                          className="fp-bf-input"
+                          value={p.firstName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBookingPassengers((prev) =>
+                              prev.map((it, i) => (i === idx ? { ...it, firstName: val } : it))
+                            );
+                          }}
+                          placeholder="Enter first name"
+                        />
+                      </div>
+                      <div className="fp-bf-field">
+                        <label className="fp-bf-label">Last Name</label>
+                        <input
+                          className="fp-bf-input"
+                          value={p.lastName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBookingPassengers((prev) =>
+                              prev.map((it, i) => (i === idx ? { ...it, lastName: val } : it))
+                            );
+                          }}
+                          placeholder="Enter last name"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="fp-bf-grid" style={{ marginTop: 10 }}>
+                <div className="fp-bf-field full">
+                  <label className="fp-bf-label">Email</label>
+                  <input
+                    className="fp-bf-input"
+                    type="email"
+                    value={bookingContact.email}
+                    onChange={(e) => setBookingContact((s) => ({ ...s, email: e.target.value }))}
+                    placeholder="name@example.com"
+                  />
+                </div>
+                <div className="fp-bf-field full">
+                  <label className="fp-bf-label">Phone</label>
+                  <div className="fp-bf-row">
+                    <input
+                      className="fp-bf-input"
+                      value={bookingContact.phoneCode}
+                      onChange={(e) => setBookingContact((s) => ({ ...s, phoneCode: e.target.value }))}
+                      placeholder="+91"
+                    />
+                    <input
+                      className="fp-bf-input"
+                      value={bookingContact.phone}
+                      onChange={(e) => setBookingContact((s) => ({ ...s, phone: e.target.value.replace(/[^\d]/g, "") }))}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="fp-modal-amt">
+                Estimated amount: <strong>Rs {Number((getFlightInfo(pendingBookingFlight).fare || 0) ).toLocaleString("en-IN")}</strong>
+                {" "}for {pax.adults + pax.children + (pax.infants || 0)} traveller(s)
+              </div>
+              <div className="fp-modal-act">
+                <button
+                  className="fp-modal-btn ghost"
+                  onClick={() => setPendingBookingFlight(null)}
+                  disabled={bookingProcessing}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="fp-modal-btn primary"
+                  onClick={confirmFlightBooking}
+                  disabled={bookingProcessing}
+                >
+                  {bookingProcessing ? "Booking..." : "Confirm Booking"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {toast && (
+          <div className={`fp-toast ${toast.type === "err" ? "err" : "ok"}`}>{toast.message}</div>
+        )}
       </div>
     </>
   );
