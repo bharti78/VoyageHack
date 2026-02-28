@@ -255,7 +255,7 @@ const INTENT_ROUTE = {
   flights:    '/flights',
   hotels:     '/hotels',
   cabs:       '/cabs',
-  carrental:  '/carrental',
+  carrental:  '/cabs',
   all:        '/flights',   // default travel intent → always flights
 };
 
@@ -810,3 +810,4 @@ export default function SmartSearchBar({
     </div>
   );
 }
+

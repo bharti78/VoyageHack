@@ -559,6 +559,7 @@ const css = `
 
 /* dropdown */
 .hp-drop{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05);z-index:5000;animation:fadeDown .18s ease both;overflow:hidden}
+.hp-cal-drop{min-width:305px;overflow:visible}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 
 /* calendar */
@@ -1754,7 +1755,7 @@ export default function HotelsPage({onBack}){
                     </div>
                   </div>
                   {drop==="ci" && (
-                    <div className="hp-drop">
+                    <div className="hp-drop hp-cal-drop">
                       <MiniCal
                         value={checkIn}
                         onChange={d=>{setCI(d);if(checkOut&&d>=checkOut)setCO(null);}}
@@ -1783,7 +1784,7 @@ export default function HotelsPage({onBack}){
                     </div>
                   </div>
                   {drop==="co" && (
-                    <div className="hp-drop">
+                    <div className="hp-drop hp-cal-drop">
                       <MiniCal
                         value={checkOut}
                         onChange={d=>{setCO(d);setDrop(null);}}

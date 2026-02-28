@@ -26,9 +26,7 @@ const TYPE_OPTIONS = [
   { id: "flights", label: "Flights", icon: "✈" },
   { id: "hotels", label: "Hotels", icon: "🏨" },
   { id: "cabs", label: "Cabs", icon: "🚕" },
-  { id: "carrental", label: "Car Rentals", icon: "🚗" },
 ];
-
 function norm(v) {
   return String(v || "").toLowerCase().trim();
 }
@@ -158,13 +156,6 @@ export default function Home() {
         children: 0,
       }));
       localStorage.setItem("voyagehack.cab.prefill", JSON.stringify({ city: destinationText, budget }));
-      localStorage.setItem("voyagehack.carrental.prefill", JSON.stringify({
-        city: destinationText,
-        pickupDate: depDate.toISOString(),
-        returnDate: retDate.toISOString(),
-        budget,
-      }));
-
       buildAndStore({
         source: "home-text-search",
         inputType: "text",
@@ -187,9 +178,7 @@ export default function Home() {
         flights: "/flights",
         hotels: "/hotels",
         cabs: "/cabs",
-        carrental: "/carrental",
       };
-      navigate(routeMap[selectedType] || "/flights");
     } catch (e) {
       setError(e.message || "Search failed.");
     } finally {
@@ -273,3 +262,5 @@ export default function Home() {
     </div>
   );
 }
+
+

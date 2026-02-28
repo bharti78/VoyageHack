@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { buildAndStore } from "../utils/unifiedSearch";
@@ -22,7 +22,7 @@ const css = `
     padding-top: 80px;
   }
 
-  /* â”€â”€ TOP NAVBAR â”€â”€ */
+  /* ── TOP NAVBAR ── */
   .tbo-nav {
     display: flex;
     align-items: center;
@@ -196,14 +196,14 @@ const css = `
   }
   .btn-book:hover { background: #e05500; transform: scale(1.03); }
 
-  /* â”€â”€ SEARCH BAR SECTION â€” below nav, above hero â”€â”€ */
+  /* ── SEARCH BAR SECTION — below nav, above hero ── */
   .tbo-search-section {
     background: #fff;
     padding: 16px clamp(20px, 3%, 60px);
     border-bottom: 1px solid #f0f0f0;
   }
 
-  /* â”€â”€ EXPANDED TEXT SEARCH BAR â”€â”€ */
+  /* ── EXPANDED TEXT SEARCH BAR ── */
   .expanded-search-bar {
     display: flex;
     align-items: center;
@@ -402,7 +402,7 @@ const css = `
   }
   .pill-search-btn:hover { background: #e05500; transform: scale(1.03); }
 
-  /* â”€â”€ DROPDOWNS â”€â”€ */
+  /* ── DROPDOWNS ── */
   .dropdown-overlay { position: fixed; inset: 0; z-index: 400; }
   .dropdown-panel {
     position: absolute;
@@ -700,7 +700,7 @@ const css = `
   .btn-apply { background: linear-gradient(135deg,#ff6600,#ff3366); color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans',sans-serif; box-shadow: 0 4px 14px rgba(255,80,50,0.4); transition: transform 0.15s; }
   .btn-apply:hover { transform: scale(1.04); }
 
-  /* â”€â”€ PRODUCTS DROPDOWN in nav â”€â”€ */
+  /* ── PRODUCTS DROPDOWN in nav ── */
   .products-nav-wrap { position: relative; }
   .products-dropdown {
     position: absolute;
@@ -822,7 +822,7 @@ const css = `
     object-fit: cover;
   }
 
-  /* â”€â”€ HERO â”€â”€ */
+  /* ── HERO ── */
   .tbo-hero-section {
     min-height: calc(100vh - 80px - 101px);
     display: flex;
@@ -919,7 +919,7 @@ const css = `
     backdrop-filter: blur(6px);
   }
 
-  /* â”€â”€ NUMBERS â”€â”€ */
+  /* ── NUMBERS ── */
   .tbo-numbers { text-align: center; padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #ffffff; }
   .tbo-numbers h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 40px; font-family: 'Playfair Display',serif; }
   .stats-row { display: flex; justify-content: center; gap: clamp(40px,8vw,140px); flex-wrap: wrap; }
@@ -1288,7 +1288,7 @@ const css = `
   }
 `;
 
-/* â”€â”€â”€ DATA â”€â”€â”€ */
+/* ─── DATA ─── */
 const destinations = [
   { city: "Dubai", country: "UAE", emoji: "\uD83C\uDFD9\uFE0F", recent: true, tags: ["city", "luxury", "shopping"] },
   { city: "Paris", country: "France", emoji: "\uD83D\uDDFC", recent: true, tags: ["city", "heritage", "romance"] },
@@ -1335,15 +1335,15 @@ const FLIGHT_ROUTES = {
   kochi: { from: { code: "DEL", city: "New Delhi" }, to: { code: "COK", city: "Kochi" } },
 };
 const TRAVEL_TYPES = [
-  { id: "mountains", label: "Mountains", icon: "â›°ï¸" },
-  { id: "beach", label: "Beach", icon: "ðŸ–ï¸" },
-  { id: "religious", label: "Religious", icon: "ðŸ•Œ" },
-  { id: "adventure", label: "Adventure", icon: "ðŸ§—" },
-  { id: "city", label: "City Tour", icon: "ðŸŒ†" },
-  { id: "wildlife", label: "Wildlife", icon: "ðŸ¦" },
-  { id: "cruise", label: "Cruise", icon: "ðŸ›³ï¸" },
-  { id: "heritage", label: "Heritage", icon: "ðŸ›ï¸" },
-  { id: "wellness", label: "Wellness", icon: "ðŸ§˜" },
+  { id: "mountains", label: "Mountains", icon: "⛰️" },
+  { id: "beach", label: "Beach", icon: "🏖️" },
+  { id: "religious", label: "Religious", icon: "🕌" },
+  { id: "adventure", label: "Adventure", icon: "🧗" },
+  { id: "city", label: "City Tour", icon: "🌆" },
+  { id: "wildlife", label: "Wildlife", icon: "🦁" },
+  { id: "cruise", label: "Cruise", icon: "🛳️" },
+  { id: "heritage", label: "Heritage", icon: "🏛️" },
+  { id: "wellness", label: "Wellness", icon: "🧘" },
 ];
 const WHERE_ENTITY_TYPES = [
   { id: "all", label: "All" },
@@ -1359,29 +1359,29 @@ const WHERE_ENTITIES = [
     city: d.city,
     country: d.country,
     code: "",
-    emoji: d.emoji || "ðŸŒ",
+    emoji: d.emoji || "🌍",
     recent: !!d.recent,
     popularity: d.recent ? 95 : 70,
     tags: Array.isArray(d.tags) ? d.tags : [],
   })),
-  { type: "airport", key: "airport:del", name: "Indira Gandhi International Airport", city: "Delhi", country: "India", code: "DEL", emoji: "âœˆï¸", popularity: 99, tags: ["city", "heritage"] },
-  { type: "airport", key: "airport:bom", name: "Chhatrapati Shivaji Maharaj International Airport", city: "Mumbai", country: "India", code: "BOM", emoji: "âœˆï¸", popularity: 98, tags: ["city", "beach"] },
-  { type: "airport", key: "airport:blr", name: "Kempegowda International Airport", city: "Bengaluru", country: "India", code: "BLR", emoji: "âœˆï¸", popularity: 95, tags: ["city"] },
-  { type: "airport", key: "airport:goi", name: "Dabolim Airport", city: "Goa", country: "India", code: "GOI", emoji: "âœˆï¸", popularity: 94, tags: ["beach", "adventure"] },
-  { type: "airport", key: "airport:cok", name: "Cochin International Airport", city: "Kochi", country: "India", code: "COK", emoji: "âœˆï¸", popularity: 90, tags: ["beach", "wellness"] },
-  { type: "hotel", key: "hotel:goa-beach", name: "Sea Breeze Goa Resort", city: "Goa", country: "India", code: "HTL-GOI-001", emoji: "ðŸ¨", popularity: 90, priceRange: "â‚¹6,500 - â‚¹11,500 / night", tags: ["beach", "luxury"] },
-  { type: "hotel", key: "hotel:manali-mountain", name: "Snow Crest Manali Retreat", city: "Manali", country: "India", code: "HTL-MNL-014", emoji: "ðŸ¨", popularity: 84, priceRange: "â‚¹5,400 - â‚¹9,900 / night", tags: ["mountains", "adventure"] },
-  { type: "hotel", key: "hotel:jaipur-heritage", name: "Royal Courtyard Jaipur", city: "Jaipur", country: "India", code: "HTL-JAI-022", emoji: "ðŸ¨", popularity: 81, priceRange: "â‚¹4,800 - â‚¹8,700 / night", tags: ["heritage", "city"] },
-  { type: "hotel", key: "hotel:bali-villa", name: "Bali Sunset Villa", city: "Bali", country: "Indonesia", code: "HTL-BAL-008", emoji: "ðŸ¨", popularity: 79, priceRange: "â‚¹9,700 - â‚¹15,000 / night", tags: ["beach", "wellness"] },
+  { type: "airport", key: "airport:del", name: "Indira Gandhi International Airport", city: "Delhi", country: "India", code: "DEL", emoji: "✈️", popularity: 99, tags: ["city", "heritage"] },
+  { type: "airport", key: "airport:bom", name: "Chhatrapati Shivaji Maharaj International Airport", city: "Mumbai", country: "India", code: "BOM", emoji: "✈️", popularity: 98, tags: ["city", "beach"] },
+  { type: "airport", key: "airport:blr", name: "Kempegowda International Airport", city: "Bengaluru", country: "India", code: "BLR", emoji: "✈️", popularity: 95, tags: ["city"] },
+  { type: "airport", key: "airport:goi", name: "Dabolim Airport", city: "Goa", country: "India", code: "GOI", emoji: "✈️", popularity: 94, tags: ["beach", "adventure"] },
+  { type: "airport", key: "airport:cok", name: "Cochin International Airport", city: "Kochi", country: "India", code: "COK", emoji: "✈️", popularity: 90, tags: ["beach", "wellness"] },
+  { type: "hotel", key: "hotel:goa-beach", name: "Sea Breeze Goa Resort", city: "Goa", country: "India", code: "HTL-GOI-001", emoji: "🏨", popularity: 90, priceRange: "₹6,500 - ₹11,500 / night", tags: ["beach", "luxury"] },
+  { type: "hotel", key: "hotel:manali-mountain", name: "Snow Crest Manali Retreat", city: "Manali", country: "India", code: "HTL-MNL-014", emoji: "🏨", popularity: 84, priceRange: "₹5,400 - ₹9,900 / night", tags: ["mountains", "adventure"] },
+  { type: "hotel", key: "hotel:jaipur-heritage", name: "Royal Courtyard Jaipur", city: "Jaipur", country: "India", code: "HTL-JAI-022", emoji: "🏨", popularity: 81, priceRange: "₹4,800 - ₹8,700 / night", tags: ["heritage", "city"] },
+  { type: "hotel", key: "hotel:bali-villa", name: "Bali Sunset Villa", city: "Bali", country: "Indonesia", code: "HTL-BAL-008", emoji: "🏨", popularity: 79, priceRange: "₹9,700 - ₹15,000 / night", tags: ["beach", "wellness"] },
 ];
 const BUDGET_OPTIONS = [
-  { id: "budget", label: "Budget", range: "Up to â‚¹30,000", icon: "ðŸª™" },
-  { id: "standard", label: "Standard", range: "â‚¹30,000 â€“ â‚¹80,000", icon: "ðŸ’³" },
-  { id: "premium", label: "Premium", range: "â‚¹80,000 â€“ â‚¹1,50,000", icon: "ðŸ’Ž" },
-  { id: "luxury", label: "Luxury", range: "â‚¹1,50,000+", icon: "ðŸ‘‘" },
+  { id: "budget", label: "Budget", range: "Up to ₹30,000", icon: "🪙" },
+  { id: "standard", label: "Standard", range: "₹30,000 – ₹80,000", icon: "💳" },
+  { id: "premium", label: "Premium", range: "₹80,000 – ₹1,50,000", icon: "💎" },
+  { id: "luxury", label: "Luxury", range: "₹1,50,000+", icon: "👑" },
 ];
 const MONTHS_LIST = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const MONTH_EMOJIS = ["â„ï¸","ðŸŒ¸","ðŸŒ§ï¸","ðŸŒ·","â˜€ï¸","ðŸ–ï¸","ðŸŒž","ðŸŒ»","ðŸ‚","ðŸŽƒ","ðŸ","ðŸŽ„"];
+const MONTH_EMOJIS = ["❄️","🌸","🌧️","🌷","☀️","🏖️","🌞","🌻","🍂","🎃","🍁","🎄"];
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const LOCALE_COUNTRY_MAP = {
   IN: "India",
@@ -1606,7 +1606,7 @@ const valueContent = {
     { title: "Revenue analytics", desc: "Access detailed reports on booking trends, top-performing buyers, and revenue opportunities to optimize your strategy." },
   ],
   "Travelpreneurs": [
-    { title: "Zero investment startup", desc: "Launch your own travel business with no upfront cost â€” use TBO's platform, supplier network, and tools from day one." },
+    { title: "Zero investment startup", desc: "Launch your own travel business with no upfront cost — use TBO's platform, supplier network, and tools from day one." },
     { title: "Training & mentorship", desc: "Get certified through TBO Academy and receive dedicated mentorship to accelerate your growth as a travel entrepreneur." },
     { title: "Earn from day one", desc: "Start earning commissions immediately on bookings while building expertise and a loyal client base." },
   ],
@@ -1810,7 +1810,7 @@ function WhereFromToPanel({
           onClick={() => setWhereStep("from")}>
           <span className="where-step-label">From</span>
           <span className={`where-step-value ${!fromCity ? "empty" : ""}`}>{fromCity || "Origin city"}</span>
-          <span className="where-step-arrow">â†’</span>
+          <span className="where-step-arrow">→</span>
         </div>
         <div className={`where-step-tab ${whereStep === "to" ? "active" : ""} ${destination ? "done" : ""}`}
           onClick={() => setWhereStep("to")} style={{paddingLeft:18}}>
@@ -1841,7 +1841,7 @@ function WhereFromToPanel({
         {/* Swap button (shown when both are set) */}
         {fromCity && destination && (
           <button className="where-swap-btn" type="button" onClick={handleSwap}>
-            â‡„ Swap From &amp; To
+            ⇄ Swap From &amp; To
           </button>
         )}
 
@@ -2514,10 +2514,10 @@ export default function TBOHomepage() {
   }
   function whenValue() {
     if (whenTab === "Dates" && startDate) {
-      if (endDate) return `${formatDate(startDate)} â€“ ${formatDate(endDate)}`;
+      if (endDate) return `${formatDate(startDate)} – ${formatDate(endDate)}`;
       return formatDate(startDate);
     }
-    if (whenTab === "Months") return `${formatDate(new Date())} â€“ ${formatDate(addMonths(new Date(), monthsDuration))}`;
+    if (whenTab === "Months") return `${formatDate(new Date())} – ${formatDate(addMonths(new Date(), monthsDuration))}`;
     if (whenTab === "Flexible" && stayType && selectedMonths.length > 0) return `${stayType} \u00B7 ${selectedMonths.length} mo`;
     return null;
   }
@@ -2706,7 +2706,7 @@ export default function TBOHomepage() {
     const service =
       (queryForService.includes("hotel") || queryForService.includes("stay") || queryForService.includes("room")) ? "hotels" :
       (queryForService.includes("cab") || queryForService.includes("taxi")) ? "cabs" :
-      (queryForService.includes("car rental") || queryForService.includes("self drive") || queryForService.includes("rent a car")) ? "carrental" :
+      (queryForService.includes("car rental") || queryForService.includes("self drive") || queryForService.includes("rent a car")) ? "cabs" :
       (queryForService.includes("flight") || queryForService.includes("air") || routeFromQuery?.source || routeFromQuery?.destination) ? "flights" :
       "flights";
 
@@ -2783,13 +2783,6 @@ export default function TBOHomepage() {
       budget: parsedBudget || "",
       travelTime: "10:00",
     }));
-    safeSetItem("voyagehack.carrental.prefill", JSON.stringify({
-      city: parsedDestination || "",
-      pickupDate: startDt.toISOString(),
-      returnDate: endDt.toISOString(),
-      budget: parsedBudget || "",
-    }));
-
     if (parsedDestination) {
       setDestination(parsedDestination);
       if (finalDestinationObj) {
@@ -2908,14 +2901,13 @@ export default function TBOHomepage() {
       budget: parsedBudget,
     }).then(data => {
       storeUnifiedResults(data);
-    }).catch(() => { /* silent â€“ result pages handle missing cache */ });
+    }).catch(() => { /* silent – result pages handle missing cache */ });
 
     const routeMap = {
       flights: "/flights",
       hotels: "/hotels",
       cabs: "/cabs",
-      carrental: "/carrental",
-    };
+          };
     navigate(routeMap[service] || "/flights");
   }
   function handleBookNow() {
@@ -2931,11 +2923,11 @@ export default function TBOHomepage() {
       <style>{css}</style>
       <div className="tbo-wrap">
 
-        {/* â”€â”€ NAVBAR â”€â”€ */}
+        {/* ── NAVBAR ── */}
         <nav className={`tbo-nav${navScrolled ? " scrolled" : ""}`}>
           {/* Logo */}
           <div className="tbo-logo-wrap">
-            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com â€“ Travel Simplified" className="tbo-logo-img" />
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
           </div>
 
           {/* Nav links */}
@@ -3084,17 +3076,17 @@ export default function TBOHomepage() {
           </div>
         </nav>
 
-        {/* â”€â”€ SEARCH BAR â€” full width below nav â”€â”€ */}
+        {/* ── SEARCH BAR — full width below nav ── */}
         <div className="tbo-search-section">
 
-          {/* â”€â”€ NATURAL LANGUAGE SMART SEARCH â”€â”€ */}
+          {/* ── NATURAL LANGUAGE SMART SEARCH ── */}
           <div style={{
             background: "linear-gradient(135deg,#1a0050 0%,#3d0099 55%,#6600cc 100%)",
             padding: "28px 20px 24px",
             textAlign: "center",
           }}>
             <p style={{color:"rgba(255,255,255,.75)",fontSize:".78rem",fontWeight:600,marginBottom:10,letterSpacing:".5px"}}>
-              {/* âœ¨ AI-POWERED NATURAL LANGUAGE SEARCH */}
+              {/* ✨ AI-POWERED NATURAL LANGUAGE SEARCH */}
               Natural language search for smarter, faster trip planning
             </p>
             <SmartSearchBar
@@ -3111,7 +3103,7 @@ export default function TBOHomepage() {
               <div className="dropdown-overlay" onClick={() => setOpenPanel(null)} />
             )}
 
-            {/* â”€â”€ EXPANDED TEXT SEARCH â”€â”€ */}
+            {/* ── EXPANDED TEXT SEARCH ── */}
             {/* Expanded text search disabled intentionally */}
             {false ? (
               <div className="expanded-search-bar">
@@ -3152,10 +3144,10 @@ export default function TBOHomepage() {
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
                 </button>
-                {/* <button className="exp-close-btn" onClick={() => { setSearchExpanded(true); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">âœ•</button> */}
+                {/* <button className="exp-close-btn" onClick={() => { setSearchExpanded(true); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">✕</button> */}
               </div>
             ) : (
-              /* â”€â”€ PILL SEARCH BAR â”€â”€ */
+              /* ── PILL SEARCH BAR ── */
               <div className={`search-pill ${openPanel ? "active" : ""} ${mobileFiltersOpen ? "mobile-filters-open" : ""}`}>
                 <button
                   type="button"
@@ -3218,7 +3210,7 @@ export default function TBOHomepage() {
                   onClick={() => { setWhereStep(fromCity ? "to" : "from"); setOpenPanel(openPanel === "where" ? null : "where"); }}>
                   <span className="pill-label">WHERE <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!fromCity && !destination ? "placeholder" : ""}`}>
-                    {fromCity && destination ? `${fromCity} â†’ ${destination}` : fromCity ? `${fromCity} â†’ ?` : destination || "From â€“ To"}
+                    {fromCity && destination ? `${fromCity} → ${destination}` : fromCity ? `${fromCity} → ?` : destination || "From – To"}
                   </span>
                 </div>
 
@@ -3245,13 +3237,13 @@ export default function TBOHomepage() {
 
                 {/* Buttons */}
                 <div className="pill-buttons">
-                  {/* Search icon â€” expands to full text search */}
+                  {/* Search icon — expands to full text search */}
                   <button className="pill-icon-btn" onClick={() => { setOpenPanel(null); setSearchExpanded(true); }} aria-label="Text search" title="Search by typing">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                   </button>
-                  {/* Orange Search button â€” triggers filter search */}
+                  {/* Orange Search button — triggers filter search */}
                   <button
                     type="button"
                     className="pill-icon-btn"
@@ -3342,7 +3334,7 @@ export default function TBOHomepage() {
                             cheapestKey={fareSummary.cheapestKey} onFareFocus={setFareFocus}/>
                         </div>
                         <div className="flex-options">
-                          {["Exact dates","Â±1 day","Â±2 days","Â±3 days","Â±7 days","Â±14 days"].map(f => (
+                          {["Exact dates","±1 day","±2 days","±3 days","±7 days","±14 days"].map(f => (
                             <button key={f} className={`flex-chip ${flexDays === f ? "active" : ""}`} onClick={() => setFlexDays(f)}>{f}</button>
                           ))}
                         </div>
@@ -3390,11 +3382,11 @@ export default function TBOHomepage() {
                         <div className="months-tab-body">
                           <CircleSelector duration={monthsDuration} onChange={setMonthsDuration}/>
                           <div className="months-range-display">
-                            <div className="months-range-text">{formatDate(new Date())} â€“ {formatDate(addMonths(new Date(), monthsDuration))}</div>
+                            <div className="months-range-text">{formatDate(new Date())} – {formatDate(addMonths(new Date(), monthsDuration))}</div>
                             <div className="months-range-sub">{monthsDuration} month{monthsDuration !== 1 ? "s" : ""} trip</div>
                             <div className="months-hint">Drag the circle handle to adjust</div>
                             <div className="months-hint" style={{marginTop:8}}>
-                              Cheapest visible day starts at Rs {fareSummary.minFare ? fareSummary.minFare.toLocaleString("en-IN") : "â€”"}
+                              Cheapest visible day starts at Rs {fareSummary.minFare ? fareSummary.minFare.toLocaleString("en-IN") : "—"}
                             </div>
                           </div>
                         </div>
@@ -3402,7 +3394,7 @@ export default function TBOHomepage() {
                       {whenTab === "Flexible" && (<>
                         <div className="flex-stay-label">How long would you like to stay?</div>
                         <div className="flex-stay-options">
-                          {[{name:"Weekend",icon:"ðŸŒ™",desc:"2â€“3 nights"},{name:"Week",icon:"â˜€ï¸",desc:"5â€“7 nights"},{name:"Month",icon:"ðŸ“…",desc:"28â€“31 nights"}].map(s => (
+                          {[{name:"Weekend",icon:"🌙",desc:"2–3 nights"},{name:"Week",icon:"☀️",desc:"5–7 nights"},{name:"Month",icon:"📅",desc:"28–31 nights"}].map(s => (
                             <button key={s.name} className={`flex-stay-btn ${stayType === s.name ? "active" : ""}`} onClick={() => setStayType(s.name)}>
                               <span className="stay-icon">{s.icon}</span><span className="stay-name">{s.name}</span><span className="stay-desc">{s.desc}</span>
                             </button>
@@ -3432,12 +3424,12 @@ export default function TBOHomepage() {
                 {openPanel === "who" && (
                   <div className="dropdown-panel who-dropdown" style={{right:"18%",left:"auto"}}>
                     <div style={{paddingBottom:4}}>
-                      {[{key:"adults",label:"Adults",sub:"Ages 13+"},{key:"children",label:"Children",sub:"Ages 2â€“12"},{key:"infants",label:"Infants",sub:"Under 2"},{key:"pets",label:"Pets",sub:"Assistance animals"}].map(g => (
+                      {[{key:"adults",label:"Adults",sub:"Ages 13+"},{key:"children",label:"Children",sub:"Ages 2–12"},{key:"infants",label:"Infants",sub:"Under 2"},{key:"pets",label:"Pets",sub:"Assistance animals"}].map(g => (
                         <div className="guest-row" key={g.key}>
                           <div><div className="guest-type">{g.label}</div><div className="guest-age">{g.sub}</div></div>
                           <div className="guest-counter">
                             <button className="guest-btn" disabled={guests[g.key] === 0 || (g.key === "adults" && guests[g.key] <= 1)}
-                              onClick={() => setGuests(p => ({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>âˆ’</button>
+                              onClick={() => setGuests(p => ({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>−</button>
                             <span className="guest-count">{guests[g.key]}</span>
                             <button className="guest-btn" disabled={guests[g.key] >= 16}
                               onClick={() => setGuests(p => ({...p,[g.key]:p[g.key]+1}))}>+</button>
@@ -3471,9 +3463,9 @@ export default function TBOHomepage() {
                       style={{"--val":budgetSlider+"%"}}
                       onChange={e => { setBudgetSlider(+e.target.value); e.target.style.setProperty("--val",e.target.value+"%"); }}/>
                     <div className="budget-range-values">
-                      <span>â‚¹0</span>
-                      <span style={{color:"#ff6600",fontWeight:600}}>â‚¹{Math.round(budgetSlider*5000).toLocaleString()}</span>
-                      <span>â‚¹5L+</span>
+                      <span>₹0</span>
+                      <span style={{color:"#ff6600",fontWeight:600}}>₹{Math.round(budgetSlider*5000).toLocaleString()}</span>
+                      <span>₹5L+</span>
                     </div>
                     <div className="dropdown-footer" style={{marginTop:12}}>
                       <button className="btn-clear" onClick={() => { setSelectedBudget(null); setBudgetSlider(50); }}>Clear</button>
@@ -3496,7 +3488,7 @@ export default function TBOHomepage() {
           </div>
         </div>
 
-        {/* â”€â”€ HERO â”€â”€ */}
+        {/* ── HERO ── */}
         <section className="tbo-hero-section">
           <div className="tbo-hero">
             <div className="hero-text">
@@ -3512,7 +3504,7 @@ export default function TBOHomepage() {
               </p>
               <p className="register-label">Register with us:</p>
               <div className="hero-btns">
-                <button className="btn-become">Start Your Journey 🚀</button>
+                <button className="btn-become">Start Your Journey ??</button>
                 <button className="btn-agent">Let's Go</button>
               </div>
             </div>
@@ -3522,7 +3514,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ NUMBERS â”€â”€ */}
+        {/* ── NUMBERS ── */}
         <section className="tbo-numbers">
           <h2>TBO in numbers</h2>
           <div className="stats-row">
@@ -3535,7 +3527,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ BRANDS MARQUEE â”€â”€ */}
+        {/* ── BRANDS MARQUEE ── */}
         <section className="tbo-our-brands">
           <h2>Our brands</h2>
           <div className="brands-marquee-wrap">
@@ -3545,7 +3537,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ VALUE â”€â”€ */}
+        {/* ── VALUE ── */}
         <section className="tbo-value">
           <h2>How do we add value to..</h2>
           <div className="value-tabs">
@@ -3568,7 +3560,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ PARTNER BRANDS â”€â”€ */}
+        {/* ── PARTNER BRANDS ── */}
         <section className="tbo-partner-brands">
           <h2>Brands we work with</h2>
           <div className="partner-row">
@@ -3583,7 +3575,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ GROWTH STORIES â”€â”€ */}
+        {/* ── GROWTH STORIES ── */}
         <section className="tbo-growth">
           <h2>Growth Stories</h2>
           <div className="slider-wrapper" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
@@ -3624,7 +3616,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ AWARDS â”€â”€ */}
+        {/* ── AWARDS ── */}
         <section className="tbo-awards">
           <h2>Awards</h2>
           <div className="awards-slider-wrapper" onMouseEnter={() => setAwardPaused(true)} onMouseLeave={() => setAwardPaused(false)}>
@@ -3646,7 +3638,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* â”€â”€ FOOTER â”€â”€ */}
+        {/* ── FOOTER ── */}
         <footer className="tbo-footer">
           <div className="footer-inner">
             <div className="footer-links">
@@ -3664,6 +3656,7 @@ export default function TBOHomepage() {
     </>
   );
 }
+
 
 
 

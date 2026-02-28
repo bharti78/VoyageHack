@@ -106,7 +106,6 @@ const SERVICES = [
   { id: "flights", path: "/flights", label: "Flights", icon: "✈️" },
   { id: "hotels", path: "/hotels", label: "Hotels", icon: "🏨" },
   { id: "cabs", path: "/cabs", label: "Cabs", icon: "🚕" },
-  { id: "carrental", path: "/carrental", label: "Car Rental", icon: "🚗" },
 ];
 
 function safeReadJSON(key) {

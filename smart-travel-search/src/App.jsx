@@ -11,7 +11,6 @@ import Home from "./pages/Home"
 import HotelsPage from "./pages/Hotelspage"
 import FlightsPage from "./pages/FlightsPage"
 import CabsPage from "./pages/CabsPage"
-import CarRentalPage from "./pages/CarRentalPage"
 import TboCaresPage from "./pages/TboCaresPage"
 import CareersPage from "./pages/CareersPage"
 import TboPlatformPage from "./pages/TboPlatformPage"
@@ -50,7 +49,6 @@ function AppInner() {
           <Route path="/hotels" element={<HotelsPage />} />
           <Route path="/flights" element={<FlightsPage />} />
           <Route path="/cabs" element={<CabsPage />} />
-          <Route path="/carrental" element={<CarRentalPage />} />
           <Route path="/tbocares" element={<TboCaresPage />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/tbo-platform" element={<TboPlatformPage />} />
