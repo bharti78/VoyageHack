@@ -54,6 +54,7 @@ function AppInner() {
           <Route path="/tbocares" element={<TboCaresPage />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/tbo-platform" element={<TboPlatformPage />} />
+          <Route path="/tbo-Platform" element={<TboPlatformPage />} />
           <Route path="/tbo-plus" element={<TboPlusPage />} />
           <Route path="/tbo-academy" element={<TboAcademyPage />} />
           <Route path="/roamer-app" element={<RoamerAppPage />} />
@@ -65,6 +66,7 @@ function AppInner() {
           <Route path="/sanctions-compliance-policy" element={<SanctionsPolicyPage />} />
           <Route path="/contact-us" element={<ContactUsPage />} />
           <Route path="/aboutus" element={<AboutUsPage />} />
+          <Route path="/about-us" element={<AboutUsPage />} />
           <Route path="/board-of-directors" element={<BoardOfDirectorsPage />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>

@@ -2929,7 +2929,7 @@ export default function TBOHomepage() {
                     <div className="solutions-mega-left">
                       <div>
                         <h6 className="solutions-mega-title">Travel Buyers</h6>
-                        <a className="solutions-mega-link" href="/tbo-Platform" onClick={() => setSolutionsOpen(false)}>TBO Platform</a>
+                        <a className="solutions-mega-link" href="/tbo-platform" onClick={() => setSolutionsOpen(false)}>TBO Platform</a>
                         <a className="solutions-mega-link" href="/tbo-api" onClick={() => setSolutionsOpen(false)}>TBO APIs</a>
                         <a className="solutions-mega-link" href="/tbo-plus" onClick={() => setSolutionsOpen(false)}>TBO+</a>
                         <a className="solutions-mega-link" href="/tbo-academy" onClick={() => setSolutionsOpen(false)}>TBO Academy</a>
@@ -3030,7 +3030,7 @@ export default function TBOHomepage() {
             </button>
             {mobileSolutionsOpen && (
               <div className="mobile-submenu">
-                <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-Platform"); }}>TBO Platform</button>
+                <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-platform"); }}>TBO Platform</button>
                 {/* <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-api"); }}>TBO APIs</button> */}
                 <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-plus"); }}>TBO+</button>
                 <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-academy"); }}>TBO Academy</button>
