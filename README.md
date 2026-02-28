@@ -122,6 +122,8 @@ npm run preview
 ```
 
 ## Screenshots
+<img width="1919" height="911" alt="image" src="https://github.com/user-attachments/assets/4ad9b3bc-b03a-40c1-8814-d5baa33ebd15" />
+
 
 ### Onboarding
 ![Onboarding](<img width="1919" height="909" alt="image" src="https://github.com/user-attachments/assets/cd77e4a9-e573-49c9-9df9-1b259402f4b2" />)
