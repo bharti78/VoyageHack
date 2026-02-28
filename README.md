@@ -124,19 +124,19 @@ npm run preview
 ## Screenshots
 
 ### Onboarding
-![Onboarding](./screenshots/onboarding.png)
+![Onboarding](<img width="1919" height="909" alt="image" src="https://github.com/user-attachments/assets/cd77e4a9-e573-49c9-9df9-1b259402f4b2" />)
 
 ### AI Assistance
-![AI Assistance](./screenshots/ai-assistance.png)
+![AI Assistance](<img width="949" height="666" alt="image" src="https://github.com/user-attachments/assets/ed7f0631-99d8-4acc-886d-40686104669a" />)
 
 ### Flights Booking
-![Flights Booking](./screenshots/flights-booking.png)
+![Flights Booking](<img width="1919" height="901" alt="image" src="https://github.com/user-attachments/assets/001679a3-fb5c-43cb-b494-f451ac119c86" />)
 
 ### Hotels Booking
-![Hotels Booking](./screenshots/hotels-booking.png)
+![Hotels Booking](<img width="1907" height="919" alt="image" src="https://github.com/user-attachments/assets/f775384e-67a5-419c-b504-34184cb7c3b2" />)
 
 ### Cab Booking
-![Cab Booking](./screenshots/cab-booking.png)
+![Cab Booking](<img width="1919" height="911" alt="image" src="https://github.com/user-attachments/assets/d5dbc221-4626-47aa-adda-b84d1e2f67f7" />)
 
 ## Notes
 - Keep backend running before using frontend APIs locally.
