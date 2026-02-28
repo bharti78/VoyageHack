@@ -65,6 +65,7 @@ const css = `
     color: #1f2937;
     margin: 0;
     white-space: pre-line;
+    text-align: justify;
   }
   .sp-hero-image-wrap {
     width: min(100%, 305px);

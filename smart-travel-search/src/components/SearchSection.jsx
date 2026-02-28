@@ -2959,7 +2959,6 @@ export default function TBOHomepage() {
               )}
               </div>
             </div>
-            <button className="nav-link">Help</button>
           </div>
 
           {/* Nav right */}
@@ -3014,7 +3013,6 @@ export default function TBOHomepage() {
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/tbocares"); }}>TBO Cares</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/aboutus"); }}>About tbo.com</button>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/board-of-directors"); }}>Board of Directors</button>
-            <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); }}>Help</button>
             {isLoggedIn ? (
               <>
                 <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); handleBookNow(); }}>Book Now</button>

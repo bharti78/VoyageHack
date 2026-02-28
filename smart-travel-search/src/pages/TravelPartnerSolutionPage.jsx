@@ -4,7 +4,7 @@ import SolutionStaticPage from "../components/SolutionStaticPage";
 export default function TravelPartnerSolutionPage() {
   return (
     <SolutionStaticPage
-      title="Travel Partner Solution\n(TPS)"
+      title="Travel Partner Solution (TPS)"
       lead="Up-sell travel products (Flight + hotel, Hotel, Packages, Transport, Insurance) without investing your time and money in technology development."
       heroImage="https://www.tbo.com/img/tpm-img.jpg"
       paragraphs={[
