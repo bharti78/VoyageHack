@@ -159,7 +159,7 @@ const css = `
     margin-bottom: 12px;
   }
   .bod-card-title {
-    font-size: 1.28rem;
+    font-size: 1.36rem;
     color: #6b7280;
     margin-bottom: 8px;
     line-height: 1.35;
@@ -174,7 +174,7 @@ const css = `
     margin-bottom: 8px;
   }
   .bod-card p {
-    font-size: 1.1rem;
+    font-size: 1.16rem;
     line-height: 1.58;
     color: #808893;
     margin: 0;
@@ -240,8 +240,8 @@ const css = `
     .bod-auth { font-size: 0.72rem; }
     .bod-book { font-size: 0.8rem; padding: 8px 12px; }
     .bod-title { font-size: 2rem; }
-    .bod-card-title { font-size: 1.08rem; }
-    .bod-card p { font-size: 1rem; }
+    .bod-card-title { font-size: 1.14rem; }
+    .bod-card p { font-size: 1.04rem; }
     .bod-footer-social { font-size: 1.3rem; }
     .bod-footer-link, .bod-footer-sep { font-size: 0.95rem; }
     .bod-footer-copy { font-size: 0.85rem; }

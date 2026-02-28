@@ -3002,7 +3002,7 @@ export default function TBOHomepage() {
             {mobileSolutionsOpen && (
               <div className="mobile-submenu">
                 <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-Platform"); }}>TBO Platform</button>
-                <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-api"); }}>TBO APIs</button>
+                {/* <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-api"); }}>TBO APIs</button> */}
                 <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-plus"); }}>TBO+</button>
                 <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-academy"); }}>TBO Academy</button>
                 <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/roamer-app"); }}>Roamer</button>

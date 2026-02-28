@@ -189,7 +189,7 @@ const css = `
     top: 80px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(1140px, calc(100vw - 20px));
+    width: min(1280px, calc(100vw - 20px));
     background: #f6f6f7;
     border: 1px solid #e7e7e9;
     box-shadow: 0 14px 28px rgba(22, 33, 52, 0.08);
@@ -199,8 +199,8 @@ const css = `
   }
   .solutions-mega-grid {
     display: grid;
-    grid-template-columns: minmax(520px, 1fr) minmax(280px, 410px);
-    gap: 36px;
+    grid-template-columns: minmax(620px, 1fr) minmax(320px, 460px);
+    gap: 44px;
     align-items: start;
   }
   .solutions-mega-left {
@@ -366,8 +366,8 @@ export default function SearchSectionTopNav({ active = "home" }) {
                     <div className="solutions-mega-left">
                       <div>
                         <h6 className="solutions-mega-title">Travel Buyers</h6>
-                        <a className="solutions-mega-link" href="/tbo-Platform" onClick={() => setSolutionsOpen(false)}>TBO Platform</a>
-                        <a className="solutions-mega-link" href="/tbo-api" onClick={() => setSolutionsOpen(false)}>TBO APIs</a>
+                        <a className="solutions-mega-link" href="/tbo-platform" onClick={() => setSolutionsOpen(false)}>TBO Platform</a>
+                        {/* <a className="solutions-mega-link" href="/tbo-api" onClick={() => setSolutionsOpen(false)}>TBO APIs</a> */}
                         <a className="solutions-mega-link" href="/tbo-plus" onClick={() => setSolutionsOpen(false)}>TBO+</a>
                         <a className="solutions-mega-link" href="/tbo-academy" onClick={() => setSolutionsOpen(false)}>TBO Academy</a>
                         <a className="solutions-mega-link" href="/roamer-app" onClick={() => setSolutionsOpen(false)}>Roamer</a>
@@ -454,8 +454,7 @@ export default function SearchSectionTopNav({ active = "home" }) {
           </button>
           {mobileSolutionsOpen && (
             <div className="mobile-submenu">
-              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-Platform"); }}>TBO Platform</button>
-              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-api"); }}>TBO APIs</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-platform"); }}>TBO Platform</button>
               <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-plus"); }}>TBO+</button>
               <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-academy"); }}>TBO Academy</button>
               <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/roamer-app"); }}>Roamer</button>
