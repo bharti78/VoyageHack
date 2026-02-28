@@ -983,6 +983,8 @@ const css = `
       background: #fff;
       min-height: 48px;
       padding: 6px 8px 6px 10px;
+      min-width: 0;
+      overflow: hidden;
     }
     .mobile-search-inline.voice-active { box-shadow: 0 0 0 2px rgba(255, 51, 0, 0.18); }
     .mobile-search-input {
@@ -993,11 +995,13 @@ const css = `
       color: #222;
       font-family: 'DM Sans', sans-serif;
       background: transparent;
+      min-width: 0;
     }
     .mobile-search-input::placeholder { color: #999; }
     .mobile-search-icon {
       width: 34px;
       height: 34px;
+      min-width: 34px;
       border: 1px solid #ececec;
       border-radius: 10px;
       background: #fff;
@@ -1142,6 +1146,24 @@ const css = `
     .pill-buttons { grid-template-columns: 1fr; }
     .pill-icon-btn { display: none; }
     .pill-search-btn { height: 42px; font-size: 0.85rem; }
+    .mobile-search-inline {
+      gap: 6px;
+      padding: 6px;
+    }
+    .mobile-search-input { font-size: 0.8rem; }
+    .mobile-search-icon {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      border-radius: 8px;
+    }
+    .mobile-search-go {
+      height: 30px;
+      padding: 0 10px;
+      font-size: 0.74rem;
+      border-radius: 8px;
+    }
+    .mobile-search-inline .mobile-search-icon:nth-of-type(2) { display: none; }
     .hero-btns { flex-direction: column; }
     .btn-become, .btn-agent { width: 100%; }
   }

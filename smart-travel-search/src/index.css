@@ -215,3 +215,66 @@ textarea {
     scroll-behavior: auto !important;
   }
 }
+
+@media (max-width: 768px) {
+  .fp-srow1,
+  .fp-srow2,
+  .hp-srow1,
+  .hp-srow2,
+  .cp-srow,
+  .cr-srow {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .fp-fin,
+  .hp-fin,
+  .cp-fin,
+  .cr-fin {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .fp-finput,
+  .hp-finput,
+  .cp-finput,
+  .cr-finput {
+    min-width: 0 !important;
+  }
+
+  .fp-sbtn,
+  .hp-sbtn,
+  .cp-sbtn,
+  .cr-sbtn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .fp-drop,
+  .hp-drop,
+  .cp-drop,
+  .cr-drop {
+    max-width: calc(100vw - (var(--page-pad) * 2)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .fp-content,
+  .hp-content,
+  .cp-content,
+  .cr-content {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .fp-srow1,
+  .fp-srow2,
+  .hp-srow1,
+  .hp-srow2,
+  .cp-srow,
+  .cr-srow {
+    padding: 10px !important;
+  }
+}
