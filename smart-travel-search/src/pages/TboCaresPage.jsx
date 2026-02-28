@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SearchSectionTopNav from "../components/SearchSectionTopNav";
 
 const css = `
@@ -66,10 +66,11 @@ const css = `
   .tc-frame-wrap { padding-top: 0; }
   .tc-frame {
     width: 100%;
-    height: calc(100vh - 80px - 360px);
+    min-height: 600px;
     border: 0;
     display: block;
     background: #fff;
+    overflow: hidden;
   }
   @media (max-width: 960px) {
     .tc-hero { padding-top: 72px; }
@@ -84,7 +85,7 @@ const css = `
       justify-self: center;
     }
     .tc-frame-wrap { padding-top: 0; }
-    .tc-frame { height: calc(100vh - 72px - 310px); }
+    .tc-frame { min-height: 520px; }
   }
   @media (max-width: 640px) {
     .tc-hero { padding-top: 64px; }
@@ -99,12 +100,29 @@ const css = `
       height: 180px;
     }
     .tc-frame-wrap { padding-top: 0; }
-    .tc-frame { height: calc(100vh - 64px - 270px); }
+    .tc-frame { min-height: 480px; }
   }
 `;
 
 export default function TboCaresPage() {
   const [iframeKey] = useState(() => Date.now());
+  const frameRef = useRef(null);
+  const [frameHeight, setFrameHeight] = useState(1200);
+
+  function syncFrameHeight() {
+    try {
+      const iframe = frameRef.current;
+      const doc = iframe?.contentDocument;
+      if (!doc) return;
+      const h = Math.max(
+        doc.body?.scrollHeight || 0,
+        doc.documentElement?.scrollHeight || 0
+      );
+      if (h > 0) setFrameHeight(h);
+    } catch {
+      // ignore
+    }
+  }
 
   function onFrameLoad(e) {
     try {
@@ -116,6 +134,7 @@ export default function TboCaresPage() {
         "#masthead",
         ".navbar",
         ".headroom",
+        ".innerheader",
       ];
       killSelectors.forEach((sel) => {
         doc.querySelectorAll(sel).forEach((el) => {
@@ -123,10 +142,22 @@ export default function TboCaresPage() {
         });
       });
       if (doc.body) doc.body.style.marginTop = "0";
+      doc.querySelectorAll(".ft_links a, .site-footer a").forEach((a) => {
+        a.setAttribute("target", "_top");
+        a.setAttribute("rel", "noopener noreferrer");
+      });
+      syncFrameHeight();
+      setTimeout(syncFrameHeight, 120);
     } catch {
       // Ignore if iframe content cannot be modified.
     }
   }
+
+  useEffect(() => {
+    const onResize = () => syncFrameHeight();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   return (
     <div className="tc-wrap">
@@ -148,10 +179,12 @@ export default function TboCaresPage() {
 
       <div className="tc-frame-wrap">
         <iframe
+          ref={frameRef}
           key={iframeKey}
           title="TBO Cares"
           src="/tbo-cares.html"
           className="tc-frame"
+          style={{ height: `${frameHeight}px` }}
           onLoad={onFrameLoad}
         />
       </div>

@@ -209,6 +209,12 @@ const css = `
     gap: 32px;
     padding-right: 30px;
   }
+  .about-mega-left {
+    display: grid;
+    grid-template-columns: minmax(240px, 420px);
+    gap: 24px;
+    padding-right: 30px;
+  }
   .solutions-mega-right {
     border-left: 1px solid #e1e1e3;
     padding-left: 34px;
@@ -405,9 +411,21 @@ export default function SearchSectionTopNav({ active = "home" }) {
                 About Us <span className="chevron" />
               </button>
               {aboutOpen && (
-                <div className="solutions-dropdown">
-                  <div className="sol-item" onClick={() => { setAboutOpen(false); navigate("/aboutus"); }}>About tbo.com</div>
-                  <div className="sol-item" onClick={() => { setAboutOpen(false); navigate("/board-of-directors"); }}>Board of Directors</div>
+                <div className="solutions-mega-panel">
+                  <div className="solutions-mega-grid">
+                    <div className="about-mega-left">
+                      <div>
+                        <h6 className="solutions-mega-title">About Us</h6>
+                        <a className="solutions-mega-link" href="/aboutus" onClick={() => setAboutOpen(false)}>About tbo.com</a>
+                        <a className="solutions-mega-link" href="/board-of-directors" onClick={() => setAboutOpen(false)}>Board of Directors</a>
+                      </div>
+                    </div>
+                    <div className="solutions-mega-right">
+                      <a className="solutions-mega-image" href="/aboutus" onClick={() => setAboutOpen(false)} aria-label="About Us">
+                        <img src="https://www.tbo.com/img/aboutnav-img.jpg" alt="About tbo.com" />
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

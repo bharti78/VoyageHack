@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { buildAndStore } from "../utils/unifiedSearch";
@@ -22,7 +22,7 @@ const css = `
     padding-top: 80px;
   }
 
-  /* ── TOP NAVBAR ── */
+  /* â”€â”€ TOP NAVBAR â”€â”€ */
   .tbo-nav {
     display: flex;
     align-items: center;
@@ -196,14 +196,14 @@ const css = `
   }
   .btn-book:hover { background: #e05500; transform: scale(1.03); }
 
-  /* ── SEARCH BAR SECTION — below nav, above hero ── */
+  /* â”€â”€ SEARCH BAR SECTION â€” below nav, above hero â”€â”€ */
   .tbo-search-section {
     background: #fff;
     padding: 16px clamp(20px, 3%, 60px);
     border-bottom: 1px solid #f0f0f0;
   }
 
-  /* ── EXPANDED TEXT SEARCH BAR ── */
+  /* â”€â”€ EXPANDED TEXT SEARCH BAR â”€â”€ */
   .expanded-search-bar {
     display: flex;
     align-items: center;
@@ -402,7 +402,7 @@ const css = `
   }
   .pill-search-btn:hover { background: #e05500; transform: scale(1.03); }
 
-  /* ── DROPDOWNS ── */
+  /* â”€â”€ DROPDOWNS â”€â”€ */
   .dropdown-overlay { position: fixed; inset: 0; z-index: 400; }
   .dropdown-panel {
     position: absolute;
@@ -700,7 +700,7 @@ const css = `
   .btn-apply { background: linear-gradient(135deg,#ff6600,#ff3366); color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans',sans-serif; box-shadow: 0 4px 14px rgba(255,80,50,0.4); transition: transform 0.15s; }
   .btn-apply:hover { transform: scale(1.04); }
 
-  /* ── PRODUCTS DROPDOWN in nav ── */
+  /* â”€â”€ PRODUCTS DROPDOWN in nav â”€â”€ */
   .products-nav-wrap { position: relative; }
   .products-dropdown {
     position: absolute;
@@ -769,6 +769,12 @@ const css = `
     gap: 32px;
     padding-right: 30px;
   }
+  .about-mega-left {
+    display: grid;
+    grid-template-columns: minmax(240px, 420px);
+    gap: 24px;
+    padding-right: 30px;
+  }
   .solutions-mega-right {
     border-left: 1px solid #e1e1e3;
     padding-left: 34px;
@@ -816,7 +822,7 @@ const css = `
     object-fit: cover;
   }
 
-  /* ── HERO ── */
+  /* â”€â”€ HERO â”€â”€ */
   .tbo-hero-section {
     min-height: calc(100vh - 80px - 101px);
     display: flex;
@@ -913,7 +919,7 @@ const css = `
     backdrop-filter: blur(6px);
   }
 
-  /* ── NUMBERS ── */
+  /* â”€â”€ NUMBERS â”€â”€ */
   .tbo-numbers { text-align: center; padding: clamp(40px,5vw,80px) clamp(24px,4%,80px); background: #ffffff; }
   .tbo-numbers h2 { font-size: clamp(1.3rem,2.6vw,2rem); font-weight: 700; color: #1a1a1a; margin-bottom: 40px; font-family: 'Playfair Display',serif; }
   .stats-row { display: flex; justify-content: center; gap: clamp(40px,8vw,140px); flex-wrap: wrap; }
@@ -971,6 +977,16 @@ const css = `
   .growth-card { flex-shrink: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 16px rgba(0,0,0,0.14); transition: transform 0.2s, box-shadow 0.2s; }
   .growth-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px rgba(0,0,0,0.2); }
   .gc-video-wrap { position: relative; height: clamp(130px,16vw,190px); overflow: hidden; background: #111; }
+  .gc-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
   .gc-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gc-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.22); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
   .gc-overlay:hover { background: rgba(0,0,0,0.35); }
@@ -1264,7 +1280,7 @@ const css = `
   }
 `;
 
-/* ─── DATA ─── */
+/* â”€â”€â”€ DATA â”€â”€â”€ */
 const destinations = [
   { city: "Dubai", country: "UAE", emoji: "\uD83C\uDFD9\uFE0F", recent: true, tags: ["city", "luxury", "shopping"] },
   { city: "Paris", country: "France", emoji: "\uD83D\uDDFC", recent: true, tags: ["city", "heritage", "romance"] },
@@ -1311,15 +1327,15 @@ const FLIGHT_ROUTES = {
   kochi: { from: { code: "DEL", city: "New Delhi" }, to: { code: "COK", city: "Kochi" } },
 };
 const TRAVEL_TYPES = [
-  { id: "mountains", label: "Mountains", icon: "⛰️" },
-  { id: "beach", label: "Beach", icon: "🏖️" },
-  { id: "religious", label: "Religious", icon: "🕌" },
-  { id: "adventure", label: "Adventure", icon: "🧗" },
-  { id: "city", label: "City Tour", icon: "🌆" },
-  { id: "wildlife", label: "Wildlife", icon: "🦁" },
-  { id: "cruise", label: "Cruise", icon: "🛳️" },
-  { id: "heritage", label: "Heritage", icon: "🏛️" },
-  { id: "wellness", label: "Wellness", icon: "🧘" },
+  { id: "mountains", label: "Mountains", icon: "â›°ï¸" },
+  { id: "beach", label: "Beach", icon: "ðŸ–ï¸" },
+  { id: "religious", label: "Religious", icon: "ðŸ•Œ" },
+  { id: "adventure", label: "Adventure", icon: "ðŸ§—" },
+  { id: "city", label: "City Tour", icon: "ðŸŒ†" },
+  { id: "wildlife", label: "Wildlife", icon: "ðŸ¦" },
+  { id: "cruise", label: "Cruise", icon: "ðŸ›³ï¸" },
+  { id: "heritage", label: "Heritage", icon: "ðŸ›ï¸" },
+  { id: "wellness", label: "Wellness", icon: "ðŸ§˜" },
 ];
 const WHERE_ENTITY_TYPES = [
   { id: "all", label: "All" },
@@ -1335,29 +1351,29 @@ const WHERE_ENTITIES = [
     city: d.city,
     country: d.country,
     code: "",
-    emoji: d.emoji || "🌍",
+    emoji: d.emoji || "ðŸŒ",
     recent: !!d.recent,
     popularity: d.recent ? 95 : 70,
     tags: Array.isArray(d.tags) ? d.tags : [],
   })),
-  { type: "airport", key: "airport:del", name: "Indira Gandhi International Airport", city: "Delhi", country: "India", code: "DEL", emoji: "✈️", popularity: 99, tags: ["city", "heritage"] },
-  { type: "airport", key: "airport:bom", name: "Chhatrapati Shivaji Maharaj International Airport", city: "Mumbai", country: "India", code: "BOM", emoji: "✈️", popularity: 98, tags: ["city", "beach"] },
-  { type: "airport", key: "airport:blr", name: "Kempegowda International Airport", city: "Bengaluru", country: "India", code: "BLR", emoji: "✈️", popularity: 95, tags: ["city"] },
-  { type: "airport", key: "airport:goi", name: "Dabolim Airport", city: "Goa", country: "India", code: "GOI", emoji: "✈️", popularity: 94, tags: ["beach", "adventure"] },
-  { type: "airport", key: "airport:cok", name: "Cochin International Airport", city: "Kochi", country: "India", code: "COK", emoji: "✈️", popularity: 90, tags: ["beach", "wellness"] },
-  { type: "hotel", key: "hotel:goa-beach", name: "Sea Breeze Goa Resort", city: "Goa", country: "India", code: "HTL-GOI-001", emoji: "🏨", popularity: 90, priceRange: "₹6,500 - ₹11,500 / night", tags: ["beach", "luxury"] },
-  { type: "hotel", key: "hotel:manali-mountain", name: "Snow Crest Manali Retreat", city: "Manali", country: "India", code: "HTL-MNL-014", emoji: "🏨", popularity: 84, priceRange: "₹5,400 - ₹9,900 / night", tags: ["mountains", "adventure"] },
-  { type: "hotel", key: "hotel:jaipur-heritage", name: "Royal Courtyard Jaipur", city: "Jaipur", country: "India", code: "HTL-JAI-022", emoji: "🏨", popularity: 81, priceRange: "₹4,800 - ₹8,700 / night", tags: ["heritage", "city"] },
-  { type: "hotel", key: "hotel:bali-villa", name: "Bali Sunset Villa", city: "Bali", country: "Indonesia", code: "HTL-BAL-008", emoji: "🏨", popularity: 79, priceRange: "₹9,700 - ₹15,000 / night", tags: ["beach", "wellness"] },
+  { type: "airport", key: "airport:del", name: "Indira Gandhi International Airport", city: "Delhi", country: "India", code: "DEL", emoji: "âœˆï¸", popularity: 99, tags: ["city", "heritage"] },
+  { type: "airport", key: "airport:bom", name: "Chhatrapati Shivaji Maharaj International Airport", city: "Mumbai", country: "India", code: "BOM", emoji: "âœˆï¸", popularity: 98, tags: ["city", "beach"] },
+  { type: "airport", key: "airport:blr", name: "Kempegowda International Airport", city: "Bengaluru", country: "India", code: "BLR", emoji: "âœˆï¸", popularity: 95, tags: ["city"] },
+  { type: "airport", key: "airport:goi", name: "Dabolim Airport", city: "Goa", country: "India", code: "GOI", emoji: "âœˆï¸", popularity: 94, tags: ["beach", "adventure"] },
+  { type: "airport", key: "airport:cok", name: "Cochin International Airport", city: "Kochi", country: "India", code: "COK", emoji: "âœˆï¸", popularity: 90, tags: ["beach", "wellness"] },
+  { type: "hotel", key: "hotel:goa-beach", name: "Sea Breeze Goa Resort", city: "Goa", country: "India", code: "HTL-GOI-001", emoji: "ðŸ¨", popularity: 90, priceRange: "â‚¹6,500 - â‚¹11,500 / night", tags: ["beach", "luxury"] },
+  { type: "hotel", key: "hotel:manali-mountain", name: "Snow Crest Manali Retreat", city: "Manali", country: "India", code: "HTL-MNL-014", emoji: "ðŸ¨", popularity: 84, priceRange: "â‚¹5,400 - â‚¹9,900 / night", tags: ["mountains", "adventure"] },
+  { type: "hotel", key: "hotel:jaipur-heritage", name: "Royal Courtyard Jaipur", city: "Jaipur", country: "India", code: "HTL-JAI-022", emoji: "ðŸ¨", popularity: 81, priceRange: "â‚¹4,800 - â‚¹8,700 / night", tags: ["heritage", "city"] },
+  { type: "hotel", key: "hotel:bali-villa", name: "Bali Sunset Villa", city: "Bali", country: "Indonesia", code: "HTL-BAL-008", emoji: "ðŸ¨", popularity: 79, priceRange: "â‚¹9,700 - â‚¹15,000 / night", tags: ["beach", "wellness"] },
 ];
 const BUDGET_OPTIONS = [
-  { id: "budget", label: "Budget", range: "Up to ₹30,000", icon: "🪙" },
-  { id: "standard", label: "Standard", range: "₹30,000 – ₹80,000", icon: "💳" },
-  { id: "premium", label: "Premium", range: "₹80,000 – ₹1,50,000", icon: "💎" },
-  { id: "luxury", label: "Luxury", range: "₹1,50,000+", icon: "👑" },
+  { id: "budget", label: "Budget", range: "Up to â‚¹30,000", icon: "ðŸª™" },
+  { id: "standard", label: "Standard", range: "â‚¹30,000 â€“ â‚¹80,000", icon: "ðŸ’³" },
+  { id: "premium", label: "Premium", range: "â‚¹80,000 â€“ â‚¹1,50,000", icon: "ðŸ’Ž" },
+  { id: "luxury", label: "Luxury", range: "â‚¹1,50,000+", icon: "ðŸ‘‘" },
 ];
 const MONTHS_LIST = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const MONTH_EMOJIS = ["❄️","🌸","🌧️","🌷","☀️","🏖️","🌞","🌻","🍂","🎃","🍁","🎄"];
+const MONTH_EMOJIS = ["â„ï¸","ðŸŒ¸","ðŸŒ§ï¸","ðŸŒ·","â˜€ï¸","ðŸ–ï¸","ðŸŒž","ðŸŒ»","ðŸ‚","ðŸŽƒ","ðŸ","ðŸŽ„"];
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const LOCALE_COUNTRY_MAP = {
   IN: "India",
@@ -1495,9 +1511,9 @@ function Calendar({
   return (
     <div className="cal-month">
       <div className="cal-month-header">
-        {showPrev ? <button className="cal-nav-btn" onClick={onPrev}>‹</button> : <div style={{width:27}}/>}
+        {showPrev ? <button className="cal-nav-btn" onClick={onPrev}>â€¹</button> : <div style={{width:27}}/>}
         <span className="cal-month-name">{MONTHS_LIST[month]} {year}</span>
-        {showNext ? <button className="cal-nav-btn" onClick={onNext}>›</button> : <div style={{width:27}}/>}
+        {showNext ? <button className="cal-nav-btn" onClick={onNext}>â€º</button> : <div style={{width:27}}/>}
       </div>
       <div className="cal-grid">
         {DOW.map(d => <div key={d} className="cal-dow">{d}</div>)}
@@ -1582,19 +1598,19 @@ const valueContent = {
     { title: "Revenue analytics", desc: "Access detailed reports on booking trends, top-performing buyers, and revenue opportunities to optimize your strategy." },
   ],
   "Travelpreneurs": [
-    { title: "Zero investment startup", desc: "Launch your own travel business with no upfront cost — use TBO's platform, supplier network, and tools from day one." },
+    { title: "Zero investment startup", desc: "Launch your own travel business with no upfront cost â€” use TBO's platform, supplier network, and tools from day one." },
     { title: "Training & mentorship", desc: "Get certified through TBO Academy and receive dedicated mentorship to accelerate your growth as a travel entrepreneur." },
     { title: "Earn from day one", desc: "Start earning commissions immediately on bookings while building expertise and a loyal client base." },
   ],
 };
 const stories = [
-  { name: "Dinesh Poojary", org: "Travel Agent", info: "orange-info", video: "https://www.tbo.com/img/testimonials/agent/Dinesh-Poojary.mp4" },
-  { name: "Gautam Vij", org: "KBS Tours and Travels, India", info: "blue-info", video: "https://www.tbo.com/img/testimonials/agent/Gautam-Vij.mp4" },
-  { name: "Sebastian Sierra", org: "Travel Agent", info: "green-info", video: "https://www.tbo.com/img/testimonials/agent/Sebastian-Sierra.mp4" },
-  { name: "Stuart Lee", org: "Travel Agent", info: "tan-info", video: "https://www.tbo.com/img/testimonials/agent/Stuart-Lee.mp4" },
-  { name: "UAE Agent", org: "UAE", info: "orange-info", video: "https://www.tbo.com/img/testimonials/agent/UAEAgenta.mp4" },
+  { name: "Dinesh Poojary", org: "Travel Agent", info: "orange-info", video: "https://www.tbo.com/img/testimonials/agent/Dinesh-Poojary.mp4", poster: "https://www.tbo.com/img/testimonials/agent/Dinesh-Poojary.png" },
+  { name: "Gautam Vij", org: "KBS Tours and Travels, India", info: "blue-info", video: "https://www.tbo.com/img/testimonials/agent/Gautam-Vij.mp4", poster: "https://www.tbo.com/img/testimonials/agent/Gautam-Vij.png" },
+  { name: "Sebastian Sierra", org: "Travel Agent", info: "green-info", video: "https://www.tbo.com/img/testimonials/agent/Sebastian-Sierra.mp4", poster: "https://www.tbo.com/img/testimonials/agent/Sebastian-Sierra.png" },
+  { name: "Stuart Lee", org: "Travel Agent", info: "tan-info", video: "https://www.tbo.com/img/testimonials/agent/Stuart-Lee.mp4", poster: "https://www.tbo.com/img/testimonials/agent/Stuart-Lee.jpg" },
+  { name: "UAE Agent", org: "UAE", info: "orange-info", video: "https://www.tbo.com/img/testimonials/agent/UAEAgenta.mp4", poster: "https://www.tbo.com/img/testimonials/agent/uaeagent.jpg" },
   { name: "Mr. Kuljit Singh Hayer", org: "Universal Travels, India", info: "green-info", video: "https://www.tbo.com/img/testimonials/agent/KuljitSingh.mp4" },
-  { name: "Fortun Plumley", org: "Travel Agent", info: "blue-info", video: "https://www.tbo.com/img/testimonials/agent/Fortun-PlumLey.mp4" },
+  { name: "Fortun Plumley", org: "Travel Agent", info: "blue-info", video: "https://www.tbo.com/img/testimonials/agent/Fortun-PlumLey.mp4", poster: "https://www.tbo.com/img/testimonials/agent/Fortun-PlumLey.jpg" },
 ];
 const awards = [
   { img: "https://www.tbo.com/img/awards/TWMGold_Award_2024.png", label: "TWM Gold Award 2024" },
@@ -1616,7 +1632,16 @@ const brandLogos = [
   { src: "https://www.tbo.com/img/brands/tboacademy-min.png", alt: "TBO Academy" },
   { src: "https://www.tbo.com/img/brands/classic-vacations.png", alt: "Classic Vacations" },
 ];
-const footerLinks = ["Home","About Us","Careers","Privacy Policy","Terms and Conditions","Sanctions Policy","Investors","Media","Contact Us"];
+const footerLinks = ["Home","About Us","Careers","Privacy Policy","Terms and Conditions","Sanctions Policy","Contact Us"];
+const footerHrefMap = {
+  Home: "/searchsection",
+  "About Us": "/aboutus",
+  Careers: "/tbocares",
+  "Privacy Policy": "/privacy-policy",
+  "Terms and Conditions": "/terms-and-conditions",
+  "Sanctions Policy": "/sanctions-compliance-policy",
+  "Contact Us": "/contact-us",
+};
 
 function useSliderSizes() {
   const [sizes, setSizes] = useState({ cardW: 210, visibleCards: 4, awardW: 130, visibleAwards: 5 });
@@ -1759,7 +1784,7 @@ function WhereFromToPanel({
           onClick={() => setWhereStep("from")}>
           <span className="where-step-label">From</span>
           <span className={`where-step-value ${!fromCity ? "empty" : ""}`}>{fromCity || "Origin city"}</span>
-          <span className="where-step-arrow">→</span>
+          <span className="where-step-arrow">â†’</span>
         </div>
         <div className={`where-step-tab ${whereStep === "to" ? "active" : ""} ${destination ? "done" : ""}`}
           onClick={() => setWhereStep("to")} style={{paddingLeft:18}}>
@@ -1790,7 +1815,7 @@ function WhereFromToPanel({
         {/* Swap button (shown when both are set) */}
         {fromCity && destination && (
           <button className="where-swap-btn" type="button" onClick={handleSwap}>
-            ⇄ Swap From &amp; To
+            â‡„ Swap From &amp; To
           </button>
         )}
 
@@ -2463,11 +2488,11 @@ export default function TBOHomepage() {
   }
   function whenValue() {
     if (whenTab === "Dates" && startDate) {
-      if (endDate) return `${formatDate(startDate)} – ${formatDate(endDate)}`;
+      if (endDate) return `${formatDate(startDate)} â€“ ${formatDate(endDate)}`;
       return formatDate(startDate);
     }
-    if (whenTab === "Months") return `${formatDate(new Date())} – ${formatDate(addMonths(new Date(), monthsDuration))}`;
-    if (whenTab === "Flexible" && stayType && selectedMonths.length > 0) return `${stayType} · ${selectedMonths.length} mo`;
+    if (whenTab === "Months") return `${formatDate(new Date())} â€“ ${formatDate(addMonths(new Date(), monthsDuration))}`;
+    if (whenTab === "Flexible" && stayType && selectedMonths.length > 0) return `${stayType} Â· ${selectedMonths.length} mo`;
     return null;
   }
   const totalGuests = guests.adults + guests.children;
@@ -2857,7 +2882,7 @@ export default function TBOHomepage() {
       budget: parsedBudget,
     }).then(data => {
       storeUnifiedResults(data);
-    }).catch(() => { /* silent – result pages handle missing cache */ });
+    }).catch(() => { /* silent â€“ result pages handle missing cache */ });
 
     const routeMap = {
       flights: "/flights",
@@ -2880,11 +2905,11 @@ export default function TBOHomepage() {
       <style>{css}</style>
       <div className="tbo-wrap">
 
-        {/* ── NAVBAR ── */}
+        {/* â”€â”€ NAVBAR â”€â”€ */}
         <nav className={`tbo-nav${navScrolled ? " scrolled" : ""}`}>
           {/* Logo */}
           <div className="tbo-logo-wrap">
-            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com – Travel Simplified" className="tbo-logo-img" />
+            <img src="https://www.tbo.com/img/LogoRamadan.gif" alt="tbo.com â€“ Travel Simplified" className="tbo-logo-img" />
           </div>
 
           {/* Nav links */}
@@ -2946,14 +2971,20 @@ export default function TBOHomepage() {
                 About Us <span className="chevron" />
               </button>
               {aboutOpen && (
-                <div
-                  className="solutions-dropdown"
-                >
-                  <div className="sol-item" onClick={() => { setAboutOpen(false); navigate("/aboutus"); }}>
-                    About tbo.com
-                  </div>
-                  <div className="sol-item" onClick={() => { setAboutOpen(false); navigate("/board-of-directors"); }}>
-                    Board of Directors
+                <div className="solutions-mega-panel">
+                  <div className="solutions-mega-grid">
+                    <div className="about-mega-left">
+                      <div>
+                        <h6 className="solutions-mega-title">About Us</h6>
+                        <a className="solutions-mega-link" href="/aboutus" onClick={() => setAboutOpen(false)}>About tbo.com</a>
+                        <a className="solutions-mega-link" href="/board-of-directors" onClick={() => setAboutOpen(false)}>Board of Directors</a>
+                      </div>
+                    </div>
+                    <div className="solutions-mega-right">
+                      <a className="solutions-mega-image" href="/aboutus" onClick={() => setAboutOpen(false)} aria-label="About Us">
+                        <img src="https://www.tbo.com/img/aboutnav-img.jpg" alt="About tbo.com" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2966,7 +2997,7 @@ export default function TBOHomepage() {
             {isLoggedIn ? (
               <>
                 <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>
-                  ✓ {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` · ${persona}` : ""}
+                  âœ“ {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` Â· ${persona}` : ""}
                 </span>
                 <div style={{display:"flex",gap:6}}>
                   <button className="btn-book" onClick={handleBookNow}>Book Now</button>
@@ -2996,7 +3027,7 @@ export default function TBOHomepage() {
           <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/home"); }}>Home</button>
             <button className="mobile-nav-item" onClick={() => setMobileSolutionsOpen((v) => !v)}>
-              Solutions {mobileSolutionsOpen ? "▲" : "▼"}
+              Solutions {mobileSolutionsOpen ? "â–²" : "â–¼"}
             </button>
             {mobileSolutionsOpen && (
               <div className="mobile-submenu">
@@ -3027,24 +3058,24 @@ export default function TBOHomepage() {
           </div>
         </nav>
 
-        {/* ── SEARCH BAR — full width below nav ── */}
+        {/* â”€â”€ SEARCH BAR â€” full width below nav â”€â”€ */}
         <div className="tbo-search-section">
 
-          {/* ── NATURAL LANGUAGE SMART SEARCH ── */}
+          {/* â”€â”€ NATURAL LANGUAGE SMART SEARCH â”€â”€ */}
           <div style={{
             background: "linear-gradient(135deg,#1a0050 0%,#3d0099 55%,#6600cc 100%)",
             padding: "28px 20px 24px",
             textAlign: "center",
           }}>
             <p style={{color:"rgba(255,255,255,.75)",fontSize:".78rem",fontWeight:600,marginBottom:10,letterSpacing:".5px"}}>
-              ✨ AI-POWERED NATURAL LANGUAGE SEARCH
+              âœ¨ AI-POWERED NATURAL LANGUAGE SEARCH
             </p>
             <SmartSearchBar
               placeholder='Try "trip from Jaipur to Goa for 4 days under 40000"'
               style={{ maxWidth: 680, margin: "0 auto" }}
             />
             <p style={{color:"rgba(255,255,255,.5)",fontSize:".68rem",marginTop:10}}>
-              Type your trip in plain English — we'll extract destination, dates &amp; budget automatically
+              Type your trip in plain English â€” we'll extract destination, dates &amp; budget automatically
             </p>
           </div>
 
@@ -3053,7 +3084,7 @@ export default function TBOHomepage() {
               <div className="dropdown-overlay" onClick={() => setOpenPanel(null)} />
             )}
 
-            {/* ── EXPANDED TEXT SEARCH ── */}
+            {/* â”€â”€ EXPANDED TEXT SEARCH â”€â”€ */}
             {/* Expanded text search disabled intentionally */}
             {false ? (
               <div className="expanded-search-bar">
@@ -3094,10 +3125,10 @@ export default function TBOHomepage() {
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
                 </button>
-                {/* <button className="exp-close-btn" onClick={() => { setSearchExpanded(true); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">✕</button> */}
+                {/* <button className="exp-close-btn" onClick={() => { setSearchExpanded(true); setSearchQuery(""); stopVoiceSearch(); }} aria-label="Close search">âœ•</button> */}
               </div>
             ) : (
-              /* ── PILL SEARCH BAR ── */
+              /* â”€â”€ PILL SEARCH BAR â”€â”€ */
               <div className={`search-pill ${openPanel ? "active" : ""} ${mobileFiltersOpen ? "mobile-filters-open" : ""}`}>
                 <button
                   type="button"
@@ -3160,7 +3191,7 @@ export default function TBOHomepage() {
                   onClick={() => { setWhereStep(fromCity ? "to" : "from"); setOpenPanel(openPanel === "where" ? null : "where"); }}>
                   <span className="pill-label">WHERE <span className="pill-label-chevron"/></span>
                   <span className={`pill-value ${!fromCity && !destination ? "placeholder" : ""}`}>
-                    {fromCity && destination ? `${fromCity} → ${destination}` : fromCity ? `${fromCity} → ?` : destination || "From – To"}
+                    {fromCity && destination ? `${fromCity} â†’ ${destination}` : fromCity ? `${fromCity} â†’ ?` : destination || "From â€“ To"}
                   </span>
                 </div>
 
@@ -3187,13 +3218,13 @@ export default function TBOHomepage() {
 
                 {/* Buttons */}
                 <div className="pill-buttons">
-                  {/* Search icon — expands to full text search */}
+                  {/* Search icon â€” expands to full text search */}
                   <button className="pill-icon-btn" onClick={() => { setOpenPanel(null); setSearchExpanded(true); }} aria-label="Text search" title="Search by typing">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                   </button>
-                  {/* Orange Search button — triggers filter search */}
+                  {/* Orange Search button â€” triggers filter search */}
                   <button
                     type="button"
                     className="pill-icon-btn"
@@ -3284,7 +3315,7 @@ export default function TBOHomepage() {
                             cheapestKey={fareSummary.cheapestKey} onFareFocus={setFareFocus}/>
                         </div>
                         <div className="flex-options">
-                          {["Exact dates","±1 day","±2 days","±3 days","±7 days","±14 days"].map(f => (
+                          {["Exact dates","Â±1 day","Â±2 days","Â±3 days","Â±7 days","Â±14 days"].map(f => (
                             <button key={f} className={`flex-chip ${flexDays === f ? "active" : ""}`} onClick={() => setFlexDays(f)}>{f}</button>
                           ))}
                         </div>
@@ -3293,7 +3324,7 @@ export default function TBOHomepage() {
                           {fareSummary.cheapestKey ? (
                             <>
                               <div className="fare-info-line">
-                                Cheapest day: <strong>{fareSummary.cheapestKey}</strong> · Rs {fareMap[fareSummary.cheapestKey]?.fare?.toLocaleString("en-IN")}
+                                Cheapest day: <strong>{fareSummary.cheapestKey}</strong> Â· Rs {fareMap[fareSummary.cheapestKey]?.fare?.toLocaleString("en-IN")}
                               </div>
                               <div className="fare-info-line">
                                 Fare range: Rs {fareSummary.minFare.toLocaleString("en-IN")} to Rs {fareSummary.maxFare.toLocaleString("en-IN")}
@@ -3304,7 +3335,7 @@ export default function TBOHomepage() {
                           )}
                           {fareFocus && (
                             <div className="fare-info-line">
-                              {fareFocus.key}: {fareFocus.airline} · {fareFocus.stops === 0 ? "Non-stop" : "1 stop"} · {fareFocus.duration} · Rs {fareFocus.fare.toLocaleString("en-IN")}
+                              {fareFocus.key}: {fareFocus.airline} Â· {fareFocus.stops === 0 ? "Non-stop" : "1 stop"} Â· {fareFocus.duration} Â· Rs {fareFocus.fare.toLocaleString("en-IN")}
                             </div>
                           )}
                           {startDate && endDate && fareMap[dateKey(startDate)] && fareMap[dateKey(endDate)] && (
@@ -3332,11 +3363,11 @@ export default function TBOHomepage() {
                         <div className="months-tab-body">
                           <CircleSelector duration={monthsDuration} onChange={setMonthsDuration}/>
                           <div className="months-range-display">
-                            <div className="months-range-text">{formatDate(new Date())} – {formatDate(addMonths(new Date(), monthsDuration))}</div>
+                            <div className="months-range-text">{formatDate(new Date())} â€“ {formatDate(addMonths(new Date(), monthsDuration))}</div>
                             <div className="months-range-sub">{monthsDuration} month{monthsDuration !== 1 ? "s" : ""} trip</div>
                             <div className="months-hint">Drag the circle handle to adjust</div>
                             <div className="months-hint" style={{marginTop:8}}>
-                              Cheapest visible day starts at Rs {fareSummary.minFare ? fareSummary.minFare.toLocaleString("en-IN") : "—"}
+                              Cheapest visible day starts at Rs {fareSummary.minFare ? fareSummary.minFare.toLocaleString("en-IN") : "â€”"}
                             </div>
                           </div>
                         </div>
@@ -3344,7 +3375,7 @@ export default function TBOHomepage() {
                       {whenTab === "Flexible" && (<>
                         <div className="flex-stay-label">How long would you like to stay?</div>
                         <div className="flex-stay-options">
-                          {[{name:"Weekend",icon:"🌙",desc:"2–3 nights"},{name:"Week",icon:"☀️",desc:"5–7 nights"},{name:"Month",icon:"📅",desc:"28–31 nights"}].map(s => (
+                          {[{name:"Weekend",icon:"ðŸŒ™",desc:"2â€“3 nights"},{name:"Week",icon:"â˜€ï¸",desc:"5â€“7 nights"},{name:"Month",icon:"ðŸ“…",desc:"28â€“31 nights"}].map(s => (
                             <button key={s.name} className={`flex-stay-btn ${stayType === s.name ? "active" : ""}`} onClick={() => setStayType(s.name)}>
                               <span className="stay-icon">{s.icon}</span><span className="stay-name">{s.name}</span><span className="stay-desc">{s.desc}</span>
                             </button>
@@ -3374,12 +3405,12 @@ export default function TBOHomepage() {
                 {openPanel === "who" && (
                   <div className="dropdown-panel who-dropdown" style={{right:"18%",left:"auto"}}>
                     <div style={{paddingBottom:4}}>
-                      {[{key:"adults",label:"Adults",sub:"Ages 13+"},{key:"children",label:"Children",sub:"Ages 2–12"},{key:"infants",label:"Infants",sub:"Under 2"},{key:"pets",label:"Pets",sub:"Assistance animals"}].map(g => (
+                      {[{key:"adults",label:"Adults",sub:"Ages 13+"},{key:"children",label:"Children",sub:"Ages 2â€“12"},{key:"infants",label:"Infants",sub:"Under 2"},{key:"pets",label:"Pets",sub:"Assistance animals"}].map(g => (
                         <div className="guest-row" key={g.key}>
                           <div><div className="guest-type">{g.label}</div><div className="guest-age">{g.sub}</div></div>
                           <div className="guest-counter">
                             <button className="guest-btn" disabled={guests[g.key] === 0 || (g.key === "adults" && guests[g.key] <= 1)}
-                              onClick={() => setGuests(p => ({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>−</button>
+                              onClick={() => setGuests(p => ({...p,[g.key]:Math.max(g.key==="adults"?1:0,p[g.key]-1)}))}>âˆ’</button>
                             <span className="guest-count">{guests[g.key]}</span>
                             <button className="guest-btn" disabled={guests[g.key] >= 16}
                               onClick={() => setGuests(p => ({...p,[g.key]:p[g.key]+1}))}>+</button>
@@ -3413,9 +3444,9 @@ export default function TBOHomepage() {
                       style={{"--val":budgetSlider+"%"}}
                       onChange={e => { setBudgetSlider(+e.target.value); e.target.style.setProperty("--val",e.target.value+"%"); }}/>
                     <div className="budget-range-values">
-                      <span>₹0</span>
-                      <span style={{color:"#ff6600",fontWeight:600}}>₹{Math.round(budgetSlider*5000).toLocaleString()}</span>
-                      <span>₹5L+</span>
+                      <span>â‚¹0</span>
+                      <span style={{color:"#ff6600",fontWeight:600}}>â‚¹{Math.round(budgetSlider*5000).toLocaleString()}</span>
+                      <span>â‚¹5L+</span>
                     </div>
                     <div className="dropdown-footer" style={{marginTop:12}}>
                       <button className="btn-clear" onClick={() => { setSelectedBudget(null); setBudgetSlider(50); }}>Clear</button>
@@ -3438,7 +3469,7 @@ export default function TBOHomepage() {
           </div>
         </div>
 
-        {/* ── HERO ── */}
+        {/* â”€â”€ HERO â”€â”€ */}
         <section className="tbo-hero-section">
           <div className="tbo-hero">
             <div className="hero-text">
@@ -3464,7 +3495,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* ── NUMBERS ── */}
+        {/* â”€â”€ NUMBERS â”€â”€ */}
         <section className="tbo-numbers">
           <h2>TBO in numbers</h2>
           <div className="stats-row">
@@ -3477,7 +3508,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* ── BRANDS MARQUEE ── */}
+        {/* â”€â”€ BRANDS MARQUEE â”€â”€ */}
         <section className="tbo-our-brands">
           <h2>Our brands</h2>
           <div className="brands-marquee-wrap">
@@ -3487,7 +3518,7 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* ── VALUE ── */}
+        {/* â”€â”€ VALUE â”€â”€ */}
         <section className="tbo-value">
           <h2>How do we add value to..</h2>
           <div className="value-tabs">
@@ -3510,37 +3541,47 @@ export default function TBOHomepage() {
           </div>
         </section>
 
-        {/* ── PARTNER BRANDS ── */}
+        {/* â”€â”€ PARTNER BRANDS â”€â”€ */}
         <section className="tbo-partner-brands">
           <h2>Brands we work with</h2>
           <div className="partner-row">
             <div className="expedia-wrap">
-              <div className="expedia-top"><span style={{color:"#e05500"}}>⬡</span> expedia</div>
+              <div className="expedia-top"><span style={{color:"#e05500"}}>â¬¡</span> expedia</div>
               <div className="expedia-sub">group</div>
             </div>
             <div className="hilton-box">Hilton</div>
             <div style={{fontWeight:700,fontSize:"clamp(1rem,1.6vw,1.3rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>Derby</span>Soft</div>
-            <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,fontSize:"clamp(1rem,1.6vw,1.2rem)"}}><span>●</span> Roibos</div>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,fontSize:"clamp(1rem,1.6vw,1.2rem)"}}><span>â—</span> Roibos</div>
             <div style={{fontSize:"clamp(1rem,1.6vw,1.2rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>ibs</span><span style={{fontWeight:700}}>software</span></div>
           </div>
         </section>
 
-        {/* ── GROWTH STORIES ── */}
+        {/* â”€â”€ GROWTH STORIES â”€â”€ */}
         <section className="tbo-growth">
           <h2>Growth Stories</h2>
           <div className="slider-wrapper" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
-            <button className="slider-arrow" onClick={() => setSlideIdx(Math.max(0,slideIdx-1))} disabled={slideIdx===0}>‹</button>
+            <button className="slider-arrow" onClick={() => setSlideIdx(Math.max(0,slideIdx-1))} disabled={slideIdx===0}>â€¹</button>
             <div className="slider-viewport" style={{width:svWidth}}>
               <div className="slider-track" style={{transform:`translateX(-${slideIdx*(cardW+GAP)}px)`}}>
                 {stories.map((s,i) => (
                   <div className="growth-card" style={{width:cardW}} key={i}>
                     <div className="gc-video-wrap">
+                      {s.poster ? (
+                        <img
+                          className="gc-poster"
+                          src={s.poster}
+                          alt={`${s.name} thumbnail`}
+                          loading="lazy"
+                          style={{ opacity: playingIdx === i ? 0 : 1 }}
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
+                      ) : null}
                       <video ref={el => { videoRefs[i].current = el; }} src={s.video} preload="metadata" playsInline
                         controls={playingIdx===i} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",background:"#111"}}
                         onPlay={() => handlePlay(i)} onPause={() => { if (playingIdx===i) setPlayingIdx(null); }}/>
                       {playingIdx!==i && (
                         <div className="gc-overlay" onClick={() => { handlePlay(i); videoRefs[i].current?.play(); }}>
-                          <div className="gc-play">▶</div>
+                          <div className="gc-play">â–¶</div>
                         </div>
                       )}
                     </div>
@@ -3549,18 +3590,18 @@ export default function TBOHomepage() {
                 ))}
               </div>
             </div>
-            <button className="slider-arrow" onClick={() => setSlideIdx(Math.min(maxSlide,slideIdx+1))} disabled={slideIdx>=maxSlide}>›</button>
+            <button className="slider-arrow" onClick={() => setSlideIdx(Math.min(maxSlide,slideIdx+1))} disabled={slideIdx>=maxSlide}>â€º</button>
           </div>
           <div className="growth-dots">
             {Array.from({length:maxSlide+1}).map((_,i) => <button key={i} className={`gdot ${slideIdx===i?"active":""}`} onClick={() => setSlideIdx(i)}/>)}
           </div>
         </section>
 
-        {/* ── AWARDS ── */}
+        {/* â”€â”€ AWARDS â”€â”€ */}
         <section className="tbo-awards">
           <h2>Awards</h2>
           <div className="awards-slider-wrapper" onMouseEnter={() => setAwardPaused(true)} onMouseLeave={() => setAwardPaused(false)}>
-            <button className="awards-arrow" onClick={() => setAwardIdx(Math.max(0,awardIdx-1))} disabled={awardIdx===0}>‹</button>
+            <button className="awards-arrow" onClick={() => setAwardIdx(Math.max(0,awardIdx-1))} disabled={awardIdx===0}>â€¹</button>
             <div className="awards-viewport" style={{width:avWidth}}>
               <div className="awards-track" style={{transform:`translateX(-${awardIdx*(awardW+AWARD_GAP)}px)`}}>
                 {awards.map(a => (
@@ -3571,32 +3612,31 @@ export default function TBOHomepage() {
                 ))}
               </div>
             </div>
-            <button className="awards-arrow" onClick={() => setAwardIdx(Math.min(maxAward,awardIdx+1))} disabled={awardIdx>=maxAward}>›</button>
+            <button className="awards-arrow" onClick={() => setAwardIdx(Math.min(maxAward,awardIdx+1))} disabled={awardIdx>=maxAward}>â€º</button>
           </div>
           <div className="awards-dots">
             {Array.from({length:maxAward+1}).map((_,i) => <button key={i} className={`adot ${awardIdx===i?"active":""}`} onClick={() => setAwardIdx(i)}/>)}
           </div>
         </section>
 
-        {/* ── FOOTER ── */}
+        {/* â”€â”€ FOOTER â”€â”€ */}
         <footer className="tbo-footer">
           <div className="footer-inner">
             <div className="footer-links">
               {footerLinks.map((l,i) => (
                 <span key={l} style={{display:"flex",alignItems:"center"}}>
-                  <a href="#">{l}</a>
+                  <a href={footerHrefMap[l] || "#"}>{l}</a>
                   {i < footerLinks.length-1 && <span className="footer-sep">|</span>}
                 </span>
               ))}
             </div>
-            <div className="footer-social">
-              {["in","f","📷","🐦"].map((icon,i) => <div key={i} className="footer-si">{icon}</div>)}
-            </div>
           </div>
-          <div className="footer-copy">© All rights reserved</div>
+          <div className="footer-copy">Â© All rights reserved</div>
         </footer>
       </div>
     </>
   );
 }
+
+
 

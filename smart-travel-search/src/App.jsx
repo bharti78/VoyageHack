@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+﻿import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import SearchSection from "./components/SearchSection"
 import Login from "./pages/Login"
@@ -21,8 +21,12 @@ import RoamerAppPage from "./pages/RoamerAppPage"
 import TravelPartnerSolutionPage from "./pages/TravelPartnerSolutionPage"
 import PaxesPage from "./pages/PaxesPage"
 import ZamzamPage from "./pages/ZamzamPage"
+import TermsAndConditionsPage from "./pages/TermsAndConditionsPage"
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage"
 import AboutUsPage from "./pages/AboutUsPage"
 import BoardOfDirectorsPage from "./pages/BoardOfDirectorsPage"
+import SanctionsPolicyPage from "./pages/SanctionsPolicyPage"
+import ContactUsPage from "./pages/ContactUsPage"
 import RegisterModal from "./components/RegisterModal"
 import PersonaModal from "./components/PersonaModal"
 import LoginModal from "./components/LoginModal"
@@ -56,6 +60,10 @@ function AppInner() {
           <Route path="/travel-partner-solution" element={<TravelPartnerSolutionPage />} />
           <Route path="/paxes" element={<PaxesPage />} />
           <Route path="/zamzam" element={<ZamzamPage />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/sanctions-compliance-policy" element={<SanctionsPolicyPage />} />
+          <Route path="/contact-us" element={<ContactUsPage />} />
           <Route path="/aboutus" element={<AboutUsPage />} />
           <Route path="/board-of-directors" element={<BoardOfDirectorsPage />} />
           <Route path="/profile" element={<Profile />} />
@@ -79,3 +87,5 @@ function App() {
 }
 
 export default App
+
+
