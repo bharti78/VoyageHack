@@ -1511,9 +1511,9 @@ function Calendar({
   return (
     <div className="cal-month">
       <div className="cal-month-header">
-        {showPrev ? <button className="cal-nav-btn" onClick={onPrev}>â€¹</button> : <div style={{width:27}}/>}
+        {showPrev ? <button className="cal-nav-btn" onClick={onPrev}>{"\u2039"}</button> : <div style={{width:27}}/>}
         <span className="cal-month-name">{MONTHS_LIST[month]} {year}</span>
-        {showNext ? <button className="cal-nav-btn" onClick={onNext}>â€º</button> : <div style={{width:27}}/>}
+        {showNext ? <button className="cal-nav-btn" onClick={onNext}>{"\u203A"}</button> : <div style={{width:27}}/>}
       </div>
       <div className="cal-grid">
         {DOW.map(d => <div key={d} className="cal-dow">{d}</div>)}
@@ -1632,11 +1632,10 @@ const brandLogos = [
   { src: "https://www.tbo.com/img/brands/tboacademy-min.png", alt: "TBO Academy" },
   { src: "https://www.tbo.com/img/brands/classic-vacations.png", alt: "Classic Vacations" },
 ];
-const footerLinks = ["Home","About Us","Careers","Privacy Policy","Terms and Conditions","Sanctions Policy","Contact Us"];
+const footerLinks = ["Home","About Us","Privacy Policy","Terms and Conditions","Sanctions Policy","Contact Us"];
 const footerHrefMap = {
   Home: "/searchsection",
   "About Us": "/aboutus",
-  Careers: "/tbocares",
   "Privacy Policy": "/privacy-policy",
   "Terms and Conditions": "/terms-and-conditions",
   "Sanctions Policy": "/sanctions-compliance-policy",
@@ -2997,7 +2996,7 @@ export default function TBOHomepage() {
             {isLoggedIn ? (
               <>
                 <span className="already-reg" style={{color:"#22c55e",fontWeight:600}}>
-                  âœ“ {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` Â· ${persona}` : ""}
+                  {"\u2713"} {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` \u00B7 ${persona}` : ""}
                 </span>
                 <div style={{display:"flex",gap:6}}>
                   <button className="btn-book" onClick={handleBookNow}>Book Now</button>
@@ -3068,14 +3067,15 @@ export default function TBOHomepage() {
             textAlign: "center",
           }}>
             <p style={{color:"rgba(255,255,255,.75)",fontSize:".78rem",fontWeight:600,marginBottom:10,letterSpacing:".5px"}}>
-              âœ¨ AI-POWERED NATURAL LANGUAGE SEARCH
+              {/* âœ¨ AI-POWERED NATURAL LANGUAGE SEARCH */}
+              Natural language search for smarter, faster trip planning
             </p>
             <SmartSearchBar
               placeholder='Try "trip from Jaipur to Goa for 4 days under 40000"'
               style={{ maxWidth: 680, margin: "0 auto" }}
             />
             <p style={{color:"rgba(255,255,255,.5)",fontSize:".68rem",marginTop:10}}>
-              Type your trip in plain English â€” we'll extract destination, dates &amp; budget automatically
+              Type your trip in plain English we'll extract destination, dates &amp; budget automatically
             </p>
           </div>
 
@@ -3485,8 +3485,8 @@ export default function TBOHomepage() {
               </p>
               <p className="register-label">Register with us:</p>
               <div className="hero-btns">
-                <button className="btn-become">Become TBO Partner</button>
-                <button className="btn-agent">Agent Partner</button>
+                <button className="btn-become">Start Your Journey 🚀</button>
+                <button className="btn-agent">Let's Go</button>
               </div>
             </div>
             <div className="hero-media-wrap">
@@ -3546,12 +3546,12 @@ export default function TBOHomepage() {
           <h2>Brands we work with</h2>
           <div className="partner-row">
             <div className="expedia-wrap">
-              <div className="expedia-top"><span style={{color:"#e05500"}}>â¬¡</span> expedia</div>
+              <div className="expedia-top"><span style={{color:"#e05500"}}>{"\u2B21"}</span> expedia</div>
               <div className="expedia-sub">group</div>
             </div>
             <div className="hilton-box">Hilton</div>
             <div style={{fontWeight:700,fontSize:"clamp(1rem,1.6vw,1.3rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>Derby</span>Soft</div>
-            <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,fontSize:"clamp(1rem,1.6vw,1.2rem)"}}><span>â—</span> Roibos</div>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,fontSize:"clamp(1rem,1.6vw,1.2rem)"}}><span>{"\u25CF"}</span> Roibos</div>
             <div style={{fontSize:"clamp(1rem,1.6vw,1.2rem)",color:"#1c1c1c"}}><span style={{fontWeight:300}}>ibs</span><span style={{fontWeight:700}}>software</span></div>
           </div>
         </section>
@@ -3560,7 +3560,7 @@ export default function TBOHomepage() {
         <section className="tbo-growth">
           <h2>Growth Stories</h2>
           <div className="slider-wrapper" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
-            <button className="slider-arrow" onClick={() => setSlideIdx(Math.max(0,slideIdx-1))} disabled={slideIdx===0}>â€¹</button>
+            <button className="slider-arrow" onClick={() => setSlideIdx(Math.max(0,slideIdx-1))} disabled={slideIdx===0}>{"\u2039"}</button>
             <div className="slider-viewport" style={{width:svWidth}}>
               <div className="slider-track" style={{transform:`translateX(-${slideIdx*(cardW+GAP)}px)`}}>
                 {stories.map((s,i) => (
@@ -3581,7 +3581,7 @@ export default function TBOHomepage() {
                         onPlay={() => handlePlay(i)} onPause={() => { if (playingIdx===i) setPlayingIdx(null); }}/>
                       {playingIdx!==i && (
                         <div className="gc-overlay" onClick={() => { handlePlay(i); videoRefs[i].current?.play(); }}>
-                          <div className="gc-play">â–¶</div>
+                          <div className="gc-play">{"\u25B6"}</div>
                         </div>
                       )}
                     </div>
@@ -3590,7 +3590,7 @@ export default function TBOHomepage() {
                 ))}
               </div>
             </div>
-            <button className="slider-arrow" onClick={() => setSlideIdx(Math.min(maxSlide,slideIdx+1))} disabled={slideIdx>=maxSlide}>â€º</button>
+            <button className="slider-arrow" onClick={() => setSlideIdx(Math.min(maxSlide,slideIdx+1))} disabled={slideIdx>=maxSlide}>{"\u203A"}</button>
           </div>
           <div className="growth-dots">
             {Array.from({length:maxSlide+1}).map((_,i) => <button key={i} className={`gdot ${slideIdx===i?"active":""}`} onClick={() => setSlideIdx(i)}/>)}
@@ -3601,7 +3601,7 @@ export default function TBOHomepage() {
         <section className="tbo-awards">
           <h2>Awards</h2>
           <div className="awards-slider-wrapper" onMouseEnter={() => setAwardPaused(true)} onMouseLeave={() => setAwardPaused(false)}>
-            <button className="awards-arrow" onClick={() => setAwardIdx(Math.max(0,awardIdx-1))} disabled={awardIdx===0}>â€¹</button>
+            <button className="awards-arrow" onClick={() => setAwardIdx(Math.max(0,awardIdx-1))} disabled={awardIdx===0}>{"\u2039"}</button>
             <div className="awards-viewport" style={{width:avWidth}}>
               <div className="awards-track" style={{transform:`translateX(-${awardIdx*(awardW+AWARD_GAP)}px)`}}>
                 {awards.map(a => (
@@ -3612,7 +3612,7 @@ export default function TBOHomepage() {
                 ))}
               </div>
             </div>
-            <button className="awards-arrow" onClick={() => setAwardIdx(Math.min(maxAward,awardIdx+1))} disabled={awardIdx>=maxAward}>â€º</button>
+            <button className="awards-arrow" onClick={() => setAwardIdx(Math.min(maxAward,awardIdx+1))} disabled={awardIdx>=maxAward}>{"\u203A"}</button>
           </div>
           <div className="awards-dots">
             {Array.from({length:maxAward+1}).map((_,i) => <button key={i} className={`adot ${awardIdx===i?"active":""}`} onClick={() => setAwardIdx(i)}/>)}

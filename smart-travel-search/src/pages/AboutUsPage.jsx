@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import SearchSectionTopNav from "../components/SearchSectionTopNav";
+import SearchSectionFooter from "../components/SearchSectionFooter";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
@@ -158,47 +158,6 @@ const css = `
     letter-spacing: 0.1px;
   }
 
-  .abt-footer {
-    margin-top: auto;
-    background: #3b82d6;
-    color: #fff;
-    padding: 14px clamp(16px, 3vw, 36px) 10px;
-  }
-  .abt-footer-top {
-    max-width: 1240px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-  .abt-footer-links {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .abt-footer-link {
-    color: #fff;
-    font-size: 0.84rem;
-    text-decoration: none;
-  }
-  .abt-footer-sep { color: rgba(255,255,255,0.86); font-size: 0.84rem; }
-  .abt-footer-social {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-  .abt-footer-copy {
-    text-align: center;
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.96);
-    margin-top: 10px;
-  }
-
   @media (max-width: 980px) {
     .abt-page { padding-top: 72px; }
     .abt-nav-links { display: none; }
@@ -229,26 +188,11 @@ const css = `
       font-size: 1.03rem;
       line-height: 1.62;
     }
-    .abt-footer-social { font-size: 1.3rem; }
-    .abt-footer-link, .abt-footer-sep { font-size: 0.95rem; }
-    .abt-footer-copy { font-size: 0.85rem; }
   }
 `;
 
-const footerLinks = [
-  "Home",
-  "About Us",
-  "Careers",
-  "Privacy Policy",
-  "Terms and Conditions",
-  "Sanctions Policy",
-  "Investors",
-  "Media",
-  "Contact Us",
-];
 
 export default function AboutUsPage() {
-  const navigate = useNavigate();
 
   return (
     <>
@@ -283,37 +227,7 @@ export default function AboutUsPage() {
             Driven by a technology-first approach, TBO continues to pioneer innovations in the travel industry. Our modular architecture supports the integration of new travel products and enables expansion into new geographies. Trusted by a vast network of travel ecosystems globally, TBO&apos;s travel APIs facilitate seamless connectivity and enhance efficiency across the travel sector. Join TBO and experience travel made easy and simple through innovative technology and unparalleled service.
           </p>
         </section>
-
-        <footer className="abt-footer">
-          <div className="abt-footer-top">
-            <div className="abt-footer-links">
-              {footerLinks.map((item, idx) => (
-                <span key={item}>
-                  <a
-                    href="#"
-                    className="abt-footer-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (item === "Home") navigate("/searchsection");
-                      if (item === "About Us") navigate("/aboutus");
-                      if (item === "Careers") navigate("/careers");
-                    }}
-                  >
-                    {item}
-                  </a>
-                  {idx < footerLinks.length - 1 && <span className="abt-footer-sep"> | </span>}
-                </span>
-              ))}
-            </div>
-            <div className="abt-footer-social">
-              <span>in</span>
-              <span>f</span>
-              <span>◎</span>
-              <span>▢</span>
-            </div>
-          </div>
-          <div className="abt-footer-copy">© All rights reserved</div>
-        </footer>
+        <SearchSectionFooter />
       </div>
     </>
   );

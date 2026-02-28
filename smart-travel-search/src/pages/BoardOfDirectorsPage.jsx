@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import SearchSectionTopNav from "../components/SearchSectionTopNav";
+import SearchSectionFooter from "../components/SearchSectionFooter";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
@@ -180,43 +180,6 @@ const css = `
     margin: 0;
   }
 
-  .bod-footer {
-    margin-top: auto;
-    background: #3b82d6;
-    color: #fff;
-    padding: 14px clamp(16px, 3vw, 36px) 10px;
-  }
-  .bod-footer-top {
-    max-width: 1240px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-  .bod-footer-links {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .bod-footer-link { color: #fff; font-size: 0.84rem; text-decoration: none; }
-  .bod-footer-sep { color: rgba(255,255,255,0.86); font-size: 0.84rem; }
-  .bod-footer-social {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-  .bod-footer-copy {
-    text-align: center;
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.96);
-    margin-top: 10px;
-  }
-
   @media (max-width: 980px) {
     .bod-page { padding-top: 72px; }
     .bod-nav-links { display: none; }
@@ -242,9 +205,6 @@ const css = `
     .bod-title { font-size: 2rem; }
     .bod-card-title { font-size: 1.14rem; }
     .bod-card p { font-size: 1.04rem; }
-    .bod-footer-social { font-size: 1.3rem; }
-    .bod-footer-link, .bod-footer-sep { font-size: 0.95rem; }
-    .bod-footer-copy { font-size: 0.85rem; }
   }
 `;
 
@@ -291,20 +251,8 @@ const directors = [
   },
 ];
 
-const footerLinks = [
-  "Home",
-  "About Us",
-  "Careers",
-  "Privacy Policy",
-  "Terms and Conditions",
-  "Sanctions Policy",
-  "Investors",
-  "Media",
-  "Contact Us",
-];
 
 export default function BoardOfDirectorsPage() {
-  const navigate = useNavigate();
 
   return (
     <>
@@ -336,37 +284,7 @@ export default function BoardOfDirectorsPage() {
             </article>
           ))}
         </section>
-
-        <footer className="bod-footer">
-          <div className="bod-footer-top">
-            <div className="bod-footer-links">
-              {footerLinks.map((item, idx) => (
-                <span key={item}>
-                  <a
-                    href="#"
-                    className="bod-footer-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (item === "Home") navigate("/searchsection");
-                      if (item === "About Us") navigate("/aboutus");
-                      if (item === "Careers") navigate("/careers");
-                    }}
-                  >
-                    {item}
-                  </a>
-                  {idx < footerLinks.length - 1 && <span className="bod-footer-sep"> | </span>}
-                </span>
-              ))}
-            </div>
-            <div className="bod-footer-social">
-              <span>in</span>
-              <span>f</span>
-              <span>◎</span>
-              <span>▢</span>
-            </div>
-          </div>
-          <div className="bod-footer-copy">© All rights reserved</div>
-        </footer>
+        <SearchSectionFooter />
       </div>
     </>
   );

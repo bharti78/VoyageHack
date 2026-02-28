@@ -15,45 +15,45 @@
     .cu-hero-inner { max-width: 1380px; margin: 0 auto; padding: 0 18px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 28px; position: relative; z-index: 2; min-height: 280px; }
     .cu-title { margin: 0; color: #6f7680; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.1; }
     .cu-hero-img { width: 360px; height: 250px; object-fit: cover; border-radius: 42% 42% 22% 22% / 55% 55% 24% 24%; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12); display: block; }
-    .cu-body { max-width: 1380px; margin: 0 auto; padding: 16px 18px 30px; }
-    .cu-block { margin-bottom: 18px; }
-    .cu-heading { background: #2f80dd; color: #fff; font-size: 16px; line-height: 1.2; font-weight: 600; padding: 8px 12px; text-transform: uppercase; margin: 0 0 10px; }
-    .cu-text { margin: 0 0 10px; font-size: 17px; line-height: 1.45; color: #707a88; }
-    .cu-link { color: #f26b25; text-decoration: none; }
-    .cu-link:hover { text-decoration: underline; }
+    .cu-body {
+      max-width: 1620px;
+      margin: 0 auto;
+      padding: 40px 120px 36px;
+      background: #f3f3f3;
+    }
+    .cu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 54px 90px;
+    }
+    .cu-card h3 {
+      margin: 0 0 18px;
+      font-size: 22px;
+      line-height: 1.08;
+      color: #6f7885;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .cu-card p {
+      margin: 0;
+      color: #727d8a;
+      font-size: 18px;
+      line-height: 1.28;
+      letter-spacing: 0.1px;
+    }
+    .cu-card p strong {
+      font-weight: 700;
+      color: #6f7885;
+    }
+    .cu-card.empty { visibility: hidden; }
     @media (max-width: 991px) {
       .cu-hero-inner { grid-template-columns: 1fr; min-height: auto; padding: 10px 14px; gap: 14px; }
       .cu-hero-img { width: min(100%, 340px); height: auto; aspect-ratio: 4 / 3; }
-      .cu-body { padding: 14px; }
-      .cu-heading { font-size: 15px; }
-      .cu-text { font-size: 14px; }
-    }
-  
-    .legal-footer {
-      background: #2f80dd;
-      color: #fff;
-      margin-top: 28px;
-      padding: 14px 10px;
-      text-align: center;
-    }
-    .legal-footer-links {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      font-size: 15px;
-      line-height: 1.3;
-    }
-    .legal-footer-links a {
-      color: #fff;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .legal-footer-links a:hover { text-decoration: underline; }
-    .legal-footer-sep { opacity: 0.8; }
-    @media (max-width: 768px) {
-      .legal-footer-links { font-size: 13px; gap: 6px; }
+      .cu-body { padding: 18px 16px 22px; }
+      .cu-grid { grid-template-columns: 1fr; gap: 22px; }
+      .cu-card h3 { font-size: clamp(1.8rem, 7.2vw, 2.4rem); margin-bottom: 10px; }
+      .cu-card p { font-size: clamp(1.2rem, 5.2vw, 1.55rem); line-height: 1.35; }
+      .cu-card.empty { display: none; }
     }
   </style>
 </head>
@@ -62,48 +62,38 @@
     <section class="cu-hero">
       <div class="cu-hero-inner">
         <h1 class="cu-title">Contact Us</h1>
-        <img class="cu-hero-img" src="/contact-us-hero.png" onerror="this.onerror=null;this.src='https://www.tbo.com/img/contact-us-img.jpg';" alt="Contact Us" />
+        <img class="cu-hero-img" src="https://www.tbo.com/img/contact-img.jpg" alt="Contact Us" />
       </div>
     </section>
 
     <section class="cu-body">
-      <div class="cu-block">
-        <h2 class="cu-heading">Corporate Office</h2>
-        <p class="cu-text">TBO Tek Ltd.<br>1101-1102, 11th Floor, Tower B,<br>Unitech Cyber Park, Sector 39,<br>Gurugram, Haryana 122002, India</p>
-      </div>
-
-      <div class="cu-block">
-        <h2 class="cu-heading">Support</h2>
-        <p class="cu-text">For partner support, please reach us at <a class="cu-link" href="mailto:support@tbo.com">support@tbo.com</a>.</p>
-        <p class="cu-text">For grievance redressal, write to <a class="cu-link" href="mailto:grievance@tbo.com">grievance@tbo.com</a>.</p>
-      </div>
-
-      <div class="cu-block">
-        <h2 class="cu-heading">Data Protection</h2>
-        <p class="cu-text">Data Protection Officer: <a class="cu-link" href="mailto:dpo@tbo.com">dpo@tbo.com</a></p>
-      </div>
-
-      <div class="cu-block">
-        <h2 class="cu-heading">Business Enquiries</h2>
-        <p class="cu-text">For partnerships and business enquiries, contact <a class="cu-link" href="mailto:sales@tbo.com">sales@tbo.com</a>.</p>
+      <div class="cu-grid">
+        <article class="cu-card">
+          <h3>Head Office</h3>
+          <p>Plot No. 728, Udyog Vihar Phase - V,<br>Gurgaon Haryana - 122016, India</p>
+        </article>
+        <article class="cu-card">
+          <h3>India Office</h3>
+          <p>Floor 17 &amp; 22, Tower C, Epitome Building No. 5,<br>DLF Cyber city, DLF phase 2,<br>Gurgaon - 122002, Haryana, India</p>
+        </article>
+        <article class="cu-card">
+          <h3>Dubai Office</h3>
+          <p>2408, Oaks Liwa Heights - Jumeirah Lake Towers<br>P.O. Box 34544, Dubai, U.A.E.</p>
+        </article>
+        <article class="cu-card">
+          <h3>Brazil Office</h3>
+          <p><strong>TBO Holidays Brasil Agencia de Viagens E Reservas LTDA.</strong><br>Rua Andre Fernandes,<br>205-A - Itaim Bibi Sao Paulo, Brazil.</p>
+        </article>
+        <article class="cu-card">
+          <h3>Singapore Office</h3>
+          <p><strong>TBO Holidays Pte. Ltd.</strong><br>30 Cecil Street, #19-08, Prudential Tower,<br>Singapore - 049712</p>
+        </article>
+        <article class="cu-card empty">
+          <h3>&nbsp;</h3>
+          <p>&nbsp;</p>
+        </article>
       </div>
     </section>
-  
-    <footer class="legal-footer">
-      <div class="legal-footer-links">
-        <a href="/aboutus">About Us</a>
-        <span class="legal-footer-sep">|</span>
-        <a href="/tbocares">Careers</a>
-        <span class="legal-footer-sep">|</span>
-        <a href="/privacy-policy">Privacy Policy</a>
-        <span class="legal-footer-sep">|</span>
-        <a href="/terms-and-conditions">Terms and Conditions</a>
-        <span class="legal-footer-sep">|</span>
-        <a href="/sanctions-compliance-policy">Sanctions Policy</a>
-        <span class="legal-footer-sep">|</span>
-        <a href="/contact-us">Contact Us</a>
-      </div>
-    </footer>
   </main>
 </body>
 </html>

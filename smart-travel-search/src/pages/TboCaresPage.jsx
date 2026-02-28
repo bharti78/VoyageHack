@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import SearchSectionTopNav from "../components/SearchSectionTopNav";
+import SearchSectionFooter from "../components/SearchSectionFooter";
 
 const css = `
   .tc-wrap { min-height: 100vh; background: #fff; }
@@ -188,6 +189,7 @@ export default function TboCaresPage() {
           onLoad={onFrameLoad}
         />
       </div>
+      <SearchSectionFooter />
     </div>
   );
 }

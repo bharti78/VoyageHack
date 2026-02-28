@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import SearchSectionTopNav from "./SearchSectionTopNav";
+import SearchSectionFooter from "./SearchSectionFooter";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
@@ -172,43 +173,6 @@ const css = `
     font-family: inherit;
   }
 
-  .sp-footer {
-    margin-top: auto;
-    background: #3b82d6;
-    color: #fff;
-    padding: 14px clamp(16px, 3vw, 36px) 10px;
-  }
-  .sp-footer-top {
-    max-width: 1240px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-  .sp-footer-links {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .sp-footer-link { color: #fff; font-size: 0.84rem; text-decoration: none; }
-  .sp-footer-sep { color: rgba(255,255,255,0.86); font-size: 0.9rem; }
-  .sp-footer-social {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-  .sp-footer-copy {
-    text-align: center;
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.96);
-    margin-top: 10px;
-  }
-
   @media (max-width: 1100px) {
     .sp-page { padding-top: 72px; }
   }
@@ -227,18 +191,6 @@ const css = `
     .sp-cta { font-size: 1rem; }
   }
 `;
-
-const footerLinks = [
-  "Home",
-  "About Us",
-  "Careers",
-  "Privacy Policy",
-  "Terms and Conditions",
-  "Sanctions Policy",
-  "Investors",
-  "Media",
-  "Contact Us",
-];
 
 export default function SolutionStaticPage({
   title,
@@ -304,36 +256,7 @@ export default function SolutionStaticPage({
           )}
         </section>
 
-        <footer className="sp-footer">
-          <div className="sp-footer-top">
-            <div className="sp-footer-links">
-              {footerLinks.map((item, idx) => (
-                <span key={item}>
-                  <a
-                    href="#"
-                    className="sp-footer-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (item === "Home") navigate("/searchsection");
-                      if (item === "About Us") navigate("/aboutus");
-                      if (item === "Careers") navigate("/careers");
-                    }}
-                  >
-                    {item}
-                  </a>
-                  {idx < footerLinks.length - 1 && <span className="sp-footer-sep"> | </span>}
-                </span>
-              ))}
-            </div>
-            <div className="sp-footer-social">
-              <span>in</span>
-              <span>f</span>
-              <span>◎</span>
-              <span>▢</span>
-            </div>
-          </div>
-          <div className="sp-footer-copy">© All rights reserved</div>
-        </footer>
+        <SearchSectionFooter />
       </div>
     </>
   );
