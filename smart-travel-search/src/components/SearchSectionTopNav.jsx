@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const SOLUTIONS = ["Travel Buyers", "Hotels", "Air", "Cruise"];
-
 const css = `
   .tbo-nav {
     display: flex;
@@ -65,6 +63,29 @@ const css = `
     font-family: 'DM Sans', sans-serif;
   }
   .mobile-nav-item:hover { background: #fff5f0; color: #ff6600; border-color: #ffd8bf; }
+  .mobile-submenu {
+    margin-top: -2px;
+    margin-bottom: 4px;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .mobile-subitem {
+    width: 100%;
+    border: 0;
+    border-top: 1px solid #f3f3f3;
+    background: #fff;
+    padding: 9px 12px;
+    text-align: left;
+    font-size: 0.79rem;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mobile-subitem:first-child { border-top: 0; }
+  .mobile-subitem:hover { background: #fff5f0; color: #ff6600; }
 
   .tbo-logo-wrap { display: flex; align-items: center; flex-shrink: 0; padding-left: 60px; }
   .tbo-logo-img { height: 100px; width: auto; object-fit: contain; display: block; }
@@ -163,6 +184,78 @@ const css = `
   }
   .sol-item:hover { background: #fff5f0; color: #ff6600; }
 
+  .solutions-mega-panel {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(1140px, calc(100vw - 20px));
+    background: #f6f6f7;
+    border: 1px solid #e7e7e9;
+    box-shadow: 0 14px 28px rgba(22, 33, 52, 0.08);
+    border-radius: 0 0 16px 16px;
+    padding: 26px 22px 28px;
+    z-index: 700;
+  }
+  .solutions-mega-grid {
+    display: grid;
+    grid-template-columns: minmax(520px, 1fr) minmax(280px, 410px);
+    gap: 36px;
+    align-items: start;
+  }
+  .solutions-mega-left {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+    gap: 32px;
+    padding-right: 30px;
+  }
+  .solutions-mega-right {
+    border-left: 1px solid #e1e1e3;
+    padding-left: 34px;
+  }
+  .solutions-mega-title,
+  .solutions-mega-subtitle {
+    margin: 0 0 10px;
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #6f7680;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .solutions-mega-subtitle {
+    margin-top: 18px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e2e4;
+    font-size: 13px;
+  }
+  .solutions-mega-link {
+    display: block;
+    margin: 0;
+    padding: 8px 0;
+    border-top: 1px solid #e2e2e4;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #5f6672;
+    transition: color 0.2s ease;
+  }
+  .solutions-mega-link:hover { color: #f26b25; }
+  .solutions-mega-image {
+    display: block;
+    width: 100%;
+    max-width: 390px;
+    margin-left: auto;
+    border-radius: 43% 43% 20% 20% / 31% 31% 22% 22%;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  }
+  .solutions-mega-image img {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+  }
+
   @media (max-width: 1100px) {
     .tbo-logo-wrap { padding-left: 0; }
     .tbo-logo-img { height: 76px; }
@@ -196,6 +289,7 @@ export default function SearchSectionTopNav({ active = "home" }) {
   const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
 
   const solutionsRef = useRef(null);
@@ -215,6 +309,7 @@ export default function SearchSectionTopNav({ active = "home" }) {
       if (aboutRef.current && !aboutRef.current.contains(e.target)) setAboutOpen(false);
       if (!e.target.closest(".mobile-nav-toggle") && !e.target.closest(".mobile-nav-menu")) {
         setMobileNavOpen(false);
+        setMobileSolutionsOpen(false);
       }
     }
     document.addEventListener("mousedown", handle);
@@ -266,10 +361,37 @@ export default function SearchSectionTopNav({ active = "home" }) {
                 Solutions <span className="chevron" />
               </button>
               {solutionsOpen && (
-                <div className="solutions-dropdown">
-                  {SOLUTIONS.map((s) => (
-                    <div key={s} className="sol-item" onClick={() => setSolutionsOpen(false)}>{s}</div>
-                  ))}
+                <div className="solutions-mega-panel">
+                  <div className="solutions-mega-grid">
+                    <div className="solutions-mega-left">
+                      <div>
+                        <h6 className="solutions-mega-title">Travel Buyers</h6>
+                        <a className="solutions-mega-link" href="/tbo-Platform" onClick={() => setSolutionsOpen(false)}>TBO Platform</a>
+                        <a className="solutions-mega-link" href="/tbo-api" onClick={() => setSolutionsOpen(false)}>TBO APIs</a>
+                        <a className="solutions-mega-link" href="/tbo-plus" onClick={() => setSolutionsOpen(false)}>TBO+</a>
+                        <a className="solutions-mega-link" href="/tbo-academy" onClick={() => setSolutionsOpen(false)}>TBO Academy</a>
+                        <a className="solutions-mega-link" href="/roamer-app" onClick={() => setSolutionsOpen(false)}>Roamer</a>
+                        <a className="solutions-mega-link" href="/travel-partner-solution" onClick={() => setSolutionsOpen(false)}>Travel Partner Solution</a>
+                      </div>
+                      <div>
+                        <h6 className="solutions-mega-title">Corporates</h6>
+                        <a className="solutions-mega-link" href="/paxes" onClick={() => setSolutionsOpen(false)}>Paxes</a>
+                        <h6 className="solutions-mega-subtitle">TMC</h6>
+                        <a className="solutions-mega-link" href="/paxes" onClick={() => setSolutionsOpen(false)}>Paxes</a>
+                        <h6 className="solutions-mega-subtitle">Umrah &amp; Hajj Operator</h6>
+                        <a className="solutions-mega-link" href="/zamzam" onClick={() => setSolutionsOpen(false)}>Zamzam &amp; Kizan</a>
+                      </div>
+                      <div>
+                        <h6 className="solutions-mega-title">Loyalty Platform</h6>
+                        <a className="solutions-mega-link" href="/travel-partner-solution" onClick={() => setSolutionsOpen(false)}>Travel Partner Solution</a>
+                      </div>
+                    </div>
+                    <div className="solutions-mega-right">
+                      <a className="solutions-mega-image" href="/travel-partner-solution" onClick={() => setSolutionsOpen(false)} aria-label="Solutions">
+                        <img src="https://www.tbo.com/img/solutions.jpg" alt="tbo.com Solutions" />
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -327,7 +449,21 @@ export default function SearchSectionTopNav({ active = "home" }) {
 
         <div className={`mobile-nav-menu${mobileNavOpen ? " open" : ""}`}>
           <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/searchsection"); }}>Home</button>
-          <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/search"); }}>Solutions</button>
+          <button className="mobile-nav-item" onClick={() => setMobileSolutionsOpen((v) => !v)}>
+            Solutions {mobileSolutionsOpen ? "▲" : "▼"}
+          </button>
+          {mobileSolutionsOpen && (
+            <div className="mobile-submenu">
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-Platform"); }}>TBO Platform</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-api"); }}>TBO APIs</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-plus"); }}>TBO+</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/tbo-academy"); }}>TBO Academy</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/roamer-app"); }}>Roamer</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/travel-partner-solution"); }}>Travel Partner Solution</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/paxes"); }}>Paxes</button>
+              <button className="mobile-subitem" onClick={() => { setMobileNavOpen(false); setMobileSolutionsOpen(false); navigate("/zamzam"); }}>Zamzam & Kizan</button>
+            </div>
+          )}
           <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/tbocares"); }}>TBO Cares</button>
           <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/aboutus"); }}>About tbo.com</button>
           <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/board-of-directors"); }}>Board of Directors</button>

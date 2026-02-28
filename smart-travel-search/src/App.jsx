@@ -14,6 +14,7 @@ import CabsPage from "./pages/CabsPage"
 import CarRentalPage from "./pages/CarRentalPage"
 import TboCaresPage from "./pages/TboCaresPage"
 import CareersPage from "./pages/CareersPage"
+import TboPlatformPage from "./pages/TboPlatformPage"
 import AboutUsPage from "./pages/AboutUsPage"
 import BoardOfDirectorsPage from "./pages/BoardOfDirectorsPage"
 import RegisterModal from "./components/RegisterModal"
@@ -42,6 +43,8 @@ function AppInner() {
           <Route path="/carrental" element={<CarRentalPage />} />
           <Route path="/tbocares" element={<TboCaresPage />} />
           <Route path="/careers" element={<CareersPage />} />
+          <Route path="/tbo-Platform" element={<TboPlatformPage />} />
+          <Route path="/tbo-platform" element={<TboPlatformPage />} />
           <Route path="/aboutus" element={<AboutUsPage />} />
           <Route path="/board-of-directors" element={<BoardOfDirectorsPage />} />
           <Route path="/profile" element={<Profile />} />
