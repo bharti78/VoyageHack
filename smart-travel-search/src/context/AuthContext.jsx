@@ -6,6 +6,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [persona, setPersona] = useState(null);
+  const [soloTravelerGender, setSoloTravelerGender] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Modals
@@ -17,12 +18,14 @@ export function AuthProvider({ children }) {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     const storedPersona = localStorage.getItem("persona");
+    const storedSoloTravelerGender = localStorage.getItem("soloTravelerGender");
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
       setIsLoggedIn(true);
     }
     if (storedPersona) setPersona(storedPersona);
+    if (storedSoloTravelerGender) setSoloTravelerGender(storedSoloTravelerGender);
   }, []);
 
   const loginWithData = (userData, tokenData) => {
@@ -33,8 +36,15 @@ export function AuthProvider({ children }) {
     setIsLoggedIn(true);
   };
 
-  const selectPersona = (type) => {
+  const selectPersona = (type, gender = "") => {
     localStorage.setItem("persona", type);
+    if (type === "solo" && (gender === "female" || gender === "male")) {
+      localStorage.setItem("soloTravelerGender", gender);
+      setSoloTravelerGender(gender);
+    } else {
+      localStorage.removeItem("soloTravelerGender");
+      setSoloTravelerGender("");
+    }
     setPersona(type);
     setShowPersona(false);
   };
@@ -43,9 +53,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("persona");
+    localStorage.removeItem("soloTravelerGender");
     setToken(null);
     setUser(null);
     setPersona(null);
+    setSoloTravelerGender("");
     setIsLoggedIn(false);
   };
 
@@ -60,7 +72,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, token, persona, isLoggedIn,
+      user, token, persona, soloTravelerGender, isLoggedIn,
       showLogin, setShowLogin,
       showRegister, setShowRegister,
       showPersona, setShowPersona,

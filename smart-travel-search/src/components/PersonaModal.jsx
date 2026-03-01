@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const personaOptions = [
@@ -27,36 +28,19 @@ const personaOptions = [
     gradient: "from-pink-500 to-rose-500",
     color: "#ec4899",
   },
-  {
-    type: "couple",
-    title: "Couple Trip",
-    description: "Romantic & Intimate Experiences",
-    icon: (
-      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    ),
-    gradient: "from-purple-500 to-pink-500",
-    color: "#a855f7",
-  },
-  {
-    type: "friends",
-    title: "Friends Trip",
-    description: "Fun & Adventure Activities",
-    icon: (
-      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    ),
-    gradient: "from-green-500 to-teal-500",
-    color: "#22c55e",
-  },
 ];
 
 export default function PersonaModal() {
   const { setShowPersona, selectPersona, user } = useAuth();
+  const [showSoloChoice, setShowSoloChoice] = useState(false);
+
+  const handlePersonaClick = (type) => {
+    if (type === "solo") {
+      setShowSoloChoice(true);
+      return;
+    }
+    selectPersona(type);
+  };
 
   return (
     <div
@@ -83,11 +67,11 @@ export default function PersonaModal() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {personaOptions.map((option) => (
             <button
               key={option.type}
-              onClick={() => selectPersona(option.type)}
+              onClick={() => handlePersonaClick(option.type)}
               className="group flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-gray-100 hover:border-transparent transition-all duration-300 hover:shadow-lg hover:scale-105 bg-white"
               style={{ "--hover-color": option.color }}
             >
@@ -107,6 +91,48 @@ export default function PersonaModal() {
             You can change your travel type anytime from your profile settings
           </p>
         </div>
+
+        {showSoloChoice && (
+          <div
+            className="absolute inset-0 rounded-3xl bg-white/95 backdrop-blur-sm flex items-center justify-center p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full max-w-md rounded-3xl border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50 p-6 shadow-xl">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-r from-pink-500 to-indigo-500 flex items-center justify-center text-white">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a4 4 0 100 8 4 4 0 000-8zM6 22a6 6 0 1112 0H6z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center mt-3">Select Solo Type</h3>
+              <p className="text-sm text-gray-600 text-center mt-2">Choose your profile to personalize safer cab recommendations.</p>
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => selectPersona("solo", "female")}
+                  className="rounded-2xl bg-white border border-pink-200 px-4 py-4 text-left hover:border-pink-400 hover:shadow-md transition-all"
+                >
+                  <div className="text-sm font-bold text-pink-700">Female Solo</div>
+                  <div className="text-xs text-gray-500 mt-1">Extra safety-first matching</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectPersona("solo", "male")}
+                  className="rounded-2xl bg-white border border-blue-200 px-4 py-4 text-left hover:border-blue-400 hover:shadow-md transition-all"
+                >
+                  <div className="text-sm font-bold text-blue-700">Male Solo</div>
+                  <div className="text-xs text-gray-500 mt-1">Standard solo recommendations</div>
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSoloChoice(false)}
+                className="mt-5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

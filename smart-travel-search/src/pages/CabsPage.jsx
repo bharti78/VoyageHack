@@ -269,13 +269,18 @@ export default function CabsPage() {
   const navigate = useNavigate();
   const persona = localStorage.getItem("persona") || "";
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const soloTravelerGender = String(localStorage.getItem("soloTravelerGender") || "").toLowerCase();
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
   const [date, setDate] = useState(() => { const d = new Date(); return d.toISOString().split("T")[0]; });
   const [time, setTime] = useState("10:00");
   const [cabType, setCabType] = useState("");
   const [budgetLimit, setBudgetLimit] = useState(0);
-  const [travelerGender, setTravelerGender] = useState((storedUser.gender || "").toLowerCase() === "female" ? "female" : "male");
+  const travelerGender = persona === "solo"
+    ? (soloTravelerGender === "female" || soloTravelerGender === "male"
+      ? soloTravelerGender
+      : ((storedUser.gender || "").toLowerCase() === "female" ? "female" : "male"))
+    : ((storedUser.gender || "").toLowerCase() === "female" ? "female" : "male");
 
   const [loading, setLoading] = useState(false);
   const [cabs, setCabs] = useState([]);
@@ -283,6 +288,7 @@ export default function CabsPage() {
   const [safetyMode, setSafetyMode] = useState("normal");
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [bookingCab, setBookingCab] = useState(null);
   const [booked, setBooked] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -312,7 +318,12 @@ export default function CabsPage() {
   }, [pickup]);
 
   async function handleSearch() {
-    if (!pickup || !drop) { setError("Please enter pickup and drop locations."); return; }
+    if (!pickup || !drop) {
+      setError(null);
+      setNotice("Please add both pickup and drop locations to see available cabs.");
+      return;
+    }
+    setNotice(null);
     setError(null);
     setLoading(true);
     setSearched(true);
@@ -394,6 +405,18 @@ export default function CabsPage() {
         
         <div className="cp-content">
           {error && <div className="cp-err"><span className="cp-err-txt">⚠ {error}</span><button className="cp-err-x" onClick={() => setError(null)}>✕</button></div>}
+          {notice && (
+            <div style={{background:"#eff6ff",border:"1.5px solid #bfdbfe",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"flex-start",gap:10,marginBottom:14}}>
+              <span style={{fontSize:".82rem",color:"#1e40af",flex:1}}>ℹ {notice}</span>
+              <button
+                type="button"
+                onClick={() => setNotice(null)}
+                style={{background:"#dbeafe",color:"#1e40af",border:"1px solid #93c5fd",borderRadius:6,padding:"4px 10px",fontSize:".7rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
+              >
+                OK
+              </button>
+            </div>
+          )}
 
           {booked && (
             <div style={{background:"#dcfce7",border:"1.5px solid #6ee7b7",borderRadius:12,padding:"12px 18px",marginBottom:14,fontSize:".84rem",fontWeight:600,color:"#064e3b"}}>
@@ -434,16 +457,6 @@ export default function CabsPage() {
                   <input type="time" className="cp-finput" value={time} onChange={e => setTime(e.target.value)} />
                 </div>
               </div>
-              <div className="cp-f tm">
-                <div className="cp-lbl">TRAVELLER</div>
-                <div className="cp-fin" style={{padding:"6px 10px"}}>
-                  <select className="cp-finput" value={travelerGender} onChange={e => setTravelerGender(e.target.value)} style={{cursor:"pointer"}}>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
               <button className="cp-sbtn" onClick={handleSearch} disabled={loading}>
                 {loading ? <><div className="cp-spin" />Searching...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Find Cabs</>}
               </button>
@@ -464,6 +477,11 @@ export default function CabsPage() {
 
           {!loading && searched && (
             <div style={{background:"#ecfeff",border:"1.5px solid #99f6e4",borderRadius:10,padding:"10px 12px",marginBottom:12,fontSize:".74rem",color:"#134e4a"}}>
+              {persona === "solo" && (
+                <div style={{marginBottom:6,fontWeight:700}}>
+                  Solo profile: {travelerGender === "female" ? "Female Solo" : "Male Solo"}
+                </div>
+              )}
               {safetyMode === "female_only" && "Safety mode applied: only female drivers shown for solo female traveller."}
               {safetyMode === "trusted_fallback_5star" && "Female drivers unavailable. Showing only 5-star drivers with 5+ years experience."}
               {safetyMode === "female_only_unavailable_night" && "No female drivers available right now (night window). Please try another time."}

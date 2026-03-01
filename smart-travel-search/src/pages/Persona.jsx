@@ -1,9 +1,10 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../components/HomepageNavbar"
 
 function Persona() {
   const navigate = useNavigate()
+  const [showSoloChoice, setShowSoloChoice] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -12,9 +13,22 @@ function Persona() {
     }
   }, [navigate])
 
-  const selectPersona = (type) => {
+  const selectPersona = (type, gender = "") => {
     localStorage.setItem("persona", type)
+    if (type === "solo" && (gender === "female" || gender === "male")) {
+      localStorage.setItem("soloTravelerGender", gender)
+    } else {
+      localStorage.removeItem("soloTravelerGender")
+    }
     navigate("/home")
+  }
+
+  const handlePersonaClick = (type) => {
+    if (type === "solo") {
+      setShowSoloChoice(true)
+      return
+    }
+    selectPersona(type)
   }
 
   const personaOptions = [
@@ -39,28 +53,6 @@ function Persona() {
         </svg>
       ),
       gradient: "from-pink-500 to-rose-500"
-    },
-    {
-      type: "couple",
-      title: "Couple Trip",
-      description: "Romantic & Intimate Experiences",
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      ),
-      gradient: "from-purple-500 to-pink-500"
-    },
-    {
-      type: "friends",
-      title: "Friends Trip",
-      description: "Fun & Adventure Activities",
-      icon: (
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ),
-      gradient: "from-green-500 to-teal-500"
     }
   ];
 
@@ -89,11 +81,11 @@ function Persona() {
           </div>
 
           {/* Persona Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {personaOptions.map((option, index) => (
               <div
                 key={option.type}
-                onClick={() => selectPersona(option.type)}
+                onClick={() => handlePersonaClick(option.type)}
                 className="group cursor-pointer"
               >
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20 hover:shadow-3xl transition-all duration-300 transform hover:scale-105">
@@ -118,6 +110,45 @@ function Persona() {
               </div>
             ))}
           </div>
+
+          {showSoloChoice && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4" style={{ background: "rgba(3,7,18,0.58)", backdropFilter: "blur(4px)" }}>
+              <div className="w-full max-w-lg rounded-3xl bg-gradient-to-br from-white via-white to-blue-50 p-7 shadow-2xl border border-blue-100">
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-r from-pink-500 to-indigo-500 flex items-center justify-center text-white shadow-lg">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a4 4 0 100 8 4 4 0 000-8zM6 22a6 6 0 1112 0H6z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 text-center mt-4">Select Solo Type</h3>
+                <p className="text-sm text-gray-600 text-center mt-2">Choose your profile to personalize safer cab recommendations.</p>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => selectPersona("solo", "female")}
+                    className="group rounded-2xl bg-white border border-pink-200 px-4 py-4 text-left hover:border-pink-400 hover:shadow-md transition-all"
+                  >
+                    <div className="text-sm font-bold text-pink-700">Female Solo</div>
+                    <div className="text-xs text-gray-500 mt-1">Extra safety-first matching</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectPersona("solo", "male")}
+                    className="group rounded-2xl bg-white border border-blue-200 px-4 py-4 text-left hover:border-blue-400 hover:shadow-md transition-all"
+                  >
+                    <div className="text-sm font-bold text-blue-700">Male Solo</div>
+                    <div className="text-xs text-gray-500 mt-1">Standard solo recommendations</div>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSoloChoice(false)}
+                  className="mt-5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Additional Info */}
           <div className="mt-16 text-center">

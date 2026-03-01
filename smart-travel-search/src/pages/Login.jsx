@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -62,10 +63,17 @@ function Login() {
   }, []);
 
 const handleLogin = async (e) => {
-  e.preventDefault();  // 🔥 THIS IS MISSING
+  e.preventDefault();
 
-  if (!email || !password) {
+  const cleanEmail = String(email || "").trim();
+  if (!cleanEmail || !password) {
     setError("Please enter email and password");
+    return;
+  }
+  if (!GMAIL_REGEX.test(cleanEmail)) {
+    const msg = "Invalid Gmail ID. Please enter a correct @gmail.com email address.";
+    setError(msg);
+    window.alert(msg);
     return;
   }
 
@@ -78,7 +86,7 @@ const handleLogin = async (e) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: cleanEmail, password }),
     });
 
     const data = await response.json().catch(() => null);
@@ -144,9 +152,12 @@ const handleLogin = async (e) => {
                 </label>
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Enter your Gmail"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  pattern="[a-zA-Z0-9._%+-]+@gmail\.com"
+                  onInvalid={(e) => e.target.setCustomValidity("Invalid Gmail ID. Please enter a correct @gmail.com email address.")}
+                  onInput={(e) => e.target.setCustomValidity("")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   required
                 />

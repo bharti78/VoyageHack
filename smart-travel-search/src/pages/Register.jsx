@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
 
 function Register() {
   const [name, setName] = useState("")
@@ -45,9 +46,17 @@ function Register() {
     }
   };
 
-  const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    const cleanEmail = String(email || "").trim();
+    if (!name || !cleanEmail || !password || !confirmPassword) {
       setError("Please fill in all fields");
+      return;
+    }
+    if (!GMAIL_REGEX.test(cleanEmail)) {
+      const msg = "Invalid Gmail ID. Please enter a correct @gmail.com email address.";
+      setError(msg);
+      window.alert(msg);
       return;
     }
 
@@ -70,7 +79,7 @@ function Register() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email: cleanEmail, password }),
       });
 
       const data = await response.json().catch(() => null);
@@ -167,9 +176,12 @@ function Register() {
                 </label>
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Enter your Gmail"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  pattern="[a-zA-Z0-9._%+-]+@gmail\.com"
+                  onInvalid={(e) => e.target.setCustomValidity("Invalid Gmail ID. Please enter a correct @gmail.com email address.")}
+                  onInput={(e) => e.target.setCustomValidity("")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   required
                 />

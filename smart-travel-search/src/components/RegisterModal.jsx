@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
 
 export default function RegisterModal() {
   const { setShowRegister, setShowPersona, loginWithData, setShowLogin } = useAuth();
@@ -35,7 +36,14 @@ export default function RegisterModal() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !confirmPassword) { setError("Please fill in all fields"); return; }
+    const cleanEmail = String(email || "").trim();
+    if (!name || !cleanEmail || !password || !confirmPassword) { setError("Please fill in all fields"); return; }
+    if (!GMAIL_REGEX.test(cleanEmail)) {
+      const msg = "Invalid Gmail ID. Please enter a correct @gmail.com email address.";
+      setError(msg);
+      window.alert(msg);
+      return;
+    }
     if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     setLoading(true);
@@ -44,7 +52,7 @@ export default function RegisterModal() {
       const response = await fetch(`${API_ORIGIN}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email: cleanEmail, password }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) { setError((data && data.error) || "Registration failed"); return; }
@@ -107,8 +115,11 @@ export default function RegisterModal() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" placeholder="Enter your email" value={email}
+            <input type="email" placeholder="Enter your Gmail" value={email}
               onChange={(e) => setEmail(e.target.value)}
+              pattern="[a-zA-Z0-9._%+-]+@gmail\.com"
+              onInvalid={(e) => e.target.setCustomValidity("Invalid Gmail ID. Please enter a correct @gmail.com email address.")}
+              onInput={(e) => e.target.setCustomValidity("")}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-sm"
               required />
           </div>

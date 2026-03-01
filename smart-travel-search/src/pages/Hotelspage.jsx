@@ -642,11 +642,17 @@ const css = `
 
 /* ── modal overlay ── */
 .hp-modal-bg{position:fixed;inset:0;background:rgba(11,61,110,.5);z-index:800;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
-.hp-modal{background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:100%;max-width:780px;max-height:92vh;overflow-y:auto;animation:modalIn .24s cubic-bezier(.34,1.56,.64,1)}
+.hp-modal{background:#fff;border-radius:20px;border:1px solid #dbeafe;box-shadow:0 24px 80px rgba(0,0,0,.25);width:100%;max-width:780px;max-height:92vh;overflow-y:auto;animation:modalIn .24s cubic-bezier(.34,1.56,.64,1)}
 @keyframes modalIn{from{opacity:0;transform:scale(.93) translateY(14px)}to{opacity:1;transform:none}}
-.hp-mhdr{padding:18px 22px 14px;border-bottom:1px solid #f0f4f8;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.hp-mhdr{padding:18px 22px 14px;border-bottom:1px solid #f0f4f8;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%)}
 .hp-mttl{font-size:1.05rem;font-weight:700;color:#1e293b}
 .hp-msub{font-size:.72rem;color:#64748b;margin-top:2px}
+.hp-mmeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.hp-mchip{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid #dbeafe;background:#f8fbff;color:#334155;font-size:.63rem;font-weight:700;line-height:1}
+.hp-mchip.rating{background:#fff7ed;border-color:#fed7aa;color:#b45309}
+.hp-mchip.price{background:#eef6ff;border-color:#bfdbfe;color:#0f5298}
+.hp-mchip.ok{background:#ecfeff;border-color:#a5f3fc;color:#0f766e}
+.hp-mchip.muted{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
 .hp-mclose{width:30px;height:30px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:1rem;transition:all .15s;flex-shrink:0}
 .hp-mclose:hover{background:#fee2e2;border-color:#fca5a5;color:#e53e3e}
 .hp-mbody{padding:18px 22px}
@@ -659,9 +665,18 @@ const css = `
 .hp-detail-thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding:2px 0 4px}
 .hp-detail-thumb{border:1px solid #cbd5e1;border-radius:9px;padding:0;overflow:hidden;width:84px;height:56px;background:#fff;cursor:pointer;flex-shrink:0;transition:border-color .14s,box-shadow .14s}
 .hp-detail-thumb.active{border:2px solid #0f5298;box-shadow:0 0 0 2px rgba(15,82,152,.1)}
-.hp-detail-section{margin-top:12px;background:#f8fbff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px}
-.hp-detail-section-title{font-size:.74rem;font-weight:700;color:#475569;margin-bottom:6px}
-.hp-detail-desc{font-size:.78rem;color:#334155;line-height:1.62}
+.hp-detail-section{margin-top:14px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);border:1px solid #dbeafe;border-radius:14px;padding:14px;box-shadow:0 4px 14px rgba(15,82,152,.08)}
+.hp-detail-section-title{font-size:.78rem;font-weight:800;color:#1e293b;margin-bottom:9px;display:flex;align-items:center;gap:7px;letter-spacing:.2px}
+.hp-detail-section-title::before{content:"";width:8px;height:8px;border-radius:999px;background:#0f5298;box-shadow:0 0 0 4px rgba(15,82,152,.12)}
+.hp-detail-desc-list{display:grid;gap:8px}
+.hp-detail-desc{font-size:.8rem;color:#334155;line-height:1.72;background:#ffffffc9;border:1px solid #e2e8f0;border-radius:10px;padding:9px 10px}
+.hp-detail-side-card{border:1px solid #dbeafe;border-radius:12px;background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%);padding:12px 13px}
+.hp-detail-side-label{font-size:.66rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.45px;margin-bottom:4px}
+.hp-detail-side-price{font-size:1.25rem;font-weight:800;color:#0f5298;line-height:1;font-family:'Sora',sans-serif}
+.hp-detail-side-sub{font-size:.68rem;color:#64748b;margin-top:4px}
+.hp-link-clean{color:#0f5298;text-decoration:none;font-weight:700}
+.hp-link-clean:hover{text-decoration:underline}
+.hp-detail-contact{background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);border-color:#dbeafe}
 .hp-detail-more-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .hp-detail-more-item{border:1px solid #cbd5e1;border-radius:8px;padding:0;overflow:hidden;height:78px;background:#fff;cursor:pointer}
 .hp-detail-more-item.active{border:2px solid #0f5298}
@@ -805,6 +820,7 @@ const css = `
   .hp-ff .hp-drop{left:0;right:0;min-width:0;width:100%}
   .hp-detail-main-image{height:220px}
   .hp-detail-map{height:180px}
+  .hp-detail-side-price{font-size:1.1rem}
 }
 `;
 
@@ -1606,6 +1622,16 @@ export default function HotelsPage({onBack}){
   const detailDescription = detailHotel?.Description
     ? String(detailHotel.Description).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
     : "";
+  const detailDescriptionParts = detailDescription
+    ? detailDescription
+        .split(/(?<=[.!?])\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+    : [];
+  const detailFacilities = normalizeFacilities(detailHotel?.HotelFacilities);
+  const detailHighlights = facilityHighlights(detailHotel?.HotelFacilities);
+  const detailPricing = detailHotel ? hotelDisplayPrice(detailHotel) : { amount: 0, currency: "INR", amountINR: 0 };
+  const detailStarCount = Math.max(0, Math.min(5, Math.round(Number(detailHotel?.HotelRating || detailHotel?.StarRating || 0))));
 
   /* ═══════════════════════════════════════════════
      RENDER
@@ -2158,6 +2184,12 @@ export default function HotelsPage({onBack}){
                   <div>
                     <div className="hp-mttl">{detailHotel.HotelName || "Hotel Details"}</div>
                     <div className="hp-msub">{detailHotel.HotelAddress || detailHotel.Address || "Address not available"}</div>
+                    <div className="hp-mmeta">
+                      {detailStarCount > 0 && <span className="hp-mchip rating">{stars(detailStarCount)}</span>}
+                      {detailImages.length > 0 && <span className="hp-mchip">{detailImages.length} photos</span>}
+                      <span className={`hp-mchip ${detailMapPoint ? "ok" : "muted"}`}>{detailMapPoint ? "Map view available" : "Map not available"}</span>
+                      {detailPricing.amountINR > 0 && <span className="hp-mchip price">From Rs {Math.round(detailPricing.amountINR).toLocaleString("en-IN")} / night</span>}
+                    </div>
                   </div>
                   <button className="hp-mclose" onClick={()=>setDetailHotel(null)}>x</button>
                 </div>
@@ -2198,16 +2230,41 @@ export default function HotelsPage({onBack}){
                     {detailDescription && (
                       <div className="hp-detail-section">
                         <div className="hp-detail-section-title">About This Hotel</div>
-                        <div className="hp-detail-desc">{detailDescription}</div>
+                        <div className="hp-detail-desc-list">
+                          {(detailDescriptionParts.length > 1 ? detailDescriptionParts : [detailDescription]).map((part, idx) => (
+                            <div key={`desc-${idx}`} className="hp-detail-desc">{part}</div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {normalizeFacilities(detailHotel.HotelFacilities).length > 0 && (
-                      <div className="hp-htags" style={{marginTop:12}}>
-                        {normalizeFacilities(detailHotel.HotelFacilities).slice(0,12).map((f,i)=><span key={i} className="hp-htag">{f}</span>)}
+                    {detailFacilities.length > 0 && (
+                      <div className="hp-detail-section">
+                        <div className="hp-detail-section-title">Top Facilities</div>
+                        <div className="hp-htags" style={{marginTop:0}}>
+                          {detailFacilities.slice(0,12).map((f,i)=><span key={i} className="hp-htag">{f}</span>)}
+                        </div>
                       </div>
                     )}
                   </div>
                   <div className="hp-detail-right">
+                    {detailPricing.amountINR > 0 && (
+                      <div className="hp-detail-side-card">
+                        <div className="hp-detail-side-label">Starting Price</div>
+                        <div className="hp-detail-side-price">Rs {Math.round(detailPricing.amountINR).toLocaleString("en-IN")}</div>
+                        <div className="hp-detail-side-sub">
+                          {String(detailPricing.currency).toUpperCase() !== "INR" && detailPricing.amount > 0
+                            ? `${detailPricing.currency} ${Math.round(detailPricing.amount).toLocaleString("en-IN")} available`
+                            : "Per night indicative rate"}
+                        </div>
+                        {detailHighlights.length > 0 && (
+                          <div className="hp-htags" style={{marginTop:10}}>
+                            {detailHighlights.map((h, i) => (
+                              <span key={`${h}-${i}`} className="hp-htag">{h}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {detailMapPoint ? (
                       <div className="hp-detail-map">
                         <MapContainer center={[detailMapPoint.lat, detailMapPoint.lng]} zoom={14} style={{height:"100%",width:"100%"}} scrollWheelZoom={false}>
@@ -2220,14 +2277,14 @@ export default function HotelsPage({onBack}){
                     ) : (
                       <div className="hp-detail-map-empty">Map location not available for this hotel.</div>
                     )}
-                    <div className="hp-sumbox" style={{marginBottom:0}}>
+                    <div className="hp-sumbox hp-detail-contact" style={{marginBottom:0}}>
                       <div className="hp-sumttl">Contact</div>
                       <div className="hp-sumrow"><span>Phone</span><span className="hp-sumval">{detailHotel.PhoneNumber || "N/A"}</span></div>
                       <div className="hp-sumrow"><span>Fax</span><span className="hp-sumval">{detailHotel.FaxNumber || "N/A"}</span></div>
-                      <div className="hp-sumrow"><span>Website</span><span className="hp-sumval">{detailHotel.HotelWebsiteURL ? <a href={detailHotel.HotelWebsiteURL} target="_blank" rel="noreferrer">Visit</a> : "N/A"}</span></div>
+                      <div className="hp-sumrow"><span>Website</span><span className="hp-sumval">{detailHotel.HotelWebsiteURL ? <a className="hp-link-clean" href={detailHotel.HotelWebsiteURL} target="_blank" rel="noreferrer">Visit Site</a> : "N/A"}</span></div>
                     </div>
                     <button className="hp-btn-pri" style={{justifyContent:"center"}} onClick={()=>{ const h = detailHotel; setDetailHotel(null); doPrebook(h); }}>
-                      Select Room & Book
+                      Select Room & Continue
                     </button>
                   </div>
                 </div>

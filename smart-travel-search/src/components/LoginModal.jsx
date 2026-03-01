@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
 
 export default function LoginModal() {
   const { setShowLogin, setShowRegister, setShowPersona, loginWithData } = useAuth();
@@ -36,14 +37,21 @@ export default function LoginModal() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email || !password) { setError("Please enter email and password"); return; }
+    const cleanEmail = String(email || "").trim();
+    if (!cleanEmail || !password) { setError("Please enter email and password"); return; }
+    if (!GMAIL_REGEX.test(cleanEmail)) {
+      const msg = "Invalid Gmail ID. Please enter a correct @gmail.com email address.";
+      setError(msg);
+      window.alert(msg);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const response = await fetch(`${API_ORIGIN}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanEmail, password }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) { setError((data && data.error) || "Login failed"); return; }
@@ -127,9 +135,12 @@ export default function LoginModal() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Enter your Gmail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              pattern="[a-zA-Z0-9._%+-]+@gmail\.com"
+              onInvalid={(e) => e.target.setCustomValidity("Invalid Gmail ID. Please enter a correct @gmail.com email address.")}
+              onInput={(e) => e.target.setCustomValidity("")}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent transition-all"
               style={{ "--tw-ring-color": "#ff6600" }}
               required
