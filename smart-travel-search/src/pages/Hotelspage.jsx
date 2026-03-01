@@ -373,6 +373,7 @@ const FX_FALLBACK_RATES = {
   SGD: 61,
   THB: 2.3,
 };
+const EMPTY_GUEST = { title: "Mr", first: "", last: "", email: "", phone: "", addr: "", city2: "", country: "IN" };
 
 function toINR(amount, currency, fxRates = {}) {
   const value = Number(amount || 0);
@@ -1042,7 +1043,7 @@ export default function HotelsPage({onBack}){
   const [selHotel,setSelHotel]   = useState(null);
   const [prebookRes,setPrebookRes] = useState(null);
   const [selRateIdx,setSelRateIdx] = useState(0);
-  const [guest,setGuest] = useState(persistedForm.guest || {title:"Mr",first:"",last:"",email:"",phone:"",addr:"",city2:"",country:"IN"});
+  const [guest,setGuest] = useState(() => ({ ...EMPTY_GUEST }));
 
   /* ── post-booking ── */
   const [bookingRef,setBookingRef]     = useState("");
@@ -1260,14 +1261,13 @@ export default function HotelsPage({onBack}){
       minimalWalkingPref,
       easyTransferPref,
       sortBy,
-      guest,
     };
     try {
       localStorage.setItem(HOTEL_FORM_STORAGE_KEY, JSON.stringify(payload));
     } catch {
       // Ignore storage errors and keep app usable.
     }
-  }, [cityQuery, cityId, cityName, destCountry, hotelCodes, checkIn, checkOut, roomCfg, nat, starF, budget, seniorAssist, groundFloorPref, minimalWalkingPref, easyTransferPref, sortBy, guest]);
+  }, [cityQuery, cityId, cityName, destCountry, hotelCodes, checkIn, checkOut, roomCfg, nat, starF, budget, seniorAssist, groundFloorPref, minimalWalkingPref, easyTransferPref, sortBy]);
 
   /* close dropdowns on outside click */
   useEffect(()=>{
@@ -1530,7 +1530,7 @@ export default function HotelsPage({onBack}){
      PREBOOK
      ══════════════════════ */
   async function doPrebook(hotel){
-    setSelHotel(hotel); setPrebookRes(null); setSelRateIdx(0);
+    setSelHotel(hotel); setPrebookRes(null); setSelRateIdx(0); setGuest({ ...EMPTY_GUEST });
     setApiErr("");
 
     const firstRoom = Array.isArray(hotel?.Rooms) ? hotel.Rooms[0] : null;
@@ -1613,6 +1613,14 @@ export default function HotelsPage({onBack}){
       totalPrice ??
       0
     );
+    const computedCurrency = roomCurrency(rate, selHotel);
+    const computedFareINR = (() => {
+      const primary = toINR(computedFare, computedCurrency, fxRates);
+      if (Number.isFinite(primary) && primary > 0) return primary;
+      const fallback = Number(totalPriceINR);
+      if (Number.isFinite(fallback) && fallback > 0) return fallback;
+      return computedFare;
+    })();
 
     try{
       const data = await apiPost("book",{
@@ -1636,7 +1644,7 @@ export default function HotelsPage({onBack}){
         title: String(selHotel?.HotelName || "Hotel Booking"),
         location: String(cityQuery || cityName || selHotel?.CityName || ""),
         date: checkIn ? checkIn.toISOString() : "",
-        amount: Number(computedFare || 0),
+        amount: Number(computedFareINR || 0),
         currency: "INR",
         details: {
           checkIn: checkIn ? fmtApi(checkIn) : "",

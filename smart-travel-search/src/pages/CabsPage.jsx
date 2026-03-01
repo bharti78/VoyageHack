@@ -27,11 +27,15 @@ const CAB_PROVIDERS = [
 function generateCabs(pickup, drop, date, time, cabType) {
   const distKm = 5 + Math.floor(Math.random() * 30);
   const hour = time ? parseInt(time.split(":")[0]) : new Date().getHours();
+  const maleDriverNames = ["Ramesh K.", "Suresh M.", "Anil T.", "Rahul V.", "Vikram J."];
+  const femaleDriverNames = ["Priya S.", "Kavya R.", "Neha P.", "Pooja N.", "Anita D."];
   return CAB_TYPES.filter(c => !cabType || c.id === cabType).flatMap(cat => {
     const isSurge = cat.surgeHours.includes(hour);
     return CAB_PROVIDERS.slice(0, 3 + Math.floor(Math.random() * 2)).map(prov => {
       const fare = Math.max(cat.minFare, Math.round(cat.pricePerKm * distKm * (isSurge ? 1.3 : 1)));
       const eta = 3 + Math.floor(Math.random() * 12);
+      const driverGender = Math.random() > 0.55 ? "male" : "female";
+      const driverNamePool = driverGender === "female" ? femaleDriverNames : maleDriverNames;
       return {
         id: `${cat.id}-${prov.name}-${Math.random().toString(36).slice(2,7)}`,
         type: cat,
@@ -40,8 +44,8 @@ function generateCabs(pickup, drop, date, time, cabType) {
         distKm,
         eta,
         isSurge,
-        driverName: ["Ramesh K.", "Suresh M.", "Priya S.", "Anil T.", "Kavya R.", "Neha P.", "Pooja N."][Math.floor(Math.random() * 7)],
-        driverGender: Math.random() > 0.55 ? "male" : "female",
+        driverName: driverNamePool[Math.floor(Math.random() * driverNamePool.length)],
+        driverGender,
         driverRating: (4.1 + Math.random() * 0.9).toFixed(1),
         yearsExperience: 1 + Math.floor(Math.random() * 14),
         carModel: cat.id === "bike" ? "Honda Activa" : cat.id === "auto" ? "Bajaj RE" : cat.id === "suv" ? "Toyota Innova" : cat.id === "xl" ? "Force Urbania" : "Maruti Dzire",
@@ -101,6 +105,29 @@ function inferCabTypeFromDriver(driver = {}) {
   return CAB_TYPES.find((t) => t.id === "sedan") || CAB_TYPES[0];
 }
 
+function normalizeDriverGender(rawGender, rawName) {
+  const g = String(rawGender || "").trim().toLowerCase();
+  const normalizedGender = g === "female" || g === "male" ? g : "";
+  const firstName = String(rawName || "")
+    .trim()
+    .split(/\s+/)[0]
+    .replace(/[^a-zA-Z]/g, "")
+    .toLowerCase();
+  const maleNames = new Set(["rohan", "karan", "ramesh", "suresh", "anil", "rahul", "vikram", "akash", "amit"]);
+  const femaleNames = new Set(["priya", "kavya", "neha", "pooja", "anita", "riya", "sneha", "shruti"]);
+
+  if (maleNames.has(firstName)) return "male";
+  if (femaleNames.has(firstName)) return "female";
+  return normalizedGender || "male";
+}
+
+function formatGenderLabel(gender) {
+  const g = String(gender || "").toLowerCase();
+  if (g === "female") return "Female";
+  if (g === "male") return "Male";
+  return "N/A";
+}
+
 function mapDriverToCab(driver, idx, { pickup, drop, time }) {
   const type = inferCabTypeFromDriver(driver);
   const hour = time ? parseInt(time.split(":")[0], 10) : new Date().getHours();
@@ -108,7 +135,8 @@ function mapDriverToCab(driver, idx, { pickup, drop, time }) {
   const distKm = 6 + ((idx * 3) % 18);
   const fare = Math.max(type.minFare, Math.round(type.pricePerKm * distKm * (isSurge ? 1.25 : 1)));
   const eta = 4 + ((idx * 2) % 11);
-  const gender = String(driver?.gender || "male").toLowerCase();
+  const name = String(driver?.name || "Driver");
+  const gender = normalizeDriverGender(driver?.gender, name);
   return {
     id: String(driver?._id || `live-${idx}`),
     type,
@@ -117,7 +145,7 @@ function mapDriverToCab(driver, idx, { pickup, drop, time }) {
     distKm,
     eta,
     isSurge,
-    driverName: String(driver?.name || "Driver"),
+    driverName: name,
     driverGender: gender || "male",
     driverRating: Number(driver?.rating || type.rating || 4).toFixed(1),
     yearsExperience: Number(driver?.experienceYears || 0),
@@ -562,7 +590,7 @@ export default function CabsPage() {
                         <span className="cp-cab-provider" style={{color:cab.provider.color}}>{cab.provider.logo} {cab.provider.name}</span>
                       </div>
                       <div className="cp-cab-desc">{cab.type.desc} · ⭐ {cab.type.rating}</div>
-                      <div className="cp-cab-driver">🧑 {cab.driverName} ({cab.driverGender}) · ⭐ {cab.driverRating} · {cab.yearsExperience} yrs exp · {cab.carModel} · {cab.plateNo}</div>
+                      <div className="cp-cab-driver">🧑 {cab.driverName} ({formatGenderLabel(cab.driverGender)}) · ⭐ {cab.driverRating} · {cab.yearsExperience} yrs exp · {cab.carModel} · {cab.plateNo}</div>
                     </div>
                     <div className="cp-eta">
                       <div className="cp-eta-min">{cab.eta}m</div>
@@ -602,7 +630,7 @@ export default function CabsPage() {
                 ["Pickup", pickup],
                 ["Drop", drop],
                 ["Date & Time", `${date} at ${time}`],
-                ["Driver", `${bookingCab.driverName} (${bookingCab.driverGender}) · ⭐ ${bookingCab.driverRating}`],
+                ["Driver", `${bookingCab.driverName} (${formatGenderLabel(bookingCab.driverGender)}) · ⭐ ${bookingCab.driverRating}`],
                 ["Car", `${bookingCab.carModel} · ${bookingCab.plateNo}`],
                 ["Distance", `~${bookingCab.distKm} km`],
                 ["ETA", `${bookingCab.eta} minutes`],
