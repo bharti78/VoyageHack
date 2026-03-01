@@ -3018,6 +3018,13 @@ export default function TBOHomepage() {
                   {"\u2713"} {user?.name ? user.name.split(" ")[0] : "Logged in"}{persona ? ` \u00B7 ${persona}` : ""}
                 </span>
                 <div style={{display:"flex",gap:6}}>
+                  <button
+                    className="btn-book"
+                    style={{background:"#eef2ff",color:"#1e3a8a"}}
+                    onClick={() => navigate("/profile")}
+                  >
+                    Profile
+                  </button>
                   <button className="btn-book" onClick={handleBookNow}>Book Now</button>
                   <button className="btn-book" style={{background:"#e0e0e0",color:"#555"}} onClick={logout}>Logout</button>
                 </div>
@@ -3064,6 +3071,7 @@ export default function TBOHomepage() {
             <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/board-of-directors"); }}>Board of Directors</button>
             {isLoggedIn ? (
               <>
+                <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); navigate("/profile"); }}>Profile</button>
                 <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); handleBookNow(); }}>Book Now</button>
                 <button className="mobile-nav-item" onClick={() => { setMobileNavOpen(false); logout(); }}>Logout</button>
               </>

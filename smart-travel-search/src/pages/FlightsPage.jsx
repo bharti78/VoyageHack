@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
+import { saveBookingRecord } from "../utils/bookingLedger";
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const API_BASE = `${API_ORIGIN}/api/flights`;
@@ -994,6 +995,22 @@ export default function FlightsPage() {
         date: formatDateStr(depDate),
         pax: totalPax,
         totalAmount,
+      });
+      saveBookingRecord({
+        service: "flight",
+        reference: String(ref),
+        status: String(data?.BookingStatus || "Confirmed"),
+        title: `${info.origin} → ${info.dest}`,
+        location: `${info.origin} to ${info.dest}`,
+        date: depDate || "",
+        amount: Number(totalAmount || 0),
+        currency: "INR",
+        details: {
+          departure: info.dep,
+          arrival: info.arr,
+          passengers: totalPax,
+          mock: Boolean(data?.Mock),
+        },
       });
       setToast({ type: "ok", message: `Booking confirmed: ${String(ref)}` });
       setPendingBookingFlight(null);

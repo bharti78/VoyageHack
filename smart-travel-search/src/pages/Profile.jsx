@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/HomepageNavbar";
+import SearchSectionTopNav from "../components/SearchSectionTopNav";
+import SearchSectionFooter from "../components/SearchSectionFooter";
+import { getBookingRecords, updateBookingRecordStatus } from "../utils/bookingLedger";
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -17,6 +19,7 @@ function Profile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("profile");
+  const [bookings, setBookings] = useState([]);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -33,7 +36,30 @@ function Profile() {
       });
       setPreviewImage(parsedUser.profileImage || "");
     }
+    setBookings(getBookingRecords());
   }, []);
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  };
+
+  const handleCancelBooking = (booking) => {
+    if (!booking?.id) return;
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    const ok = updateBookingRecordStatus(booking.id, "Cancelled");
+    if (ok) {
+      setBookings(getBookingRecords());
+      setSuccess("Booking cancelled successfully.");
+      setError("");
+      setTimeout(() => setSuccess(""), 2500);
+    } else {
+      setError("Unable to cancel this booking right now. Please try again.");
+      setTimeout(() => setError(""), 2500);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -128,32 +154,20 @@ function Profile() {
     navigate("/");
   };
 
-  const stats = [
-    { label: "Trips Planned", value: "12", icon: "🌍" },
-    { label: "Places Visited", value: "8", icon: "✈️" },
-    { label: "Reviews", value: "23", icon: "⭐" },
-    { label: "Saved Places", value: "45", icon: "❤️" }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50">
-      {/* Hero Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 via-transparent to-blue-100/20"></div>
-      
-      {/* Profile Content */}
-      <div className="relative min-h-screen">
-        <Navbar user={user} />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+    <div className="min-h-screen bg-[#f7f9fc]">
+      <SearchSectionTopNav />
+      <div className="pt-24 md:pt-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
           {/* Header */}
           <div className="text-center mb-16">
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl lg:text-6xl font-bold text-slate-900 mb-6">
               My
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-blue-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0f5298] to-[#f26b25]">
                 {" "}Profile
               </span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               Manage your account settings and travel preferences
             </p>
           </div>
@@ -163,13 +177,13 @@ function Profile() {
             <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
               {/* Tabs */}
               <div className="flex border-b border-gray-200">
-                {['profile', 'settings', 'activity'].map((tab) => (
+                {['profile', 'bookings'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
                       activeTab === tab
-                        ? 'text-pink-600 border-b-2 border-pink-600'
+                        ? 'text-[#0f5298] border-b-2 border-[#0f5298]'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -199,7 +213,7 @@ function Profile() {
                         </div>
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute bottom-0 right-0 bg-pink-600 hover:bg-pink-700 text-white p-2 rounded-full shadow-lg transition-colors"
+                          className="absolute bottom-0 right-0 bg-[#0f5298] hover:bg-[#0b3f75] text-white p-2 rounded-full shadow-lg transition-colors"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -216,17 +230,6 @@ function Profile() {
                       <h3 className="text-xl font-semibold text-gray-900 mt-4">{user.name || "Your Name"}</h3>
                       <p className="text-gray-600">{user.email || "your.email@example.com"}</p>
                     </div>
-
-                    {/* Stats */}
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {stats.map((stat, index) => (
-                        <div key={index} className="text-center p-4 bg-gray-50 rounded-xl">
-                          <div className="text-2xl mb-1">{stat.icon}</div>
-                          <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                          <div className="text-sm text-gray-600">{stat.label}</div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Form Fields */}
@@ -239,7 +242,7 @@ function Profile() {
                           name="name"
                           value={user.name}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f5298] focus:border-transparent"
                           placeholder="Enter your name"
                         />
                       </div>
@@ -250,7 +253,7 @@ function Profile() {
                           name="email"
                           value={user.email}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-gray-50"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f5298] focus:border-transparent bg-gray-50"
                           placeholder="Enter your email"
                           disabled
                         />
@@ -264,7 +267,7 @@ function Profile() {
                         name="phone"
                         value={user.phone}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f5298] focus:border-transparent"
                         placeholder="Enter your phone number"
                       />
                     </div>
@@ -276,7 +279,7 @@ function Profile() {
                         value={user.bio}
                         onChange={handleInputChange}
                         rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f5298] focus:border-transparent resize-none"
                         placeholder="Tell us about yourself"
                       />
                     </div>
@@ -299,7 +302,7 @@ function Profile() {
                     <button
                       onClick={handleSave}
                       disabled={loading}
-                      className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="flex-1 bg-gradient-to-r from-[#0f5298] to-[#f26b25] text-white px-6 py-3 rounded-xl font-semibold hover:from-[#0b457f] hover:to-[#d95b1b] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {loading ? "Saving..." : "Save Changes"}
                     </button>
@@ -313,29 +316,92 @@ function Profile() {
                 </div>
               )}
 
-              {/* Settings Tab Content */}
-              {activeTab === 'settings' && (
+              {/* Bookings Tab Content */}
+              {activeTab === 'bookings' && (
                 <div className="p-8">
-                  <div className="text-center py-16">
-                    <div className="text-gray-500 text-lg">Settings coming soon...</div>
+                  <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+                    <h3 className="text-2xl font-bold text-gray-900">My Bookings</h3>
+                    <button
+                      type="button"
+                      onClick={() => setBookings(getBookingRecords())}
+                      className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                      Refresh
+                    </button>
                   </div>
+
+                  {bookings.length === 0 ? (
+                    <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-100">
+                      <div className="text-4xl mb-3">🧳</div>
+                      <div className="text-gray-700 font-semibold">No bookings yet</div>
+                      <div className="text-gray-500 text-sm mt-1">Book flights, hotels, or cabs to see them here.</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {bookings.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-4 flex-wrap">
+                            <div>
+                              <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">
+                                {String(item.service || "booking")}
+                              </div>
+                              <div className="text-lg font-semibold text-gray-900">{item.title || "Booking"}</div>
+                              <div className="text-sm text-gray-600 mt-1">{item.location || "Location not available"}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-500">Status</div>
+                              <div className="text-sm font-bold text-green-600">{item.status || "Confirmed"}</div>
+                              <div className="text-xs text-gray-500 mt-1">{formatDateTime(item.createdAt || item.date)}</div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            <div className="p-3 rounded-xl bg-gray-50">
+                              <div className="text-gray-500 text-xs">Reference</div>
+                              <div className="font-semibold text-gray-900 break-all">{item.reference || "N/A"}</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-gray-50">
+                              <div className="text-gray-500 text-xs">Amount</div>
+                              <div className="font-semibold text-gray-900">
+                                {Number(item.amount || 0) > 0 ? `${item.currency || "INR"} ${Number(item.amount).toLocaleString("en-IN")}` : "N/A"}
+                              </div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-gray-50">
+                              <div className="text-gray-500 text-xs">Booked On</div>
+                              <div className="font-semibold text-gray-900">{formatDateTime(item.createdAt)}</div>
+                            </div>
+                          </div>
+
+                          {String(item.status || "").toLowerCase() !== "cancelled" && (
+                            <div className="mt-4 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleCancelBooking(item)}
+                                className="px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-semibold hover:bg-red-100 transition-colors"
+                              >
+                                Cancel Booking
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Activity Tab Content */}
-              {activeTab === 'activity' && (
-                <div className="p-8">
-                  <div className="text-center py-16">
-                    <div className="text-gray-500 text-lg">Activity history coming soon...</div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
+      <SearchSectionFooter />
     </div>
   );
 }
 
 export default Profile;
+
+

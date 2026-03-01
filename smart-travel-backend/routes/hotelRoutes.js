@@ -14,6 +14,7 @@ const {
   bookingDetail,
   bookingDetailsByDate,
   cancel,
+  fxRate,
 } = require("../controllers/hotelController")
 
 router.get("/countries", countryList)
@@ -29,5 +30,6 @@ router.post("/book", book)
 router.post("/detail", bookingDetail)
 router.post("/detail-by-date", bookingDetailsByDate)
 router.post("/cancel", cancel)
+router.get("/fx-rate", fxRate)
 
 module.exports = router

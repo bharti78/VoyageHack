@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
+import { saveBookingRecord } from "../utils/bookingLedger";
 
 const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const SMART_SEARCH_API = `${API_ORIGIN}/api/search`;
@@ -404,6 +405,24 @@ export default function CabsPage() {
   }
 
   function confirmBook() {
+    if (bookingCab) {
+      saveBookingRecord({
+        service: "cab",
+        reference: `CAB_${Date.now()}`,
+        status: "Confirmed",
+        title: `${bookingCab.type?.name || "Cab"} (${bookingCab.provider?.name || "Provider"})`,
+        location: `${pickup} → ${drop}`,
+        date: `${date} ${time}`,
+        amount: Number(bookingCab.fare || 0),
+        currency: "INR",
+        details: {
+          driver: bookingCab.driverName || "",
+          rating: bookingCab.driverRating || "",
+          eta: bookingCab.eta || "",
+          distanceKm: bookingCab.distKm || "",
+        },
+      });
+    }
     setBookingCab(null);
     setBooked(true);
     setTimeout(() => setBooked(false), 4000);

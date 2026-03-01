@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import ServiceNav from "../components/ServiceNav";
+import { saveBookingRecord } from "../utils/bookingLedger";
 
 /* ═══════════════════════════════════════════════
    BACKEND PROXY  ─  all TBO calls go through here
@@ -364,21 +365,24 @@ function normalizeImageUrl(url) {
   }
 }
 
-const INR_RATES = {
-  INR: 1,
-  USD: 83.0,
-  EUR: 90.0,
-  GBP: 106.0,
+const FX_FALLBACK_RATES = {
+  USD: 83,
+  EUR: 90,
+  GBP: 106,
   AED: 22.6,
-  SGD: 61.0,
+  SGD: 61,
   THB: 2.3,
 };
 
-function toINR(amount, currency) {
+function toINR(amount, currency, fxRates = {}) {
   const value = Number(amount || 0);
   if (!Number.isFinite(value) || value <= 0) return 0;
   const code = String(currency || "INR").toUpperCase();
-  const rate = INR_RATES[code] || 1;
+  if (code === "INR") return value;
+  const liveRate = Number(fxRates?.[code]);
+  const fallbackRate = Number(FX_FALLBACK_RATES?.[code]);
+  const rate = Number.isFinite(liveRate) && liveRate > 0 ? liveRate : fallbackRate;
+  if (!Number.isFinite(rate) || rate <= 0) return Number.NaN;
   return value * rate;
 }
 
@@ -392,7 +396,7 @@ function roomCurrency(room, hotel) {
   );
 }
 
-function hotelDisplayPrice(hotel) {
+function hotelDisplayPrice(hotel, fxRates = {}) {
   const rooms = Array.isArray(hotel?.Rooms)
     ? hotel.Rooms
     : (hotel?.Rooms ? [hotel.Rooms] : []);
@@ -405,7 +409,7 @@ function hotelDisplayPrice(hotel) {
     return {
       amount: cheapest.amount,
       currency: cheapest.currency,
-      amountINR: toINR(cheapest.amount, cheapest.currency),
+      amountINR: toINR(cheapest.amount, cheapest.currency, fxRates),
     };
   }
 
@@ -414,7 +418,7 @@ function hotelDisplayPrice(hotel) {
   return {
     amount: fallbackAmount,
     currency: fallbackCurrency,
-    amountINR: toINR(fallbackAmount, fallbackCurrency),
+    amountINR: toINR(fallbackAmount, fallbackCurrency, fxRates),
   };
 }
 
@@ -541,6 +545,9 @@ const css = `
 .hp-err{background:#fff5f5;border:1.5px solid #fca5a5;border-radius:12px;padding:13px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;animation:fadeIn .2s ease}
 .hp-err-txt{font-size:.8rem;color:#7f1d1d;line-height:1.55;flex:1}
 .hp-err-x{background:#e53e3e;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:.7rem;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit}
+.hp-err.hp-ok{background:#ecfdf3;border-color:#86efac}
+.hp-err.hp-ok .hp-err-txt{color:#166534}
+.hp-err.hp-ok .hp-err-x{background:#16a34a}
 
 /* ── search box ── */
 .hp-sbox{background:#fff;border-radius:18px;box-shadow:0 4px 28px rgba(15,82,152,.09),0 1px 4px rgba(0,0,0,.05);border:1px solid rgba(15,82,152,.08);position:relative}
@@ -1012,6 +1019,7 @@ export default function HotelsPage({onBack}){
   const calendarFlexDays = 3;
   const [hotelCalendarFares,setHotelCalendarFares] = useState([]);
   const [sortBy,setSortBy]     = useState(persistedForm.sortBy || "price_asc");
+  const [fxRates,setFxRates]   = useState({ INR: 1 });
   const [showMap,setShowMap]   = useState(true);
   const [mobileNavOpen,setMobileNavOpen] = useState(false);
   const [mobileFiltersOpen,setMobileFiltersOpen] = useState(false);
@@ -1416,6 +1424,44 @@ export default function HotelsPage({onBack}){
     if (!seed || !cityId) return;
     void loadCalendarFares(seed, { silent: true });
   }, [drop, cityId, cityName, cityQuery, checkIn, checkOut, hotelCodes, nat, roomCfg.count, roomCfg.adults, roomCfg.children, destCountry, calendarFlexDays]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const currencies = new Set();
+    for (const hotel of hotels) {
+      const rooms = Array.isArray(hotel?.Rooms) ? hotel.Rooms : (hotel?.Rooms ? [hotel.Rooms] : []);
+      if (rooms.length > 0) {
+        rooms.forEach((room) => currencies.add(String(roomCurrency(room, hotel) || "INR").toUpperCase()));
+      } else {
+        currencies.add(String(roomCurrency(null, hotel) || "INR").toUpperCase());
+      }
+    }
+
+    const missing = [...currencies].filter((code) => code !== "INR" && !Number.isFinite(Number(fxRates?.[code])));
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const updates = {};
+      await Promise.all(
+        missing.map(async (cur) => {
+          try {
+            const res = await fetch(`${API_BASE}/fx-rate?base=${encodeURIComponent(cur)}&to=INR`);
+            const data = await res.json().catch(() => ({}));
+            const rate = Number(data?.rate);
+            if (res.ok && Number.isFinite(rate) && rate > 0) updates[cur] = rate;
+          } catch {
+            // Keep UI usable even if FX fetch fails for some currencies.
+          }
+        })
+      );
+      if (!cancelled && Object.keys(updates).length > 0) {
+        setFxRates((prev) => ({ ...prev, ...updates }));
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [hotels, fxRates]);
+
   async function openHotelDetails(hotel){
     setDetailImageIdx(0);
     setDetailHotel(hotel);
@@ -1583,6 +1629,23 @@ export default function HotelsPage({onBack}){
       });
       const ref = data.ConfirmationNumber || data.BookingReferenceId || data.BookingId || `REF${Date.now()}`;
       setBookingRef(ref);
+      saveBookingRecord({
+        service: "hotel",
+        reference: String(ref),
+        status: "Confirmed",
+        title: String(selHotel?.HotelName || "Hotel Booking"),
+        location: String(cityQuery || cityName || selHotel?.CityName || ""),
+        date: checkIn ? checkIn.toISOString() : "",
+        amount: Number(computedFare || 0),
+        currency: "INR",
+        details: {
+          checkIn: checkIn ? fmtApi(checkIn) : "",
+          checkOut: checkOut ? fmtApi(checkOut) : "",
+          nights: nt,
+          rooms: roomCfg?.count || 1,
+          guest: `${guest?.first || ""} ${guest?.last || ""}`.trim(),
+        },
+      });
       setPage("confirm");
     }catch(e){
       setApiErr(`Booking failed: ${e.message}`);
@@ -1648,8 +1711,8 @@ export default function HotelsPage({onBack}){
       if (!activeStarValues.includes(bucket)) return false;
     }
     if (Number.isFinite(activeBudget) && activeBudget > 0) {
-      const priceInINR = Number(hotelDisplayPrice(hotel).amountINR || 0);
-      if (!(priceInINR > 0 && priceInINR <= activeBudget)) return false;
+      const priceInINR = Number(hotelDisplayPrice(hotel, fxRates).amountINR);
+      if (Number.isFinite(priceInINR) && !(priceInINR > 0 && priceInINR <= activeBudget)) return false;
     }
     return true;
   });
@@ -1689,6 +1752,8 @@ export default function HotelsPage({onBack}){
   const rateList = prebookRooms.length ? prebookRooms : (selHotel?.Rooms || []);
   const pickedRate = rateList[selRateIdx] || rateList[0] || selHotel || {};
   const totalPrice = roomTotal(pickedRate, selHotel);
+  const totalPriceCurrency = roomCurrency(pickedRate, selHotel);
+  const totalPriceINR = toINR(totalPrice, totalPriceCurrency, fxRates);
   const detailImages = detailHotel ? hotelImageUrls(detailHotel) : [];
   const detailMapPoint = detailHotel ? parseHotelMapPoint(detailHotel) : null;
   const detailDescription = detailHotel?.Description
@@ -1702,8 +1767,9 @@ export default function HotelsPage({onBack}){
     : [];
   const detailFacilities = normalizeFacilities(detailHotel?.HotelFacilities);
   const detailHighlights = facilityHighlights(detailHotel?.HotelFacilities);
-  const detailPricing = detailHotel ? hotelDisplayPrice(detailHotel) : { amount: 0, currency: "INR", amountINR: 0 };
+  const detailPricing = detailHotel ? hotelDisplayPrice(detailHotel, fxRates) : { amount: 0, currency: "INR", amountINR: 0 };
   const detailStarCount = Math.max(0, Math.min(5, Math.round(Number(detailHotel?.HotelRating || detailHotel?.StarRating || 0))));
+  const isSuccessApiMsg = String(apiErr || "").startsWith("Live fare loaded. Mock booking mode is ON");
 
   /* ═══════════════════════════════════════════════
      RENDER
@@ -1743,8 +1809,8 @@ export default function HotelsPage({onBack}){
 
           {/* error banner */}
           {apiErr && (
-            <div className="hp-err">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c53030" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div className={`hp-err ${isSuccessApiMsg ? "hp-ok" : ""}`}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={isSuccessApiMsg ? "#166534" : "#c53030"} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <div className="hp-err-txt">{apiErr}</div>
               <button className="hp-err-x" onClick={()=>setApiErr("")}>✕</button>
             </div>
@@ -2242,7 +2308,7 @@ export default function HotelsPage({onBack}){
               )}
 
               {sorted.map((h,idx)=>{
-                const pricing = hotelDisplayPrice(h);
+                const pricing = hotelDisplayPrice(h, fxRates);
                 const priceInr = pricing.amountINR;
                 const img   = firstHotelImage(h);
                 const ref   = h.IsRefundable ?? true;
@@ -2589,7 +2655,13 @@ export default function HotelsPage({onBack}){
                     ))}
                     <div className="hp-sumrow tot">
                       <span>Total</span>
-                      <span style={{color:"#0f5298",fontSize:"1.05rem"}}>{totalPrice>0?`${Math.round(totalPrice).toLocaleString()} INR`:"—"}</span>
+                      <span style={{color:"#0f5298",fontSize:"1.05rem"}}>
+                        {totalPrice > 0
+                          ? (Number.isFinite(totalPriceINR) && totalPriceINR > 0
+                              ? `INR ${Math.round(totalPriceINR).toLocaleString("en-IN")}`
+                              : `${String(totalPriceCurrency || "INR").toUpperCase()} ${Math.round(totalPrice).toLocaleString("en-IN")}`)
+                          : "—"}
+                      </span>
                     </div>
                   </div>
 

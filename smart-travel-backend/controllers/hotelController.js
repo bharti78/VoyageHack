@@ -149,6 +149,30 @@ const cityCache = {};
 const cityHotelCodeCache = {};
 const cityHotelDetailsCache = {};
 const hotelDetailsCache = {};
+const fxRateCache = {};
+const FX_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const FX_FALLBACK_TO_INR = {
+  USD: 83,
+  EUR: 90,
+  GBP: 106,
+  AED: 22.6,
+  SGD: 61,
+  THB: 2.3,
+};
+
+function fallbackFxRate(base, to) {
+  if (base === to) return 1;
+  if (to === "INR" && Number.isFinite(Number(FX_FALLBACK_TO_INR[base]))) {
+    return Number(FX_FALLBACK_TO_INR[base]);
+  }
+  if (base === "INR" && Number.isFinite(Number(FX_FALLBACK_TO_INR[to]))) {
+    return 1 / Number(FX_FALLBACK_TO_INR[to]);
+  }
+  if (Number.isFinite(Number(FX_FALLBACK_TO_INR[base])) && Number.isFinite(Number(FX_FALLBACK_TO_INR[to]))) {
+    return Number(FX_FALLBACK_TO_INR[base]) / Number(FX_FALLBACK_TO_INR[to]);
+  }
+  return Number.NaN;
+}
 
 function isInsufficientBalanceStatus(status) {
   const code = String(status?.Code || "").trim();
@@ -390,6 +414,40 @@ function chunkArray(items, size) {
     chunks.push(items.slice(i, i + size));
   }
   return chunks;
+}
+
+async function getFxRate(baseCurrency = "INR", toCurrency = "INR") {
+  const base = String(baseCurrency || "INR").toUpperCase().trim();
+  const to = String(toCurrency || "INR").toUpperCase().trim();
+  if (!base || !to) throw new Error("Invalid currency code.");
+  if (base === to) return { rate: 1, source: "identity", cached: false };
+
+  const cacheKey = `${base}_${to}`;
+  const now = Date.now();
+  const cached = fxRateCache[cacheKey];
+  if (cached && now - cached.savedAt < FX_CACHE_TTL_MS) {
+    return { rate: cached.rate, source: cached.source || "cache", cached: true };
+  }
+
+  try {
+    const url = `https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}&to=${encodeURIComponent(to)}`;
+    const resp = await fetch(url, { method: "GET" });
+    if (!resp.ok) throw new Error(`FX upstream failed (${resp.status})`);
+    const data = await resp.json().catch(() => ({}));
+    const rate = Number(data?.rates?.[to]);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error(`FX rate unavailable for ${base}->${to}`);
+    }
+    fxRateCache[cacheKey] = { rate, savedAt: now, source: "frankfurter" };
+    return { rate, source: "frankfurter", cached: false };
+  } catch (err) {
+    const fallback = fallbackFxRate(base, to);
+    if (Number.isFinite(fallback) && fallback > 0) {
+      fxRateCache[cacheKey] = { rate: fallback, savedAt: now, source: "fallback" };
+      return { rate: fallback, source: "fallback", cached: false };
+    }
+    throw err;
+  }
 }
 
 async function getHotelDetailsForCodes(hotelCodes) {
@@ -942,5 +1000,19 @@ exports.cancel = async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(502).json({ error: err.message });
+  }
+};
+
+exports.fxRate = async (req, res) => {
+  try {
+    const base = String(req.query?.base || "INR").toUpperCase().trim();
+    const to = String(req.query?.to || "INR").toUpperCase().trim();
+    if (!/^[A-Z]{3}$/.test(base) || !/^[A-Z]{3}$/.test(to)) {
+      return res.status(400).json({ error: "base/to must be valid 3-letter currency codes." });
+    }
+    const { rate, source, cached } = await getFxRate(base, to);
+    return res.json({ base, to, rate, source, cached });
+  } catch (err) {
+    return res.status(502).json({ error: err.message || "FX rate fetch failed." });
   }
 };
