@@ -239,6 +239,33 @@ function facilityHighlights(facilities) {
   ].filter(Boolean);
 }
 
+function seniorFacilityMatch(hotel) {
+  const facilities = normalizeFacilities(hotel?.HotelFacilities).map((f) => String(f).toLowerCase());
+  const address = String(hotel?.HotelAddress || hotel?.Address || "").toLowerCase();
+  const desc = String(hotel?.Description || "").toLowerCase();
+  const joined = `${facilities.join(" ")} ${address} ${desc}`;
+  const liftAccess = /lift|elevator/.test(joined);
+  const wheelchairSupport = /wheelchair|accessible|disabled access|barrier free|senior friendly/.test(joined);
+  const groundFloorSupport = /ground floor|lower floor|easy access room/.test(joined) || liftAccess;
+  const minimalWalkingSupport = /walking distance|city center|central|near metro|near station|easy access|close to/.test(joined);
+  const easyTransferSupport = /transfer|shuttle|airport pickup|airport drop|cab|taxi|car hire/.test(joined);
+  const score = [
+    liftAccess,
+    wheelchairSupport,
+    groundFloorSupport,
+    minimalWalkingSupport,
+    easyTransferSupport,
+  ].filter(Boolean).length;
+  return {
+    liftAccess,
+    wheelchairSupport,
+    groundFloorSupport,
+    minimalWalkingSupport,
+    easyTransferSupport,
+    score,
+  };
+}
+
 function loadPersistedHotelForm() {
   try {
     const raw = localStorage.getItem(HOTEL_FORM_STORAGE_KEY);
@@ -550,6 +577,16 @@ const css = `
 .hp-ffin input{border:none;outline:none;background:transparent;font-size:.76rem;font-weight:500;color:#1e293b;font-family:inherit;width:100%}
 .hp-ffin input::placeholder{color:#a0aec0}
 .hp-chev svg{width:12px;height:12px;color:#94a3b8}
+.hp-ff.senior{flex:0 0 300px;min-width:250px}
+.hp-senior-dd{padding:10px 12px;min-width:285px}
+.hp-senior-dd-title{font-size:.68rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.hp-senior-row{display:flex;align-items:flex-start;gap:8px;padding:6px 0}
+.hp-senior-row input{margin-top:2px}
+.hp-senior-row label{font-size:.76rem;color:#334155;line-height:1.4;cursor:pointer}
+.hp-senior-row.sub label{font-size:.72rem;color:#475569}
+.hp-senior-row.sub{padding-left:16px}
+.hp-senior-row.off{opacity:.5}
+.hp-senior-apply{width:100%;margin-top:8px;background:#0f5298;color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit}
 
 /* search btn */
 .hp-sbtn{flex-shrink:0;background:linear-gradient(135deg,#0f5298,#1565c0);color:#fff;border:none;border-radius:12px;padding:0 26px;height:46px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;transition:all .22s;box-shadow:0 4px 14px rgba(15,82,152,.35);white-space:nowrap}
@@ -786,6 +823,7 @@ const css = `
   .hp-stats{grid-template-columns:1fr 1fr}
   .hp-ck-grid{grid-template-columns:1fr}
   .hp-fgrid{grid-template-columns:1fr}
+  .hp-ff.senior{flex:1 1 100%;min-width:0}
   .hp-nav{position:relative;height:auto;min-height:56px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
   .hp-nav-toggle{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit}
   .hp-nav-toggle svg{width:18px;height:18px}
@@ -818,6 +856,7 @@ const css = `
   .hp-ffval,.hp-ffin input{font-size:.88rem;color:#1e293b}
   .hp-ffic svg,.hp-chev svg{width:16px;height:16px}
   .hp-ff .hp-drop{left:0;right:0;min-width:0;width:100%}
+  .hp-senior-dd{min-width:0}
   .hp-detail-main-image{height:220px}
   .hp-detail-map{height:180px}
   .hp-detail-side-price{font-size:1.1rem}
@@ -956,6 +995,10 @@ export default function HotelsPage({onBack}){
   const [nat,setNat]       = useState(persistedForm.nat || "IN");
   const [starF,setStarF]   = useState(persistedForm.starF ?? null);
   const [budget,setBudget] = useState(persistedForm.budget || "");
+  const [seniorAssist,setSeniorAssist] = useState(Boolean(persistedForm.seniorAssist || false));
+  const [groundFloorPref,setGroundFloorPref] = useState(Boolean(persistedForm.groundFloorPref || false));
+  const [minimalWalkingPref,setMinimalWalkingPref] = useState(Boolean(persistedForm.minimalWalkingPref || false));
+  const [easyTransferPref,setEasyTransferPref] = useState(Boolean(persistedForm.easyTransferPref || false));
   const [drop,setDrop]     = useState(null);
 
   /* ── api / page state ── */
@@ -1204,6 +1247,10 @@ export default function HotelsPage({onBack}){
       nat,
       starF,
       budget,
+      seniorAssist,
+      groundFloorPref,
+      minimalWalkingPref,
+      easyTransferPref,
       sortBy,
       guest,
     };
@@ -1212,7 +1259,7 @@ export default function HotelsPage({onBack}){
     } catch {
       // Ignore storage errors and keep app usable.
     }
-  }, [cityQuery, cityId, cityName, destCountry, hotelCodes, checkIn, checkOut, roomCfg, nat, starF, budget, sortBy, guest]);
+  }, [cityQuery, cityId, cityName, destCountry, hotelCodes, checkIn, checkOut, roomCfg, nat, starF, budget, seniorAssist, groundFloorPref, minimalWalkingPref, easyTransferPref, sortBy, guest]);
 
   /* close dropdowns on outside click */
   useEffect(()=>{
@@ -1406,6 +1453,8 @@ export default function HotelsPage({onBack}){
         city,
         budget: Number(budget || 0) || 0,
         date: pickupDate.toISOString(),
+        seniorAssist,
+        easyTransferOnly: seniorAssist && easyTransferPref,
       }));
       const prevUnified = JSON.parse(localStorage.getItem("voyagehack.unifiedSearch") || "{}");
       localStorage.setItem("voyagehack.unifiedSearch", JSON.stringify({
@@ -1416,6 +1465,13 @@ export default function HotelsPage({onBack}){
         budget: {
           ...(prevUnified?.budget || {}),
           maxValue: Number(budget || prevUnified?.budget?.maxValue || 0) || 0,
+        },
+        preferences: {
+          ...(prevUnified?.preferences || {}),
+          seniorAssist,
+          groundFloorPref: seniorAssist && groundFloorPref,
+          minimalWalkingPref: seniorAssist && minimalWalkingPref,
+          easyTransferPref: seniorAssist && easyTransferPref,
         },
       }));
     } catch {
@@ -1598,7 +1654,7 @@ export default function HotelsPage({onBack}){
     return true;
   });
 
-  const sorted = [...filteredHotels].sort((a,b)=>{
+  const baseSorted = [...filteredHotels].sort((a,b)=>{
     const pa = roomTotal(a?.Rooms?.[0], a), pb = roomTotal(b?.Rooms?.[0], b);
     if(sortBy==="price_asc")  return pa-pb;
     if(sortBy==="price_desc") return pb-pa;
@@ -1606,6 +1662,22 @@ export default function HotelsPage({onBack}){
     if(sortBy==="name")       return (a.HotelName||"").localeCompare(b.HotelName||"");
     return 0;
   });
+  const sorted = seniorAssist
+    ? [...baseSorted].sort((a, b) => {
+        const sa = seniorFacilityMatch(a);
+        const sb = seniorFacilityMatch(b);
+        const prefA = sa.score
+          + (groundFloorPref && sa.groundFloorSupport ? 1 : 0)
+          + (minimalWalkingPref && sa.minimalWalkingSupport ? 1 : 0)
+          + (easyTransferPref && sa.easyTransferSupport ? 1 : 0);
+        const prefB = sb.score
+          + (groundFloorPref && sb.groundFloorSupport ? 1 : 0)
+          + (minimalWalkingPref && sb.minimalWalkingSupport ? 1 : 0)
+          + (easyTransferPref && sb.easyTransferSupport ? 1 : 0);
+        if (prefB !== prefA) return prefB - prefA;
+        return 0;
+      })
+    : baseSorted;
   const mappedHotels = sorted
     .map((hotel) => ({ hotel, point: parseHotelMapPoint(hotel) }))
     .filter((x) => x.point);
@@ -1963,6 +2035,79 @@ export default function HotelsPage({onBack}){
                   </div>
                 </div>
 
+                {/* senior comfort */}
+                <div className="hp-ff senior" style={{position:"relative"}}>
+                  <div className="hp-lbl">Senior Comfort</div>
+                  <div className="hp-ffin" onClick={()=>tog("senior")}>
+                    <span className="hp-ffic">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <circle cx="12" cy="7" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>
+                      </svg>
+                    </span>
+                    <span className="hp-ffval">
+                      {!seniorAssist
+                        ? "Off"
+                        : `${[groundFloorPref,minimalWalkingPref,easyTransferPref].filter(Boolean).length} preference${[groundFloorPref,minimalWalkingPref,easyTransferPref].filter(Boolean).length!==1?"s":""} selected`}
+                    </span>
+                    <span className="hp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+                  </div>
+                  {drop==="senior" && (
+                    <div className="hp-drop">
+                      <div className="hp-senior-dd">
+                        <div className="hp-senior-dd-title">Senior Comfort Preferences</div>
+                        <div className="hp-senior-row">
+                          <input
+                            id="hp-senior-assist"
+                            type="checkbox"
+                            checked={seniorAssist}
+                            onChange={(e)=>{
+                              const v = e.target.checked;
+                              setSeniorAssist(v);
+                              if (!v) {
+                                setGroundFloorPref(false);
+                                setMinimalWalkingPref(false);
+                                setEasyTransferPref(false);
+                              }
+                            }}
+                          />
+                          <label htmlFor="hp-senior-assist">Travelling with Senior Citizen</label>
+                        </div>
+                        <div className={`hp-senior-row sub${!seniorAssist ? " off" : ""}`}>
+                          <input
+                            id="hp-ground-floor"
+                            type="checkbox"
+                            disabled={!seniorAssist}
+                            checked={groundFloorPref}
+                            onChange={(e)=>setGroundFloorPref(e.target.checked)}
+                          />
+                          <label htmlFor="hp-ground-floor">Ground-floor preference</label>
+                        </div>
+                        <div className={`hp-senior-row sub${!seniorAssist ? " off" : ""}`}>
+                          <input
+                            id="hp-minimal-walking"
+                            type="checkbox"
+                            disabled={!seniorAssist}
+                            checked={minimalWalkingPref}
+                            onChange={(e)=>setMinimalWalkingPref(e.target.checked)}
+                          />
+                          <label htmlFor="hp-minimal-walking">Minimal walking distance</label>
+                        </div>
+                        <div className={`hp-senior-row sub${!seniorAssist ? " off" : ""}`}>
+                          <input
+                            id="hp-easy-transfer"
+                            type="checkbox"
+                            disabled={!seniorAssist}
+                            checked={easyTransferPref}
+                            onChange={(e)=>setEasyTransferPref(e.target.checked)}
+                          />
+                          <label htmlFor="hp-easy-transfer">Easy-transfer vehicle needed</label>
+                        </div>
+                        <button type="button" className="hp-senior-apply" onClick={()=>setDrop(null)}>Apply</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 </div>
               </div>
             </div>
@@ -2049,6 +2194,11 @@ export default function HotelsPage({onBack}){
                   </div>
                 )}
               </div>
+              {seniorAssist && (
+                <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"8px 10px",marginBottom:10,fontSize:".72rem",color:"#1e3a8a",fontWeight:600}}>
+                  Senior Comfort mode is ON: results are prioritized for lift access, wheelchair support and your selected comfort preferences.
+                </div>
+              )}
 
               {mappedHotels.length > 0 && (
                 <div className="hp-sbox" style={{padding:"10px 12px",marginBottom:12}}>
@@ -2099,6 +2249,7 @@ export default function HotelsPage({onBack}){
                 const stRaw = h.HotelRating  || h.StarRating || 0;
                 const facilities = normalizeFacilities(h.HotelFacilities).slice(0,4);
                 const highlights = facilityHighlights(h.HotelFacilities);
+                const seniorMatch = seniorFacilityMatch(h);
                 const hasCabFacility = highlights.includes("Cab Facility");
                 const attractionPreview = Array.isArray(h.Attractions)
                   ? textPreview(h.Attractions[0], 95)
@@ -2139,6 +2290,15 @@ export default function HotelsPage({onBack}){
                         {highlights.length>0 && (
                           <div className="hp-htags">
                             {highlights.map((f,i)=><span key={i} className="hp-htag" style={f==="Cab Facility"?{background:"#f0fdf4",borderColor:"#86efac",color:"#166534"}:{background:"#ecfeff",borderColor:"#a5f3fc",color:"#0f766e"}}>{f}</span>)}
+                          </div>
+                        )}
+                        {seniorAssist && seniorMatch.score > 0 && (
+                          <div className="hp-htags">
+                            <span className="hp-htag" style={{background:"#fff7ed",borderColor:"#fed7aa",color:"#b45309"}}>
+                              Senior Match: {seniorMatch.score}/5
+                            </span>
+                            {seniorMatch.liftAccess && <span className="hp-htag" style={{background:"#f0f9ff",borderColor:"#bae6fd",color:"#0369a1"}}>Lift Access</span>}
+                            {seniorMatch.wheelchairSupport && <span className="hp-htag" style={{background:"#ecfeff",borderColor:"#a5f3fc",color:"#0f766e"}}>Wheelchair Support</span>}
                           </div>
                         )}
                         {(h.PhoneNumber || h.FaxNumber || h.HotelWebsiteURL) && (

@@ -135,6 +135,11 @@ function mapDriverToCab(driver, idx, { pickup, drop, time }) {
   };
 }
 
+function isEasyTransferCab(cab) {
+  const id = String(cab?.type?.id || "").toLowerCase();
+  return id !== "bike" && id !== "auto";
+}
+
 /* ── CSS ── */
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Sora:wght@400;600;700;800&display=swap');
@@ -276,6 +281,8 @@ export default function CabsPage() {
   const [time, setTime] = useState("10:00");
   const [cabType, setCabType] = useState("");
   const [budgetLimit, setBudgetLimit] = useState(0);
+  const [seniorAssistMode, setSeniorAssistMode] = useState(false);
+  const [easyTransferOnly, setEasyTransferOnly] = useState(false);
   const travelerGender = persona === "solo"
     ? (soloTravelerGender === "female" || soloTravelerGender === "male"
       ? soloTravelerGender
@@ -305,7 +312,11 @@ export default function CabsPage() {
       }
       const cabPrefill = JSON.parse(localStorage.getItem("voyagehack.cab.prefill") || "{}");
       const prefBudget = Number(cabPrefill.budget || unified?.budget?.maxValue || smart.budget || 0);
+      const prefSeniorAssist = Boolean(cabPrefill.seniorAssist || unified?.preferences?.seniorAssist || false);
+      const prefEasyTransfer = Boolean(cabPrefill.easyTransferOnly || unified?.preferences?.easyTransferPref || false);
       if (prefBudget > 0) setBudgetLimit(prefBudget);
+      if (prefSeniorAssist) setSeniorAssistMode(true);
+      if (prefEasyTransfer) setEasyTransferOnly(true);
       if (cabPrefill.city && !pickup) {
         setPickup(cabPrefill.city);
         setDrop(`${cabPrefill.city} City Center`);
@@ -345,6 +356,14 @@ export default function CabsPage() {
       if (budgetLimit > 0) {
         results = results.filter((cab) => Number(cab.fare || 0) <= budgetLimit);
       }
+      if (easyTransferOnly) {
+        const easyCabs = results.filter(isEasyTransferCab);
+        if (easyCabs.length > 0) {
+          results = easyCabs;
+        } else {
+          setNotice("Easy-transfer cabs are limited right now. Showing all available cabs.");
+        }
+      }
       setCabs(results);
       const safety = applyCabSafetyRules(results, { persona, travelerGender, time });
       setDisplayedCabs(safety.list);
@@ -357,6 +376,14 @@ export default function CabsPage() {
       let fallback = generateCabs(pickup, drop, date, time, cabType || null);
       if (budgetLimit > 0) {
         fallback = fallback.filter((cab) => Number(cab.fare || 0) <= budgetLimit);
+      }
+      if (easyTransferOnly) {
+        const easyCabs = fallback.filter(isEasyTransferCab);
+        if (easyCabs.length > 0) {
+          fallback = easyCabs;
+        } else {
+          setNotice("Easy-transfer cabs are limited right now. Showing all available cabs.");
+        }
       }
       setCabs(fallback);
       const safety = applyCabSafetyRules(fallback, { persona, travelerGender, time });
@@ -421,6 +448,11 @@ export default function CabsPage() {
           {booked && (
             <div style={{background:"#dcfce7",border:"1.5px solid #6ee7b7",borderRadius:12,padding:"12px 18px",marginBottom:14,fontSize:".84rem",fontWeight:600,color:"#064e3b"}}>
               🎉 Cab booked successfully! Your driver will arrive shortly.
+            </div>
+          )}
+          {seniorAssistMode && (
+            <div style={{background:"#fffbeb",border:"1.5px solid #fcd34d",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:".78rem",fontWeight:600,color:"#92400e"}}>
+              Senior Assist mode active{easyTransferOnly ? " · Prioritizing easy-transfer vehicles" : ""}.
             </div>
           )}
 
